@@ -1,6 +1,7 @@
 ---
 import { SITE } from '@/config/site';
 import { CATEGORY_IDS } from '@/data/categories';
+import Logo from '@/components/Logo.astro';
 
 const path = Astro.url.pathname;
 const isWork =
@@ -11,7 +12,8 @@ const isWork =
 
 <header class="header">
   <div class="container header-inner">
-    <a class="wordmark" href="/" aria-label={`${SITE.name} — home`}>
+    <a class="wordmark wordmark-lockup" href="/" aria-label={`${SITE.name} — home`}>
+      <Logo size={30} />
       XStudioz<span class="accent-dot" aria-hidden="true">.</span>
     </a>
     <nav aria-label="Main">

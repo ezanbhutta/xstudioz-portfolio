@@ -1,6 +1,6 @@
 {
   "name": "xstudioz-portfolio",
-  "description": "XStudioz \u2014 design studio portfolio",
+  "description": "XStudioz — design studio portfolio",
   "type": "module",
   "version": "1.0.0",
   "private": true,
@@ -20,6 +20,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@fontsource-variable/outfit": "^5.3.0",
     "@napi-rs/canvas": "^1.0.3",
     "pdfjs-dist": "^6.1.200",
     "prettier": "^3.9.6",

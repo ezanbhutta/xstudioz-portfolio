@@ -25,7 +25,7 @@ const jsonLd = {
     ...siteGraph(),
     {
       '@type': 'CollectionPage',
-      name: `${category.title} — ${SITE.name}`,
+      name: `${category.title} | ${SITE.name}`,
       description: category.description,
       url: new URL(`/${category.id}/`, SITE.url).href,
       isPartOf: { '@id': WEBSITE_ID },

@@ -12,14 +12,9 @@ const isWork =
 
 <header class="header">
   <div class="container header-inner">
-    <a
-      class="wordmark wordmark-lockup"
-      href="/"
-      data-astro-prefetch
-      aria-label={`${SITE.name} — home`}
-    >
-      <Logo size={26} />
-      XStudioz<span class="accent-dot" aria-hidden="true">.</span>
+    {/* Icon-only brand mark; the accessible name still says who we are. */}
+    <a class="brand-mark" href="/" data-astro-prefetch aria-label={`${SITE.name} home`}>
+      <Logo size={36} />
     </a>
     <nav aria-label="Main">
       <ul class="nav-list" role="list">
@@ -58,6 +53,25 @@ const isWork =
     align-items: center;
     justify-content: space-between;
     gap: var(--space-md);
+  }
+
+  .brand-mark {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--control-h);
+  }
+
+  .brand-mark :global(img),
+  .brand-mark :global(svg) {
+    border-radius: 8px;
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .brand-mark:hover :global(img),
+    .brand-mark:hover :global(svg) {
+      transform: scale(1.05);
+    }
   }
 
   .nav-list {

@@ -41,7 +41,7 @@ const {
   jsonLd,
 } = Astro.props;
 
-const fullTitle = title.includes(SITE.name) ? title : `${title} — ${SITE.name}`;
+const fullTitle = title.includes(SITE.name) ? title : `${title} | ${SITE.name}`;
 const canonical = new URL(Astro.url.pathname, SITE.url);
 const ogImageUrl = ogImage ?? new URL('/og.png', SITE.url).href;
 ---

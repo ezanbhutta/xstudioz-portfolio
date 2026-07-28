@@ -1,0 +1,27 @@
+{
+  "title": "Nova Fitness",
+  "category": "social-media",
+  "year": 2025,
+  "order": 5,
+  "summary": "A high-energy feed system for a boutique gym — bold templates that stay unmistakable at scroll speed.",
+  "cover": "./cover.png",
+  "coverAlt": "Three Nova Fitness social media post designs arranged as a set",
+  "images": [
+    {
+      "src": "./01.png",
+      "alt": "Nova Fitness Instagram feed grid of six coordinated posts"
+    },
+    {
+      "src": "./02.png",
+      "alt": "Nova Fitness featured social post design"
+    },
+    {
+      "src": "./03.png",
+      "alt": "Nova Fitness story template design"
+    },
+    {
+      "src": "./04.png",
+      "alt": "Nova Fitness carousel post sequence"
+    }
+  ]
+}

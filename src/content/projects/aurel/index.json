@@ -1,0 +1,27 @@
+{
+  "title": "Aurel",
+  "category": "logo-design",
+  "year": 2026,
+  "order": 1,
+  "summary": "A refined monogram for a contemporary jewelry house — drawn from a single continuous curve and set in warm metallics.",
+  "cover": "./cover.png",
+  "coverAlt": "Aurel logo mark centered on a deep color field with fine registration marks",
+  "images": [
+    {
+      "src": "./01.png",
+      "alt": "Aurel logo mark in dark ink on a light background"
+    },
+    {
+      "src": "./02.png",
+      "alt": "Construction grid showing the geometry behind the Aurel logo mark"
+    },
+    {
+      "src": "./03.png",
+      "alt": "Repeating pattern tile built from the Aurel logo mark"
+    },
+    {
+      "src": "./04.png",
+      "alt": "Aurel horizontal logo lockup with wordmark placeholder"
+    }
+  ]
+}

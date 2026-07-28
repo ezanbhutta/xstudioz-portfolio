@@ -1,0 +1,62 @@
+---
+import ProjectCard from '@/components/ProjectCard.astro';
+import type { Project } from '@/lib/projects';
+
+interface Props {
+  projects: Project[];
+  /** How many cards start above the fold and should load eagerly. */
+  eagerCount?: number;
+  /** Set on the home grid so the filter script can find it. */
+  filterable?: boolean;
+  /** Screen-reader heading that keeps the document outline sequential. */
+  heading?: string;
+}
+
+const { projects, eagerCount = 2, filterable = false, heading = 'Projects' } = Astro.props;
+---
+
+<div class="work" data-work-grid={filterable ? '' : undefined}>
+  <h2 class="visually-hidden">{heading}</h2>
+  <p class="visually-hidden" role="status" data-filter-status></p>
+  <ul class="work-grid" role="list">
+    {
+      projects.map((project, i) => (
+        <ProjectCard project={project} index={i} eager={i < eagerCount} />
+      ))
+    }
+  </ul>
+  <p class="work-empty" data-work-empty hidden>
+    Nothing in this category yet — it’s on the bench.
+  </p>
+</div>
+
+<style>
+  .work-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-2xl) var(--space-xl);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  @media (min-width: 680px) {
+    .work-grid {
+      grid-template-columns: 1fr 1fr;
+      column-gap: var(--space-xl);
+      padding-block-end: var(--space-2xl);
+    }
+
+    /* Editorial offset — the right column starts lower, so pairs never sit
+       in a rigid row and each cover gets its own moment. Counts only visible
+       cards so the rhythm survives filtering (no-op in older browsers). */
+    .work-grid > :global(li:nth-child(even of :not([hidden]))) {
+      transform: translateY(var(--space-2xl));
+    }
+  }
+
+  .work-empty {
+    color: var(--color-ink-mute);
+    padding-block: var(--space-2xl);
+  }
+</style>

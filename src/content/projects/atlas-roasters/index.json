@@ -1,0 +1,27 @@
+{
+  "title": "Atlas Roasters",
+  "category": "brand-identity",
+  "year": 2024,
+  "order": 12,
+  "summary": "An identity for a specialty coffee roaster — a globe-and-bean mark with packaging built for the shelf and the feed.",
+  "cover": "./cover.png",
+  "coverAlt": "Atlas Roasters brand identity overview — mark, pattern, type and color side by side",
+  "images": [
+    {
+      "src": "./01.png",
+      "alt": "Atlas Roasters primary brand mark on the core brand color"
+    },
+    {
+      "src": "./02.png",
+      "alt": "Atlas Roasters brand color palette with primary and secondary swatches"
+    },
+    {
+      "src": "./03.png",
+      "alt": "Atlas Roasters brand card application with logo and supporting text"
+    },
+    {
+      "src": "./04.png",
+      "alt": "Atlas Roasters brand pattern in accent color on a dark field"
+    }
+  ]
+}

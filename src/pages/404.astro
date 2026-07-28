@@ -1,0 +1,49 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Page not found"
+  description="This page doesn’t exist. Explore the XStudioz portfolio instead."
+>
+  <section class="container notfound">
+    <p class="overline">404</p>
+    <h1 class="notfound-title">This page moved on<span class="accent">.</span></h1>
+    <p class="notfound-lede">
+      The work didn’t. Head back to the portfolio or browse the packages.
+    </p>
+    <div class="notfound-actions">
+      <a class="button button--primary" href="/">View the work</a>
+      <a class="button button--outline" href="/packages/">See packages</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .notfound {
+    padding-block: var(--space-3xl);
+    min-height: 50vh;
+  }
+
+  .notfound-title {
+    font-size: var(--text-display);
+    margin-block: var(--space-sm) var(--space-md);
+  }
+
+  .accent {
+    color: var(--color-accent);
+  }
+
+  .notfound-lede {
+    color: var(--color-ink-soft);
+    font-size: var(--text-lg);
+    max-width: var(--measure);
+  }
+
+  .notfound-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-block-start: var(--space-lg);
+  }
+</style>

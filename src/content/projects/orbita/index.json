@@ -1,0 +1,27 @@
+{
+  "title": "Orbita",
+  "category": "animation",
+  "year": 2024,
+  "order": 14,
+  "summary": "A motion identity for a space-data company — orbital paths trace the mark before settling into the static lockup.",
+  "cover": "./cover.png",
+  "coverAlt": "Orbita animated logo hero frame with orbital motion trails",
+  "images": [
+    {
+      "src": "./01.png",
+      "alt": "Four key frames from the Orbita logo animation"
+    },
+    {
+      "src": "./02.png",
+      "alt": "Easing curve diagram for the Orbita motion system"
+    },
+    {
+      "src": "./03.png",
+      "alt": "Orbita mark with motion blur trail"
+    },
+    {
+      "src": "./04.png",
+      "alt": "Orbita animation storyboard with frame sequence"
+    }
+  ]
+}

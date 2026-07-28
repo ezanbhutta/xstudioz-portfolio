@@ -1,0 +1,202 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import FilterBar from '@/components/FilterBar.astro';
+import WorkGrid from '@/components/WorkGrid.astro';
+import { SITE } from '@/config/site';
+import { PACKAGES } from '@/data/packages';
+import { getSortedProjects, countByCategory } from '@/lib/projects';
+
+const projects = await getSortedProjects();
+const counts = countByCategory(projects);
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${SITE.url}/#organization`,
+      name: SITE.name,
+      url: `${SITE.url}/`,
+      description: SITE.description,
+      logo: new URL('/apple-touch-icon.png', SITE.url).href,
+      sameAs: [SITE.fiverrUrl],
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE.url}/#website`,
+      name: SITE.name,
+      url: `${SITE.url}/`,
+      publisher: { '@id': `${SITE.url}/#organization` },
+    },
+  ],
+};
+---
+
+<BaseLayout
+  title={`${SITE.name} — Logos, Brand Identity & Motion`}
+  description={SITE.description}
+>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} slot="head" />
+
+  <section class="hero container">
+    <p class="overline">Independent Design Studio</p>
+    <h1 class="hero-title">Identity, crafted<br />with intent<span class="hero-dot">.</span></h1>
+    <p class="hero-lede">
+      Logos, brand identities and visual systems for ambitious businesses —
+      designed quietly, built to last.
+    </p>
+    <div class="hero-actions">
+      <a class="button button--primary" href="#work">View the work <span aria-hidden="true">↓</span></a>
+      <a class="button button--outline" href={SITE.fiverrUrl} rel="noopener">
+        Hire on Fiverr <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+  </section>
+
+  <section id="work" class="work-section" aria-label="Portfolio">
+    <FilterBar counts={counts} total={projects.length} enhanced />
+    <div class="container work-container">
+      <WorkGrid projects={projects} eagerCount={2} filterable heading="Selected work" />
+    </div>
+  </section>
+
+  <section class="packages-teaser" aria-labelledby="packages-teaser-heading">
+    <div class="container teaser-grid">
+      <div>
+        <p class="overline">Packages</p>
+        <h2 id="packages-teaser-heading">Fixed scope.<br />Studio craft.</h2>
+        <p class="teaser-lede">
+          Three clear ways to work together — from a first logo to a full
+          identity with motion.
+        </p>
+      </div>
+      <ul class="teaser-list" role="list">
+        {
+          PACKAGES.map((pkg) => (
+            <li>
+              <a class="teaser-row" href="/packages/">
+                <span class="teaser-name">{pkg.name}</span>
+                <span class="teaser-price">{pkg.price}</span>
+                <span class="teaser-arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    padding-block: var(--space-3xl) var(--space-3xl);
+  }
+
+  .hero-title {
+    font-size: var(--text-display);
+    max-width: 12em;
+    margin-block: var(--space-md) var(--space-md);
+  }
+
+  .hero-dot {
+    color: var(--color-accent);
+  }
+
+  .hero-lede {
+    font-size: var(--text-lg);
+    color: var(--color-ink-soft);
+    max-width: var(--measure);
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-block-start: var(--space-lg);
+  }
+
+  .work-container {
+    padding-block-start: var(--space-xl);
+  }
+
+  /* Keeps anchored + post-filter scroll positions clear of the sticky bar */
+  .work-section {
+    scroll-margin-top: var(--space-lg);
+  }
+
+  .packages-teaser {
+    margin-block-start: var(--space-section);
+    border-block-start: 1px solid var(--color-line);
+    padding-block-start: var(--space-3xl);
+  }
+
+  .teaser-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: var(--space-2xl);
+    align-items: start;
+  }
+
+  .teaser-grid h2 {
+    font-size: var(--text-3xl);
+    margin-block: var(--space-sm);
+  }
+
+  .teaser-lede {
+    color: var(--color-ink-soft);
+    max-width: 26rem;
+  }
+
+  .teaser-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .teaser-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: baseline;
+    gap: var(--space-md);
+    padding-block: var(--space-md);
+    border-block-end: 1px solid var(--color-line);
+    text-decoration: none;
+    transition: padding-inline-start var(--duration-base) var(--ease-out);
+  }
+
+  .teaser-list li:first-child .teaser-row {
+    border-block-start: 1px solid var(--color-line);
+  }
+
+  .teaser-row:hover {
+    padding-inline-start: var(--space-2xs);
+  }
+
+  .teaser-name {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: 560;
+    letter-spacing: var(--tracking-tight);
+  }
+
+  .teaser-price {
+    color: var(--color-ink-mute);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .teaser-arrow {
+    color: var(--color-accent);
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+
+  .teaser-row:hover .teaser-arrow {
+    transform: translateX(4px);
+  }
+
+  @media (max-width: 819px) {
+    .teaser-grid {
+      grid-template-columns: 1fr;
+      gap: var(--space-lg);
+    }
+  }
+</style>

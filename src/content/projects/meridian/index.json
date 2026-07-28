@@ -1,0 +1,27 @@
+{
+  "title": "Meridian",
+  "category": "brand-identity",
+  "year": 2026,
+  "order": 2,
+  "summary": "A full identity system for a fintech startup — a precise geometric mark, confident type and a disciplined two-color world.",
+  "cover": "./cover.png",
+  "coverAlt": "Meridian brand identity overview — mark, pattern, type and color side by side",
+  "images": [
+    {
+      "src": "./01.png",
+      "alt": "Meridian primary brand mark on the core brand color"
+    },
+    {
+      "src": "./02.png",
+      "alt": "Meridian brand color palette with primary and secondary swatches"
+    },
+    {
+      "src": "./03.png",
+      "alt": "Meridian brand card application with logo and supporting text"
+    },
+    {
+      "src": "./04.png",
+      "alt": "Meridian brand pattern in accent color on a dark field"
+    }
+  ]
+}

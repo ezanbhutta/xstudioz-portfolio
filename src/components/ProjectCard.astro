@@ -1,0 +1,99 @@
+---
+import { Picture } from 'astro:assets';
+import { getCategory } from '@/data/categories';
+import type { Project } from '@/lib/projects';
+
+interface Props {
+  project: Project;
+  /** Above-the-fold cards load eagerly with high priority. */
+  eager?: boolean;
+  /** Stagger position for the entrance reveal. */
+  index?: number;
+}
+
+const { project, eager = false, index = 0 } = Astro.props;
+const { title, category, year, cover } = project.data;
+const categoryLabel = getCategory(category).label;
+const href = `/work/${project.id}/`;
+const delay = Math.min(index % 4, 3) * 60;
+---
+
+<li class="card" data-category={category}>
+  <a class="card-link" href={href} data-reveal style={`--reveal-delay:${delay}ms`}>
+    <div class="card-media" style={`view-transition-name: work-${project.id}`}>
+      <Picture
+        src={cover}
+        alt=""
+        formats={['avif', 'webp']}
+        widths={[480, 800, 1200, 1600]}
+        sizes="(min-width: 1488px) 592px, (min-width: 680px) 45vw, 92vw"
+        loading={eager ? 'eager' : 'lazy'}
+        fetchpriority={eager ? 'high' : 'auto'}
+      />
+    </div>
+    <div class="card-caption">
+      <h3 class="card-title">{title}</h3>
+      <p class="card-meta">{categoryLabel} · {year}</p>
+    </div>
+  </a>
+</li>
+
+<style>
+  .card-link {
+    display: block;
+    text-decoration: none;
+  }
+
+  .card-media {
+    overflow: hidden;
+    border-radius: var(--radius-xs);
+    background: var(--color-line);
+  }
+
+  .card-media :global(img) {
+    width: 100%;
+    height: auto;
+    transition: transform var(--duration-slow) var(--ease-out);
+  }
+
+  .card-caption {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding-block-start: var(--space-sm);
+  }
+
+  .card-title {
+    font-size: var(--text-xl);
+    font-weight: 560;
+    background-image: linear-gradient(var(--color-accent), var(--color-accent));
+    background-repeat: no-repeat;
+    background-size: 0% 2px;
+    background-position: 0 100%;
+    padding-block-end: 2px;
+    transition: background-size var(--duration-base) var(--ease-out);
+  }
+
+  .card-meta {
+    color: var(--color-ink-mute);
+    font-size: var(--text-sm);
+    white-space: nowrap;
+  }
+
+  @media (hover: hover) {
+    .card-link:hover .card-media :global(img) {
+      transform: scale(1.03);
+    }
+
+    .card-link:hover .card-title {
+      background-size: 100% 2px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card-link:hover .card-media :global(img) {
+      transform: none;
+    }
+  }
+</style>

@@ -1,0 +1,99 @@
+---
+import { SITE } from '@/config/site';
+
+const path = Astro.url.pathname;
+const isWork = path === '/' || path.startsWith('/work/');
+const isPackages = path.startsWith('/packages');
+---
+
+<header class="header">
+  <div class="container header-inner">
+    <a class="wordmark" href="/" aria-label={`${SITE.name} — home`}>
+      XStudioz<span class="wordmark-dot" aria-hidden="true">.</span>
+    </a>
+    <nav aria-label="Main">
+      <ul class="nav-list" role="list">
+        <li>
+          <a class="nav-link" href="/" aria-current={isWork ? 'page' : undefined}>Work</a>
+        </li>
+        <li>
+          <a class="nav-link" href="/packages/" aria-current={isPackages ? 'page' : undefined}
+            >Packages</a
+          >
+        </li>
+        <li class="nav-cta">
+          <a class="button button--outline" href={SITE.fiverrUrl} rel="noopener">
+            Hire on Fiverr
+            <span aria-hidden="true">↗</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .header {
+    padding-block: var(--space-md);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+  }
+
+  .wordmark {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 620;
+    letter-spacing: var(--tracking-tight);
+    text-decoration: none;
+  }
+
+  .wordmark-dot {
+    color: var(--color-accent);
+  }
+
+  .nav-list {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    list-style: none;
+    padding: 0;
+  }
+
+  .nav-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    font-size: var(--text-md);
+    font-weight: 480;
+    color: var(--color-ink-soft);
+    text-decoration: none;
+    border-block-end: 2px solid transparent;
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  .nav-link:hover {
+    color: var(--color-ink);
+  }
+
+  .nav-link[aria-current='page'] {
+    color: var(--color-ink);
+    border-block-end-color: var(--color-accent);
+  }
+
+  .nav-cta .button {
+    font-size: var(--text-sm);
+    min-height: 2.5rem;
+    padding: 0.5rem 1.125rem;
+  }
+
+  @media (max-width: 519px) {
+    .nav-cta {
+      display: none;
+    }
+  }
+</style>

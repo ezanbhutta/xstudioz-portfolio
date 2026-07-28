@@ -1,0 +1,27 @@
+{
+  "title": "Bloom & Bough",
+  "category": "brand-identity",
+  "year": 2025,
+  "order": 7,
+  "summary": "A soft botanical identity for a florist — organic mark, seasonal palette and packaging that feels hand-tended.",
+  "cover": "./cover.png",
+  "coverAlt": "Bloom & Bough brand identity overview — mark, pattern, type and color side by side",
+  "images": [
+    {
+      "src": "./01.png",
+      "alt": "Bloom & Bough primary brand mark on the core brand color"
+    },
+    {
+      "src": "./02.png",
+      "alt": "Bloom & Bough brand color palette with primary and secondary swatches"
+    },
+    {
+      "src": "./03.png",
+      "alt": "Bloom & Bough brand card application with logo and supporting text"
+    },
+    {
+      "src": "./04.png",
+      "alt": "Bloom & Bough brand pattern in accent color on a dark field"
+    }
+  ]
+}

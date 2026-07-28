@@ -1,0 +1,27 @@
+{
+  "title": "Paper & Pine",
+  "category": "stationery",
+  "year": 2024,
+  "order": 13,
+  "summary": "A tactile stationery suite for a boutique letterpress shop — cards, notecards and wraps in forest and cream.",
+  "cover": "./cover.png",
+  "coverAlt": "Paper & Pine stationery flat lay — letterhead and business cards",
+  "images": [
+    {
+      "src": "./01.png",
+      "alt": "Paper & Pine business cards, front and back"
+    },
+    {
+      "src": "./02.png",
+      "alt": "Paper & Pine letterhead design"
+    },
+    {
+      "src": "./03.png",
+      "alt": "Paper & Pine branded envelope"
+    },
+    {
+      "src": "./04.png",
+      "alt": "Complete Paper & Pine stationery suite arranged on brand color"
+    }
+  ]
+}

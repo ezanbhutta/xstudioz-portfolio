@@ -1,0 +1,27 @@
+{
+  "title": "Terra Forma",
+  "category": "logo-design",
+  "year": 2025,
+  "order": 9,
+  "summary": "A layered landform mark for a landscape architecture practice — contour lines reduced to a single memorable symbol.",
+  "cover": "./cover.png",
+  "coverAlt": "Terra Forma logo mark centered on a deep color field with fine registration marks",
+  "images": [
+    {
+      "src": "./01.png",
+      "alt": "Terra Forma logo mark in dark ink on a light background"
+    },
+    {
+      "src": "./02.png",
+      "alt": "Construction grid showing the geometry behind the Terra Forma logo mark"
+    },
+    {
+      "src": "./03.png",
+      "alt": "Repeating pattern tile built from the Terra Forma logo mark"
+    },
+    {
+      "src": "./04.png",
+      "alt": "Terra Forma horizontal logo lockup with wordmark placeholder"
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+---
+import { CATEGORIES } from '@/data/categories';
+
+interface Props {
+  counts: Record<string, number>;
+  total: number;
+  /** Category id when rendered on a category landing page, 'all' on home. */
+  active?: string;
+  /**
+   * When true (home), a script upgrades the links to instant in-page
+   * filtering. Without JS — or on category pages — they are plain links.
+   */
+  enhanced?: boolean;
+}
+
+const { counts, total, active = 'all', enhanced = false } = Astro.props;
+---
+
+<nav
+  class="filterbar"
+  aria-label="Filter work by category"
+  data-filterbar={enhanced ? '' : undefined}
+>
+  <div class="container">
+    <ul class="filter-list" role="list">
+      <li>
+        <a
+          class="filter-link"
+          href="/"
+          data-filter="all"
+          aria-current={active === 'all' ? 'true' : undefined}
+        >
+          All <span class="filter-count">{total}</span>
+        </a>
+      </li>
+      {
+        CATEGORIES.map((c) => (
+          <li>
+            <a
+              class="filter-link"
+              href={`/${c.id}/`}
+              data-filter={c.id}
+              aria-current={active === c.id ? 'true' : undefined}
+            >
+              {c.label} <span class="filter-count">{counts[c.id] ?? 0}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</nav>
+
+<script>
+  // Instant in-page filtering. Only activates on pages that opt in with
+  // data-filterbar — everywhere else the category links navigate normally.
+  const bar = document.querySelector<HTMLElement>('[data-filterbar]');
+  const gridWrap = document.querySelector<HTMLElement>('[data-work-grid]');
+
+  if (bar && gridWrap) {
+    const links = [...bar.querySelectorAll<HTMLAnchorElement>('a[data-filter]')];
+    const items = [...gridWrap.querySelectorAll<HTMLLIElement>('li[data-category]')];
+    const status = gridWrap.querySelector<HTMLElement>('[data-filter-status]');
+    const empty = gridWrap.querySelector<HTMLElement>('[data-work-empty]');
+    const valid = new Set(links.map((l) => l.dataset.filter));
+
+    const apply = (category: string) => {
+      let shown = 0;
+      for (const li of items) {
+        const show = category === 'all' || li.dataset.category === category;
+        li.hidden = !show;
+        if (show) shown += 1;
+      }
+      for (const link of links) {
+        if (link.dataset.filter === category) link.setAttribute('aria-current', 'true');
+        else link.removeAttribute('aria-current');
+      }
+      if (empty) empty.hidden = shown > 0;
+      if (status) {
+        status.textContent = `Showing ${shown} ${shown === 1 ? 'project' : 'projects'}`;
+      }
+    };
+
+    const applyWithTransition = (category: string) => {
+      const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (document.startViewTransition && !reduceMotion) {
+        document.startViewTransition(() => apply(category));
+      } else {
+        apply(category);
+      }
+    };
+
+    const fromUrl = () => {
+      const category = new URLSearchParams(location.search).get('category') ?? 'all';
+      return valid.has(category) ? category : 'all';
+    };
+
+    bar.addEventListener('click', (event) => {
+      const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[data-filter]');
+      if (!link || event.metaKey || event.ctrlKey || event.shiftKey) return;
+      event.preventDefault();
+      const category = link.dataset.filter ?? 'all';
+      applyWithTransition(category);
+      history.replaceState(null, '', category === 'all' ? '/' : `/?category=${category}`);
+      // Keep the grid in view when filtering from deep in the page.
+      if (gridWrap.getBoundingClientRect().top < 0) {
+        gridWrap.scrollIntoView({ block: 'start' });
+      }
+    });
+
+    window.addEventListener('popstate', () => apply(fromUrl()));
+
+    const initial = fromUrl();
+    if (initial !== 'all') apply(initial);
+  }
+</script>
+
+<style>
+  .filterbar {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-filter);
+    background: var(--color-paper);
+    border-block-end: 1px solid var(--color-line);
+  }
+
+  .filter-list {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: var(--space-2xs);
+    list-style: none;
+    padding: var(--space-xs) 0;
+    margin: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filter-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    min-height: 2.75rem;
+    padding: 0.375rem 1rem;
+    border-radius: var(--radius-pill);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--color-ink-soft);
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out);
+  }
+
+  .filter-link:hover {
+    background: var(--color-line);
+    color: var(--color-ink);
+  }
+
+  .filter-link[aria-current] {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  .filter-count {
+    font-size: var(--text-xs);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+</style>

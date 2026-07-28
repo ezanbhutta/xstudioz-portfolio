@@ -1,0 +1,70 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import FilterBar from '@/components/FilterBar.astro';
+import WorkGrid from '@/components/WorkGrid.astro';
+import { SITE } from '@/config/site';
+import { CATEGORIES } from '@/data/categories';
+import { getSortedProjects, countByCategory } from '@/lib/projects';
+
+export async function getStaticPaths() {
+  return CATEGORIES.map((category) => ({
+    params: { category: category.id },
+    props: { category },
+  }));
+}
+
+const { category } = Astro.props;
+const allProjects = await getSortedProjects();
+const counts = countByCategory(allProjects);
+const projects = allProjects.filter((p) => p.data.category === category.id);
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: `${category.title} — ${SITE.name}`,
+  description: category.description,
+  url: new URL(`/${category.id}/`, SITE.url).href,
+  isPartOf: { '@id': `${SITE.url}/#website` },
+};
+---
+
+<BaseLayout title={`${category.title} Portfolio`} description={category.description}>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} slot="head" />
+
+  <section class="category-hero container">
+    <p class="overline">
+      {projects.length}
+      {projects.length === 1 ? 'project' : 'projects'}
+    </p>
+    <h1 class="category-title">{category.title}</h1>
+    <p class="category-lede">{category.description}</p>
+  </section>
+
+  <section aria-label={`${category.title} projects`}>
+    <FilterBar counts={counts} total={allProjects.length} active={category.id} />
+    <div class="container category-grid">
+      <WorkGrid projects={projects} eagerCount={2} />
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .category-hero {
+    padding-block: var(--space-2xl) var(--space-xl);
+  }
+
+  .category-title {
+    font-size: var(--text-display);
+    margin-block: var(--space-sm) var(--space-md);
+  }
+
+  .category-lede {
+    font-size: var(--text-lg);
+    color: var(--color-ink-soft);
+    max-width: var(--measure);
+  }
+
+  .category-grid {
+    padding-block-start: var(--space-xl);
+  }
+</style>

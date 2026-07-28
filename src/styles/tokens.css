@@ -1,0 +1,78 @@
+/* ---------------------------------------------------------------------------
+   XStudioz design tokens — the single source of truth for the visual system.
+   Colors are chosen for WCAG contrast on their intended surfaces:
+     ink       on paper  → 16.7:1
+     ink-soft  on paper  →  7.3:1
+     ink-mute  on paper  →  5.0:1
+     accent    on paper  →  5.7:1
+     paper     on accent →  5.7:1
+     paper-mute on ink   →  8.4:1
+--------------------------------------------------------------------------- */
+:root {
+  /* Color — warm gallery palette. The work provides the color; the UI stays quiet. */
+  --color-paper: #faf8f5;
+  --color-paper-raised: #ffffff;
+  --color-ink: #1a1815;
+  --color-ink-soft: #57524b;
+  --color-ink-mute: #6f6a62;
+  --color-line: #e7e2da;
+  --color-line-strong: #d5cfc5;
+  --color-accent: #a6431a;
+  --color-accent-deep: #8c3512;
+  /* On dark (ink) surfaces */
+  --color-paper-mute: #b8b2a9;
+  --color-accent-bright: #d97b4a;
+
+  /* Typography */
+  --font-display: 'Fraunces', 'Fraunces-fallback', georgia, 'Times New Roman', serif;
+  --font-sans: 'Archivo', 'Archivo-fallback', 'Helvetica Neue', arial, sans-serif;
+
+  /* Fluid type scale — minor third on mobile opening to wider jumps on desktop */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
+  --text-2xl: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
+  --text-3xl: clamp(1.9rem, 1.4rem + 2.5vw, 3.25rem);
+  --text-display: clamp(2.625rem, 1.5rem + 5.625vw, 6rem);
+
+  --leading-tight: 1.05;
+  --leading-snug: 1.25;
+  --leading-body: 1.6;
+
+  --tracking-tight: -0.02em;
+  --tracking-wide: 0.14em;
+
+  /* Spacing — 4px rhythm with fluid section spacing */
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+  --space-section: clamp(4.5rem, 3rem + 7vw, 9rem);
+
+  /* Layout */
+  --container-max: 85rem; /* 1360px */
+  --gutter: clamp(1.25rem, 5vw, 4rem);
+  --measure: 38rem; /* comfortable reading width ≈ 66ch */
+
+  /* Shape — print-like sharp imagery, pill actions */
+  --radius-pill: 999px;
+  --radius-xs: 2px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 450ms;
+
+  /* Elevation for sticky surfaces */
+  --z-skip-link: 100;
+  --z-header: 50;
+  --z-filter: 40;
+}

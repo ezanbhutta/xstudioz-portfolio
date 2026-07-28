@@ -1,0 +1,164 @@
+---
+import { SITE } from '@/config/site';
+import { CATEGORIES } from '@/data/categories';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <div class="container">
+    <section class="footer-cta" aria-labelledby="footer-cta-heading">
+      <p class="overline footer-overline">Start a project</p>
+      <h2 id="footer-cta-heading">Let’s make yours next.</h2>
+      <p class="footer-lede">
+        Every project starts as a conversation on Fiverr — scope, timeline and a
+        package that fits.
+      </p>
+      <div class="footer-actions">
+        <a class="button button--paper" href={SITE.fiverrUrl} rel="noopener">
+          Start on Fiverr <span aria-hidden="true">↗</span>
+        </a>
+        <a class="footer-secondary" href="/packages/">Compare packages</a>
+      </div>
+    </section>
+
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <p class="footer-wordmark">XStudioz<span aria-hidden="true">.</span></p>
+        <p class="footer-tag">Independent design studio.<br />The work speaks first.</p>
+      </div>
+      <nav aria-label="Work categories">
+        <p class="overline footer-overline" id="footer-categories">Work</p>
+        <ul role="list" aria-labelledby="footer-categories">
+          {
+            CATEGORIES.map((c) => (
+              <li>
+                <a href={`/${c.id}/`}>{c.title}</a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+      <nav aria-label="Studio">
+        <p class="overline footer-overline" id="footer-studio">Studio</p>
+        <ul role="list" aria-labelledby="footer-studio">
+          <li><a href="/">All work</a></li>
+          <li><a href="/packages/">Packages</a></li>
+          <li>
+            <a href={SITE.fiverrUrl} rel="noopener">Fiverr <span aria-hidden="true">↗</span></a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
+    <p class="footer-legal">© {year} {SITE.name}. All rights reserved.</p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    background: var(--color-ink);
+    color: var(--color-paper);
+    margin-block-start: var(--space-section);
+    padding-block: var(--space-section) var(--space-lg);
+  }
+
+  .footer-cta {
+    max-width: 44rem;
+  }
+
+  .footer-overline {
+    color: var(--color-paper-mute);
+  }
+
+  .footer-cta h2 {
+    font-size: var(--text-3xl);
+    margin-block: var(--space-sm) var(--space-sm);
+  }
+
+  .footer-lede {
+    color: var(--color-paper-mute);
+    max-width: var(--measure);
+  }
+
+  .footer-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    margin-block-start: var(--space-lg);
+  }
+
+  .footer-secondary {
+    color: var(--color-paper);
+    font-weight: 500;
+    text-decoration-color: var(--color-accent-bright);
+    text-decoration-thickness: 2px;
+  }
+
+  .footer-secondary:hover {
+    color: var(--color-accent-bright);
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: var(--space-lg);
+    border-block-start: 1px solid rgb(255 255 255 / 12%);
+    margin-block-start: var(--space-3xl);
+    padding-block-start: var(--space-xl);
+  }
+
+  .footer-wordmark {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: 620;
+    letter-spacing: var(--tracking-tight);
+  }
+
+  .footer-wordmark span {
+    color: var(--color-accent-bright);
+  }
+
+  .footer-tag {
+    color: var(--color-paper-mute);
+    font-size: var(--text-sm);
+    margin-block-start: var(--space-2xs);
+  }
+
+  .footer-grid ul {
+    list-style: none;
+    padding: 0;
+    margin-block-start: var(--space-sm);
+    display: grid;
+    gap: var(--space-3xs);
+  }
+
+  .footer-grid ul a {
+    display: inline-block;
+    padding-block: var(--space-3xs);
+    color: var(--color-paper-mute);
+    text-decoration: none;
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  .footer-grid ul a:hover {
+    color: var(--color-paper);
+  }
+
+  .footer-legal {
+    color: var(--color-paper-mute);
+    font-size: var(--text-xs);
+    margin-block-start: var(--space-2xl);
+  }
+
+  @media (max-width: 719px) {
+    .footer-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .footer-brand {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

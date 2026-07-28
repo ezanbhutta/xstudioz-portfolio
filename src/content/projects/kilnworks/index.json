@@ -1,0 +1,27 @@
+{
+  "title": "Kilnworks",
+  "category": "brand-guidelines",
+  "year": 2024,
+  "order": 10,
+  "summary": "Compact, practical guidelines for a ceramics studio — warm earth tones and rules that keep the craft feeling handmade.",
+  "cover": "./cover.png",
+  "coverAlt": "Open spread of the Kilnworks brand guidelines book",
+  "images": [
+    {
+      "src": "./01.png",
+      "alt": "Front cover of the Kilnworks brand guidelines"
+    },
+    {
+      "src": "./02.png",
+      "alt": "Typography specimen page from the Kilnworks guidelines"
+    },
+    {
+      "src": "./03.png",
+      "alt": "Color system page from the Kilnworks guidelines"
+    },
+    {
+      "src": "./04.png",
+      "alt": "Logo usage grid from the Kilnworks guidelines showing correct applications"
+    }
+  ]
+}

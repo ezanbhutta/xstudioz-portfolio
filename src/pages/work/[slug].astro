@@ -21,6 +21,17 @@ const { title, category, summary, cover, coverAlt, images, logoType, guidelineTy
 const categoryInfo = getCategory(category);
 const kind = logoType ?? guidelineType;
 const extras = projectExtras(project.data);
+
+// Linked only when set in the CMS; a value that isn't a real URL is
+// ignored rather than failing the build.
+const website = (() => {
+  try {
+    return project.data.website ? new URL(project.data.website) : null;
+  } catch {
+    return null;
+  }
+})();
+const websiteLabel = website?.hostname.replace(/^www\./, '');
 const { prev, next } = adjacentProjects(projects, project.id);
 
 // Social card + structured data use the processed cover, cropped to the
@@ -105,6 +116,15 @@ const widths = [640, 960, 1280, 1600];
             {extras.map((item) => (
               <span class="project-includes-item">{item}</span>
             ))}
+          </p>
+        )
+      }
+      {
+        website && (
+          <p class="project-website">
+            <a href={website.href} target="_blank" rel="noopener noreferrer">
+              Live at {websiteLabel} <span aria-hidden="true">↗</span>
+            </a>
           </p>
         )
       }
@@ -236,6 +256,30 @@ const widths = [640, 960, 1280, 1600];
     box-shadow: inset 0 0 0 1px var(--color-line-strong);
     border-radius: var(--radius-pill);
     padding: 0.25rem 0.75rem;
+  }
+
+  .project-website {
+    margin-block-start: var(--space-md);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .project-website a {
+    display: inline-block;
+    /* 44px hit area without growing the line box */
+    padding-block: 0.75rem;
+    margin-block: -0.75rem;
+    color: var(--color-ink-soft);
+    text-decoration: underline;
+    text-decoration-color: var(--color-accent);
+    text-underline-offset: 0.4em;
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .project-website a:hover {
+      color: var(--color-accent);
+    }
   }
 
   .project-gallery {

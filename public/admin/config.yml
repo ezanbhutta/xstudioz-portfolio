@@ -101,6 +101,11 @@ collections:
         widget: string
         required: false
         hint: 'e.g. Jewelry. Powers the Industry filter dropdown; new industries appear automatically.'
+      - name: website
+        label: Brand website
+        widget: string
+        required: false
+        hint: 'Optional, e.g. brandname.com. Shown as a link on the project page only when filled.'
       - name: order
         label: Grid position
         widget: number

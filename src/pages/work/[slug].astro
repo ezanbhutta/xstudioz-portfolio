@@ -22,16 +22,43 @@ const categoryInfo = getCategory(category);
 const kind = logoType ?? guidelineType;
 const extras = projectExtras(project.data);
 
-// Linked only when set in the CMS; a value that isn't a real URL is
-// ignored rather than failing the build.
-const website = (() => {
+// Brand links, rendered only when set in the CMS. A social accepts a
+// full link or a bare username (the platform base is prepended); a value
+// that isn't a real URL is ignored rather than failing the build.
+const toUrl = (value: string | undefined, platformBase?: string) => {
+  const v = value?.trim().replace(/^@/, '');
+  if (!v) return null;
+  const href = /^https?:\/\//i.test(v)
+    ? v
+    : platformBase && !v.includes('.')
+      ? `${platformBase}${v}`
+      : `https://${v}`;
   try {
-    return project.data.website ? new URL(project.data.website) : null;
+    return new URL(href);
   } catch {
     return null;
   }
-})();
-const websiteLabel = website?.hostname.replace(/^www\./, '');
+};
+const hostLabel = (url: URL) => url.hostname.replace(/^www\./, '');
+
+const website = toUrl(project.data.website);
+const links = [
+  website && { label: `Live at ${hostLabel(website)}`, href: website.href },
+  ...(
+    [
+      ['Instagram', project.data.instagram, 'https://instagram.com/'],
+      ['Facebook', project.data.facebook, 'https://facebook.com/'],
+      ['LinkedIn', project.data.linkedin, 'https://www.linkedin.com/company/'],
+    ] as const
+  ).map(([label, value, base]) => {
+    const url = toUrl(value, base);
+    return url && { label, href: url.href };
+  }),
+  ...(project.data.otherLinks ?? []).map((value) => {
+    const url = toUrl(value);
+    return url && { label: hostLabel(url), href: url.href };
+  }),
+].filter((l) => l !== null);
 const { prev, next } = adjacentProjects(projects, project.id);
 
 // Social card + structured data use the processed cover, cropped to the
@@ -120,11 +147,13 @@ const widths = [640, 960, 1280, 1600];
         )
       }
       {
-        website && (
-          <p class="project-website">
-            <a href={website.href} target="_blank" rel="noopener noreferrer">
-              Live at {websiteLabel} <span aria-hidden="true">↗</span>
-            </a>
+        links.length > 0 && (
+          <p class="project-links">
+            {links.map((l) => (
+              <a href={l.href} target="_blank" rel="noopener noreferrer">
+                {l.label} <span aria-hidden="true">↗</span>
+              </a>
+            ))}
           </p>
         )
       }
@@ -258,13 +287,16 @@ const widths = [640, 960, 1280, 1600];
     padding: 0.25rem 0.75rem;
   }
 
-  .project-website {
+  .project-links {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: var(--space-md);
     margin-block-start: var(--space-md);
     font-size: var(--text-sm);
     font-weight: var(--weight-medium);
   }
 
-  .project-website a {
+  .project-links a {
     display: inline-block;
     /* 44px hit area without growing the line box */
     padding-block: 0.75rem;
@@ -277,7 +309,7 @@ const widths = [640, 960, 1280, 1600];
   }
 
   @media (hover: hover) {
-    .project-website a:hover {
+    .project-links a:hover {
       color: var(--color-accent);
     }
   }

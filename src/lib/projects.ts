@@ -7,7 +7,6 @@ export type Project = CollectionEntry<'projects'>;
 export type ReadyProject = Project & {
   data: Project['data'] & {
     cover: NonNullable<Project['data']['cover']>;
-    coverAlt: string;
     images: NonNullable<Project['data']['images']>;
   };
 };
@@ -20,7 +19,7 @@ export type ReadyProject = Project & {
 export async function getSortedProjects(): Promise<ReadyProject[]> {
   const all = await getCollection('projects');
   const ready = all.filter((p): p is ReadyProject =>
-    Boolean(p.data.cover && p.data.coverAlt && p.data.images?.length),
+    Boolean(p.data.cover && p.data.images?.length),
   );
   for (const p of all) {
     if (!ready.includes(p as ReadyProject)) {

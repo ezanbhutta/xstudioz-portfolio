@@ -68,7 +68,7 @@ const widths = [640, 960, 1280, 1600];
   title={`${title} | ${categoryInfo.title}`}
   description={summary}
   ogImage={socialUrl}
-  ogImageAlt={coverAlt}
+  ogImageAlt={coverAlt || `${title} presentation cover`}
   ogType="article"
   jsonLd={jsonLd}
 >

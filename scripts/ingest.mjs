@@ -110,7 +110,7 @@ async function ingestProject(slug) {
     const pages = await renderPdf(pdfPath, dir);
     await makeCover(path.join(dir, pages[0]), dir);
     meta.cover = './cover.png';
-    meta.coverAlt = meta.coverAlt ?? `${title} presentation cover`;
+    meta.coverAlt = meta.coverAlt || `${title} presentation cover`;
     meta.images = pages.map((name, i) => ({
       src: `./${name}`,
       alt: `${title} presentation, page ${i + 1} of ${pages.length}`,
@@ -120,7 +120,7 @@ async function ingestProject(slug) {
   } else {
     await makeCover(path.join(dir, sheetName), dir);
     meta.cover = './cover.png';
-    meta.coverAlt = meta.coverAlt ?? `${title} presentation cover`;
+    meta.coverAlt = meta.coverAlt || `${title} presentation cover`;
     meta.images = [{ src: `./${sheetName}`, alt: `${title} — full portfolio presentation` }];
     delete meta.download;
     console.log(`✓ ${slug} — single-sheet portfolio ingested`);

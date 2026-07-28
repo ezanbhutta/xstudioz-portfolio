@@ -14,6 +14,12 @@ import { CATEGORY_IDS } from './data/categories';
  *
  * Adding a project = add a folder. Removing one = delete the folder.
  */
+/** The CMS may store entry-relative image paths without the './' prefix. */
+const relativize = (value: unknown) =>
+  typeof value === 'string' && !value.startsWith('.') && !value.startsWith('/')
+    ? `./${value}`
+    : value;
+
 const projects = defineCollection({
   loader: glob({
     pattern: '*/index.json',
@@ -30,13 +36,13 @@ const projects = defineCollection({
       /** One-sentence description shown on the project page + meta description. */
       summary: z.string(),
       /** 4:3 grid thumbnail. The detail page shows `images`, not this. */
-      cover: image(),
+      cover: z.preprocess(relativize, image()),
       coverAlt: z.string(),
       /** The portfolio content, in order: PDF pages, one tall sheet, or a set. */
       images: z
         .array(
           z.object({
-            src: image(),
+            src: z.preprocess(relativize, image()),
             alt: z.string(),
           }),
         )

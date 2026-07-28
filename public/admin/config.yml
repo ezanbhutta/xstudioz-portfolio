@@ -1,0 +1,162 @@
+# Sveltia CMS configuration — https://github.com/sveltia/sveltia-cms
+#
+# Sign-in options (pick one):
+#   1. Open /admin/ on the live site → "Sign in with GitHub" → use a
+#      fine-grained personal access token with Contents read/write on this
+#      repo (Sveltia supports token sign-in without any OAuth server).
+#   2. Or deploy the tiny sveltia-cms-auth Cloudflare Worker
+#      (https://github.com/sveltia/sveltia-cms-auth) and add its URL here as
+#      `base_url` for one-click OAuth sign-in.
+#   3. Working locally? Run `npm run dev`, open localhost:4321/admin/ and
+#      choose "Work with local repository" — no sign-in needed.
+#
+# Every save commits to `main`; the host rebuilds the site automatically.
+
+backend:
+  name: github
+  repo: ezanbhutta/xstudioz-portfolio
+  branch: main
+
+site_url: https://xstudioz.design
+media_folder: public/uploads
+public_folder: /uploads
+
+collections:
+  - name: projects
+    label: Projects
+    label_singular: Project
+    folder: src/content/projects
+    format: json
+    extension: json
+    path: '{{slug}}/index'
+    # Images uploaded in the editor live inside the project's own folder.
+    media_folder: ''
+    public_folder: ''
+    create: true
+    delete: true
+    identifier_field: title
+    slug: '{{slug}}'
+    summary: '{{title}} — {{category}} · {{year}}'
+    sortable_fields:
+      fields: [order, year, title]
+      default:
+        field: order
+    fields:
+      - { name: title, label: Title, widget: string }
+      - name: category
+        label: Category
+        widget: select
+        # Keep in sync with src/data/categories.json (Site settings → Categories)
+        options:
+          - logo-design
+          - brand-identity
+          - brand-guidelines
+          - stationery
+          - social-media
+          - animation
+      - { name: year, label: Year, widget: number, value_type: int }
+      - name: order
+        label: Grid position
+        widget: number
+        value_type: int
+        default: 99
+        hint: Lower numbers appear earlier in the grid.
+      - name: summary
+        label: Summary
+        widget: text
+        hint: One sentence shown on the project page and in search results.
+      - name: cover
+        label: Grid thumbnail
+        widget: image
+        hint: 4:3 image shown in the work grid (1600×1200 recommended).
+      - name: coverAlt
+        label: Thumbnail alt text
+        widget: string
+        hint: Describe what the thumbnail shows, for screen readers and SEO.
+      - name: images
+        label: Portfolio images
+        label_singular: Image
+        widget: list
+        min: 1
+        hint: The presentation itself, in order — one tall sheet or multiple pages.
+        fields:
+          - { name: src, label: Image, widget: image }
+          - { name: alt, label: Alt text, widget: string }
+      - name: download
+        label: Download link
+        widget: string
+        required: false
+        hint: 'Optional. Site path to a downloadable PDF, e.g. /downloads/brand.pdf (upload the file via Media or the repo).'
+
+  - name: settings
+    label: Site settings
+    editor:
+      preview: false
+    files:
+      - name: site
+        label: Brand & links
+        file: src/config/site.json
+        fields:
+          - { name: name, label: Studio name, widget: string }
+          - name: url
+            label: Production URL
+            widget: string
+            hint: 'No trailing slash, e.g. https://xstudioz.design — canonicals and sitemap derive from it.'
+          - { name: tagline, label: Tagline, widget: string }
+          - { name: description, label: Site description, widget: text }
+          - name: fiverrUrl
+            label: Fiverr profile URL
+            widget: string
+            hint: Every "Hire on Fiverr" button points here.
+          - { name: locale, label: Locale, widget: string, default: en }
+      - name: categories
+        label: Categories
+        file: src/data/categories.json
+        fields:
+          - name: categories
+            label: Categories
+            label_singular: Category
+            widget: list
+            fields:
+              - name: id
+                label: ID
+                widget: string
+                hint: URL segment, kebab-case (e.g. logo-design). Also add new ids to the Projects category options in public/admin/config.yml.
+              - { name: title, label: Title, widget: string }
+              - { name: description, label: Description, widget: text }
+      - name: packages
+        label: Packages
+        file: src/data/packages.json
+        fields:
+          - name: packages
+            label: Packages
+            label_singular: Package
+            widget: list
+            fields:
+              - { name: id, label: ID, widget: string, hint: 'kebab-case, e.g. starter' }
+              - { name: name, label: Name, widget: string }
+              - { name: summary, label: Summary, widget: string }
+              - { name: price, label: Price, widget: string, hint: 'e.g. From $95' }
+              - { name: delivery, label: Delivery, widget: string, hint: 'e.g. 3 days' }
+              - { name: revisions, label: Revisions, widget: string, hint: 'e.g. 2 rounds' }
+              - name: includes
+                label: What's included
+                widget: list
+                field: { name: item, label: Item, widget: string }
+              - name: highlighted
+                label: Most popular
+                widget: boolean
+                required: false
+                hint: Exactly one package should be highlighted.
+              - name: href
+                label: Fiverr gig link
+                widget: string
+                required: false
+                hint: 'Gig deep link, e.g. https://www.fiverr.com/user/gig?package=premium. Falls back to the profile URL.'
+          - name: processSteps
+            label: How it works (steps)
+            label_singular: Step
+            widget: list
+            fields:
+              - { name: title, label: Title, widget: string }
+              - { name: text, label: Text, widget: text }

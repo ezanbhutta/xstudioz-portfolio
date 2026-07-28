@@ -3,6 +3,7 @@ import { SITE } from '@/config/site';
 
 const body = `User-agent: *
 Allow: /
+Disallow: /admin/
 
 Sitemap: ${new URL('/sitemap-index.xml', SITE.url).href}
 `;

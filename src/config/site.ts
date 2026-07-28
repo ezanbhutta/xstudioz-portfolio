@@ -1,16 +1,19 @@
+import data from './site.json';
+
 /**
- * Central site configuration.
- * Every brand-level value lives here — change once, applies everywhere.
+ * Central site configuration — edit src/config/site.json (or use the CMS at
+ * /admin/). Every brand-level value lives there; this module only adds types.
  */
-export const SITE = {
-  name: 'XStudioz',
-  /** Production URL. Update when the final domain is connected. */
-  url: 'https://xstudioz.design',
-  tagline: 'Identity, crafted with intent.',
-  description:
-    'XStudioz is an independent design studio crafting logos, brand identities, guidelines, stationery, social media design and animation for ambitious businesses.',
+export interface SiteConfig {
+  name: string;
+  /** Production URL — canonicals, sitemap and robots.txt derive from it. */
+  url: string;
+  tagline: string;
+  description: string;
   /** Primary conversion — all "hire us" CTAs point here. */
-  fiverrUrl: 'https://www.fiverr.com/xstudioz',
+  fiverrUrl: string;
   /** Used in Open Graph locale + <html lang>. */
-  locale: 'en',
-} as const;
+  locale: string;
+}
+
+export const SITE: SiteConfig = data;

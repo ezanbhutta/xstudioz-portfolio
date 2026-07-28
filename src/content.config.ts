@@ -19,6 +19,15 @@ import { GUIDELINE_TYPES, LOGO_TYPES } from './data/filters';
 const emptyToUndef = (value: unknown) =>
   value === '' || (Array.isArray(value) && value.length === 0) ? undefined : value;
 
+/** Empty → undefined; a bare domain gets https:// so links always work. */
+const urlize = (value: unknown) => {
+  if (value === '' || value == null) return undefined;
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (trimmed === '') return undefined;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+};
+
 /** The CMS may store entry-relative image paths without the './' prefix. */
 const relativize = (value: unknown) => {
   if (value === '' || value == null) return undefined;
@@ -43,6 +52,8 @@ const projects = defineCollection({
       guidelineType: z.preprocess(emptyToUndef, z.enum(GUIDELINE_TYPES).optional()),
       /** Powers the per-category Industry dropdown filter. */
       industry: z.preprocess(emptyToUndef, z.string().optional()),
+      /** The brand's live website; linked on the project page only when set. */
+      website: z.preprocess(urlize, z.string().optional()),
       /**
        * Extra elements included beyond the core sections (Social Media Kit,
        * Mockups…). Listed on the project page — not filterable.

@@ -4,7 +4,7 @@ import FilterBar from '@/components/FilterBar.astro';
 import WorkGrid from '@/components/WorkGrid.astro';
 import { SITE } from '@/config/site';
 import { CATEGORIES } from '@/data/categories';
-import { getSortedProjects, countByCategory } from '@/lib/projects';
+import { getSortedProjects, countByCategory, logoIndustries } from '@/lib/projects';
 import { siteGraph, WEBSITE_ID } from '@/lib/schema';
 
 export async function getStaticPaths() {
@@ -17,6 +17,7 @@ export async function getStaticPaths() {
 const { category } = Astro.props;
 const allProjects = await getSortedProjects();
 const counts = countByCategory(allProjects);
+const industries = logoIndustries(allProjects);
 const projects = allProjects.filter((p) => p.data.category === category.id);
 
 const jsonLd = {
@@ -49,7 +50,12 @@ const jsonLd = {
   </section>
 
   <section aria-label={`${category.title} projects`}>
-    <FilterBar counts={counts} total={allProjects.length} active={category.id} />
+    <FilterBar
+      counts={counts}
+      total={allProjects.length}
+      active={category.id}
+      industries={industries}
+    />
     <div class="container category-grid">
       <WorkGrid projects={projects} eagerCount={2} />
     </div>

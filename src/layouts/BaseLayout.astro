@@ -4,8 +4,6 @@ import Header from '@/components/Header.astro';
 import Footer from '@/components/Footer.astro';
 import '@/styles/global.css';
 import { existsSync } from 'node:fs';
-import outfitUrl from '@/assets/fonts/outfit-latin-var.woff2?url';
-import manropeUrl from '@/assets/fonts/manrope-latin-var.woff2?url';
 
 // Pixel-exact favicon generated from src/assets/logo-original.* when present
 // (see scripts/generate-og.mjs); the vector fallback ships otherwise.
@@ -67,9 +65,6 @@ const ogImageUrl = ogImage ?? new URL('/og.png', SITE.url).href;
     }
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />
-
-    <link rel="preload" href={outfitUrl} as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href={manropeUrl} as="font" type="font/woff2" crossorigin />
 
     <meta property="og:site_name" content={SITE.name} />
     <meta property="og:type" content={ogType} />

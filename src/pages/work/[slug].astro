@@ -16,7 +16,7 @@ export async function getStaticPaths() {
 }
 
 const { project, projects } = Astro.props;
-const { title, category, year, summary, cover, coverAlt, images } = project.data;
+const { title, category, summary, cover, coverAlt, images, logoType, industry } = project.data;
 const categoryInfo = getCategory(category);
 const { prev, next } = adjacentProjects(projects, project.id);
 
@@ -40,7 +40,6 @@ const jsonLd = {
       name: title,
       description: summary,
       genre: categoryInfo.title,
-      dateCreated: String(year),
       url: new URL(`/work/${project.id}/`, SITE.url).href,
       image: socialUrl,
       creator: { '@id': ORGANIZATION_ID },
@@ -77,7 +76,22 @@ const widths = [640, 960, 1280, 1600];
     <header class="container page-hero project-header">
       <p class="overline">
         <a class="overline-link" href={`/${category}/`} data-astro-prefetch>{categoryInfo.title}</a>
-        <span aria-hidden="true"> · </span>{year}
+        {
+          logoType && (
+            <span>
+              <span aria-hidden="true"> · </span>
+              {logoType}
+            </span>
+          )
+        }
+        {
+          industry && (
+            <span>
+              <span aria-hidden="true"> · </span>
+              {industry}
+            </span>
+          )
+        }
       </p>
       <h1 class="page-title">{title}</h1>
       <p class="page-lede">{summary}</p>

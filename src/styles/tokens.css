@@ -29,9 +29,15 @@
   --color-accent-bright: #e879f9;
   --color-line-on-ink: rgb(255 255 255 / 14%);
 
-  /* Typography — clean geometric sans throughout */
-  --font-display: 'Outfit', 'Outfit-fallback', 'Helvetica Neue', arial, sans-serif;
-  --font-sans: 'Manrope', 'Manrope-fallback', 'Helvetica Neue', arial, sans-serif;
+  /* Typography — the native system stack: SF Pro on Apple devices,
+     Segoe UI on Windows, Roboto on Android. Zero font downloads, zero
+     layout shift, instant text. */
+  --font-display:
+    -apple-system, blinkmacsystemfont, 'SF Pro Display', 'Segoe UI', roboto, 'Helvetica Neue',
+    arial, sans-serif;
+  --font-sans:
+    -apple-system, blinkmacsystemfont, 'SF Pro Text', 'Segoe UI', roboto, 'Helvetica Neue', arial,
+    sans-serif;
 
   /* Fluid type scale — minor third on mobile opening to wider jumps on desktop */
   --text-xs: 0.75rem;

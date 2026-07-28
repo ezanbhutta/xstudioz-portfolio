@@ -14,7 +14,7 @@
  *
  * Then run:  npm run ingest
  *
- * index.json is created if missing (edit title/category/year/summary after)
+ * index.json is created if missing (edit title/category/summary after)
  * and updated in place if present — your copy fields are preserved, only
  * cover/images are rewritten. Re-running is safe and idempotent.
  */
@@ -71,11 +71,10 @@ async function makeCover(sourcePath, dir) {
 async function readMeta(dir, slug) {
   const metaPath = path.join(dir, 'index.json');
   if (existsSync(metaPath)) return JSON.parse(await readFile(metaPath, 'utf8'));
-  console.warn(`  ! ${slug}/index.json created — set category, year and summary before building.`);
+  console.warn(`  ! ${slug}/index.json created — set category and summary before building.`);
   return {
     title: titleFromSlug(slug),
     category: 'logo-design',
-    year: new Date().getFullYear(),
     order: 99,
     summary: `EDIT ME: one sentence about the ${titleFromSlug(slug)} project.`,
   };
@@ -83,15 +82,27 @@ async function readMeta(dir, slug) {
 
 async function ingestProject(slug) {
   const dir = path.join(PROJECTS_ROOT, slug);
-  const pdfPath = path.join(dir, 'portfolio.pdf');
+  const metaPath = path.join(dir, 'index.json');
+  const existingMeta = existsSync(metaPath) ? JSON.parse(await readFile(metaPath, 'utf8')) : null;
+
+  // The CMS stores an uploaded PDF's filename in the `pdf` field; the
+  // portfolio.pdf convention still works for manual drops.
+  const cmsPdf = existingMeta?.pdf ? existingMeta.pdf.replace(/^\.\//, '') : null;
+  const pdfName =
+    cmsPdf && existsSync(path.join(dir, cmsPdf))
+      ? cmsPdf
+      : existsSync(path.join(dir, 'portfolio.pdf'))
+        ? 'portfolio.pdf'
+        : null;
+  const pdfPath = pdfName ? path.join(dir, pdfName) : path.join(dir, 'portfolio.pdf');
   const sheetName = SHEET_NAMES.find((n) => existsSync(path.join(dir, n)));
 
-  if (!existsSync(pdfPath) && !sheetName) return false;
+  if (!pdfName && !sheetName) return false;
 
-  const meta = await readMeta(dir, slug);
+  const meta = existingMeta ?? (await readMeta(dir, slug));
   const title = meta.title ?? titleFromSlug(slug);
 
-  if (existsSync(pdfPath)) {
+  if (pdfName) {
     // Clear stale renders so removed pages don't linger.
     for (const f of await readdir(dir)) {
       if (/^page-\d+\.png$/.test(f)) await rm(path.join(dir, f));

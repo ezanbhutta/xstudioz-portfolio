@@ -1,7 +1,8 @@
 {
   "title": "Aurel",
   "category": "logo-design",
-  "year": 2026,
+  "logoType": "Lettermark",
+  "industry": "Jewelry",
   "order": 1,
   "summary": "A refined monogram for a contemporary jewelry house. Drawn from a single continuous curve and set in warm metallics.",
   "cover": "./cover.png",

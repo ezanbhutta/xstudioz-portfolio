@@ -1,7 +1,8 @@
 {
   "title": "Terra Forma",
   "category": "logo-design",
-  "year": 2025,
+  "logoType": "Pictorial",
+  "industry": "Architecture",
   "order": 9,
   "summary": "A layered landform mark for a landscape architecture practice. Contour lines reduced to a single memorable symbol.",
   "cover": "./cover.png",

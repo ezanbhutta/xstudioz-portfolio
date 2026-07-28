@@ -1,10 +1,10 @@
 ---
 import ProjectCard from '@/components/ProjectCard.astro';
 import { SITE } from '@/config/site';
-import type { Project } from '@/lib/projects';
+import type { ReadyProject } from '@/lib/projects';
 
 interface Props {
-  projects: Project[];
+  projects: ReadyProject[];
   /** How many cards start above the fold and should load eagerly. */
   eagerCount?: number;
   /** Set on the home grid so the filter script can find it. */

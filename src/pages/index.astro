@@ -3,11 +3,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import FilterBar from '@/components/FilterBar.astro';
 import WorkGrid from '@/components/WorkGrid.astro';
 import { SITE } from '@/config/site';
-import { getSortedProjects, countByCategory } from '@/lib/projects';
+import { getSortedProjects, countByCategory, logoIndustries } from '@/lib/projects';
 import { siteGraph } from '@/lib/schema';
 
 const projects = await getSortedProjects();
 const counts = countByCategory(projects);
+const industries = logoIndustries(projects);
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -45,7 +46,7 @@ const jsonLd = {
   </section>
 
   <section id="work" class="work-section" aria-label="Portfolio">
-    <FilterBar counts={counts} total={projects.length} enhanced />
+    <FilterBar counts={counts} total={projects.length} industries={industries} enhanced />
     <div class="container work-container">
       <WorkGrid projects={projects} eagerCount={2} filterable heading="Selected work" />
     </div>

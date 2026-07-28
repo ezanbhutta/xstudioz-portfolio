@@ -1,5 +1,3 @@
-import { SITE } from '@/config/site';
-
 /**
  * Service packages shown on /packages/.
  * Edit copy, pricing and inclusions here — the page renders from this data.
@@ -17,7 +15,12 @@ export interface Package {
   includes: string[];
   /** Marks the recommended tier. Exactly one package should set this. */
   highlighted?: boolean;
-  /** Destination for the CTA — defaults to the studio Fiverr profile. */
+  /**
+   * CTA destination. IMPORTANT: set this to the package's Fiverr gig deep
+   * link (e.g. https://www.fiverr.com/<user>/<gig-slug>?package=premium) so
+   * buyers land on the exact scope they chose. Falls back to the studio
+   * profile from src/config/site.ts until gig URLs exist.
+   */
   href?: string;
 }
 
@@ -60,7 +63,7 @@ export const PACKAGES: Package[] = [
     summary: 'The full studio treatment — identity, guidelines and motion.',
     price: 'From $520',
     delivery: '14 days',
-    revisions: 'Unlimited',
+    revisions: 'Until sign-off',
     includes: [
       'Everything in Identity',
       'Complete brand guidelines book',
@@ -72,4 +75,22 @@ export const PACKAGES: Package[] = [
   },
 ];
 
-export const PACKAGES_CTA_FALLBACK = SITE.fiverrUrl;
+/** The four-step process shown on /packages/. */
+export const PROCESS_STEPS = [
+  {
+    title: 'Brief',
+    text: 'Share the business, audience and taste in a short Fiverr brief.',
+  },
+  {
+    title: 'Concepts',
+    text: 'We design and present the initial concepts within the delivery window.',
+  },
+  {
+    title: 'Refine',
+    text: 'Each revision round is one consolidated set of changes, applied and returned fast.',
+  },
+  {
+    title: 'Handover',
+    text: 'Final files, source and full ownership rights delivered through Fiverr.',
+  },
+];

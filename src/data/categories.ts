@@ -7,9 +7,7 @@
 export interface Category {
   /** URL segment + project tag. Kebab-case. */
   id: string;
-  /** Short label used in filters and cards. */
-  label: string;
-  /** Full name used in page titles. */
+  /** Category name, used everywhere: filters, captions, titles, footer. */
   title: string;
   /** One-sentence description for the category landing page + meta. */
   description: string;
@@ -18,54 +16,45 @@ export interface Category {
 export const CATEGORIES = [
   {
     id: 'logo-design',
-    label: 'Logos',
     title: 'Logo Design',
     description:
-      'Distinctive marks and logotypes — built on geometry, reduced to essentials, made to last.',
+      'Primary marks, lockups and monograms — delivered in SVG, PDF and PNG with color and mono versions.',
   },
   {
     id: 'brand-identity',
-    label: 'Brand Identity',
     title: 'Brand Identity',
     description:
-      'Complete visual identities — logo, color, type and voice working as one coherent system.',
+      'Logo suite, color palette, typography and applications — one coherent system with every file you need.',
   },
   {
     id: 'brand-guidelines',
-    label: 'Guidelines',
     title: 'Brand Guidelines',
     description:
-      'Clear, practical brand books that keep every future touchpoint consistent and on-brand.',
+      'Practical brand books covering logo rules, color, type and usage — so every future design stays on-brand.',
   },
   {
     id: 'stationery',
-    label: 'Stationery',
     title: 'Stationery Design',
     description:
-      'Business cards, letterheads and print collateral that carry the brand into the physical world.',
+      'Business cards, letterheads and envelopes — print-ready files with bleed, set up for any print shop.',
   },
   {
     id: 'social-media',
-    label: 'Social Media',
     title: 'Social Media Design',
     description:
-      'Feed systems, templates and campaign visuals designed to stay recognisable at scroll speed.',
+      'Feed templates, story layouts and campaign tiles — sized for every platform, editable for every post.',
   },
   {
     id: 'animation',
-    label: 'Animation',
     title: 'Animation',
     description:
-      'Logo reveals and motion identities that give brands life beyond the static frame.',
+      'Logo reveals and motion identities — delivered as MP4 and GIF, ready for web, decks and social.',
   },
 ] as const satisfies readonly Category[];
 
 export type CategoryId = (typeof CATEGORIES)[number]['id'];
 
-export const CATEGORY_IDS = CATEGORIES.map((c) => c.id) as [
-  CategoryId,
-  ...CategoryId[],
-];
+export const CATEGORY_IDS = CATEGORIES.map((c) => c.id) as [CategoryId, ...CategoryId[]];
 
 export function getCategory(id: CategoryId): Category {
   const found = CATEGORIES.find((c) => c.id === id);

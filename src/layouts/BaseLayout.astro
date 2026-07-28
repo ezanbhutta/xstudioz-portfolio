@@ -3,6 +3,8 @@ import { SITE } from '@/config/site';
 import Header from '@/components/Header.astro';
 import Footer from '@/components/Footer.astro';
 import '@/styles/global.css';
+import frauncesUrl from '@/assets/fonts/fraunces-latin-var.woff2?url';
+import archivoUrl from '@/assets/fonts/archivo-latin-var.woff2?url';
 
 interface Props {
   /** Full document title. The site name is appended unless it already appears. */
@@ -10,10 +12,29 @@ interface Props {
   description: string;
   /** Absolute URL for og:image. Defaults to the brand card. */
   ogImage?: string;
+  /** Alt text for the social card image. */
+  ogImageAlt?: string;
+  /** Rendered dimensions of the social card image. */
+  ogImageWidth?: number;
+  ogImageHeight?: number;
   ogType?: 'website' | 'article';
+  /** Error/utility pages: emit noindex and skip canonical/og:url. */
+  noindex?: boolean;
+  /** Page structured data, rendered as a JSON-LD script in <head>. */
+  jsonLd?: Record<string, unknown>;
 }
 
-const { title, description, ogImage, ogType = 'website' } = Astro.props;
+const {
+  title,
+  description,
+  ogImage,
+  ogImageAlt = `${SITE.name} — independent design studio`,
+  ogImageWidth = 1200,
+  ogImageHeight = 630,
+  ogType = 'website',
+  noindex = false,
+  jsonLd,
+} = Astro.props;
 
 const fullTitle = title.includes(SITE.name) ? title : `${title} — ${SITE.name}`;
 const canonical = new URL(Astro.url.pathname, SITE.url);
@@ -27,42 +48,34 @@ const ogImageUrl = ogImage ?? new URL('/og.png', SITE.url).href;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
     <meta name="generator" content={Astro.generator} />
+    {/* --color-paper; keep in sync with src/styles/tokens.css */}
     <meta name="theme-color" content="#faf8f5" />
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />
 
-    <link
-      rel="preload"
-      href="/fonts/fraunces-latin-var.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="/fonts/archivo-latin-var.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
+    <link rel="preload" href={frauncesUrl} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={archivoUrl} as="font" type="font/woff2" crossorigin />
 
     <meta property="og:site_name" content={SITE.name} />
     <meta property="og:type" content={ogType} />
-    <meta property="og:url" content={canonical} />
+    {!noindex && <meta property="og:url" content={canonical} />}
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={ogImageUrl} />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    <meta property="og:image:width" content={String(ogImageWidth)} />
+    <meta property="og:image:height" content={String(ogImageHeight)} />
+    <meta property="og:image:alt" content={ogImageAlt} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImageUrl} />
+    <meta name="twitter:image:alt" content={ogImageAlt} />
 
+    {jsonLd && <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
     <slot name="head" />
 
     <script is:inline>

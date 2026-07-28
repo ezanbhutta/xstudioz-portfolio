@@ -1,29 +1,47 @@
 ---
 import { SITE } from '@/config/site';
+import { CATEGORY_IDS } from '@/data/categories';
 
 const path = Astro.url.pathname;
-const isWork = path === '/' || path.startsWith('/work/');
+const isWork =
+  path === '/' ||
+  path.startsWith('/work/') ||
+  CATEGORY_IDS.some((id) => path.startsWith(`/${id}/`));
 const isPackages = path.startsWith('/packages');
 ---
 
 <header class="header">
   <div class="container header-inner">
     <a class="wordmark" href="/" aria-label={`${SITE.name} — home`}>
-      XStudioz<span class="wordmark-dot" aria-hidden="true">.</span>
+      XStudioz<span class="accent-dot" aria-hidden="true">.</span>
     </a>
     <nav aria-label="Main">
       <ul class="nav-list" role="list">
         <li>
-          <a class="nav-link" href="/" aria-current={isWork ? 'page' : undefined}>Work</a>
+          <a
+            class="nav-link"
+            href="/"
+            aria-current={isWork ? 'page' : undefined}
+            data-astro-prefetch>Work</a
+          >
         </li>
         <li>
-          <a class="nav-link" href="/packages/" aria-current={isPackages ? 'page' : undefined}
-            >Packages</a
+          <a
+            class="nav-link"
+            href="/packages/"
+            aria-current={isPackages ? 'page' : undefined}
+            data-astro-prefetch>Packages</a
           >
         </li>
         <li class="nav-cta">
-          <a class="button button--outline" href={SITE.fiverrUrl} rel="noopener">
-            Hire on Fiverr
+          <a
+            class="button button--outline"
+            href={SITE.fiverrUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="nav-cta-full">Hire on Fiverr</span><span class="nav-cta-short">Fiverr</span
+            >
             <span aria-hidden="true">↗</span>
           </a>
         </li>
@@ -44,18 +62,6 @@ const isPackages = path.startsWith('/packages');
     gap: var(--space-md);
   }
 
-  .wordmark {
-    font-family: var(--font-display);
-    font-size: 1.5rem;
-    font-weight: 620;
-    letter-spacing: var(--tracking-tight);
-    text-decoration: none;
-  }
-
-  .wordmark-dot {
-    color: var(--color-accent);
-  }
-
   .nav-list {
     display: flex;
     align-items: center;
@@ -65,14 +71,14 @@ const isPackages = path.startsWith('/packages');
   }
 
   .nav-link {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    min-height: 2.75rem;
+    min-height: var(--control-h);
     font-size: var(--text-md);
-    font-weight: 480;
+    font-weight: var(--weight-medium);
     color: var(--color-ink-soft);
     text-decoration: none;
-    border-block-end: 2px solid transparent;
     transition: color var(--duration-fast) var(--ease-out);
   }
 
@@ -82,18 +88,34 @@ const isPackages = path.startsWith('/packages');
 
   .nav-link[aria-current='page'] {
     color: var(--color-ink);
-    border-block-end-color: var(--color-accent);
+  }
+
+  /* Active indicator hugs the text baseline instead of the 44px hit box */
+  .nav-link[aria-current='page']::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: calc(50% + 0.8em);
+    height: 2px;
+    background: var(--color-accent);
   }
 
   .nav-cta .button {
     font-size: var(--text-sm);
-    min-height: 2.5rem;
     padding: 0.5rem 1.125rem;
   }
 
+  .nav-cta-short {
+    display: none;
+  }
+
   @media (max-width: 519px) {
-    .nav-cta {
+    .nav-cta-full {
       display: none;
+    }
+
+    .nav-cta-short {
+      display: inline;
     }
   }
 </style>

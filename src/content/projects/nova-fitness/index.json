@@ -5,23 +5,27 @@
   "order": 5,
   "summary": "A high-energy feed system for a boutique gym — bold templates that stay unmistakable at scroll speed.",
   "cover": "./cover.png",
-  "coverAlt": "Three Nova Fitness social media post designs arranged as a set",
+  "coverAlt": "Three Nova Fitness social post designs in ember orange and bone on charcoal, arranged as a staggered set",
   "images": [
     {
+      "src": "./cover.png",
+      "alt": "Three Nova Fitness social post designs in ember orange and bone on charcoal, arranged as a staggered set"
+    },
+    {
       "src": "./01.png",
-      "alt": "Nova Fitness Instagram feed grid of six coordinated posts"
+      "alt": "Nova Fitness feed grid of six coordinated post designs"
     },
     {
       "src": "./02.png",
-      "alt": "Nova Fitness featured social post design"
+      "alt": "Nova Fitness featured social post with the mark and headline block"
     },
     {
       "src": "./03.png",
-      "alt": "Nova Fitness story template design"
+      "alt": "Nova Fitness story template with hero panel and action button"
     },
     {
       "src": "./04.png",
-      "alt": "Nova Fitness carousel post sequence"
+      "alt": "Nova Fitness carousel sequence of four posts with position dots"
     }
   ]
 }

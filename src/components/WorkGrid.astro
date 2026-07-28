@@ -1,5 +1,6 @@
 ---
 import ProjectCard from '@/components/ProjectCard.astro';
+import { SITE } from '@/config/site';
 import type { Project } from '@/lib/projects';
 
 interface Props {
@@ -25,10 +26,25 @@ const { projects, eagerCount = 2, filterable = false, heading = 'Projects' } = A
       ))
     }
   </ul>
-  <p class="work-empty" data-work-empty hidden>
-    Nothing in this category yet — it’s on the bench.
+  <p class="work-empty" data-work-empty hidden={projects.length > 0}>
+    No projects in this category yet. <a href="/">See all work</a> or
+    <a href={SITE.fiverrUrl} target="_blank" rel="noopener noreferrer"
+      >ask about this service on Fiverr <span aria-hidden="true">↗</span></a
+    >.
   </p>
 </div>
+
+<script>
+  // Name the clicked card for the cross-document view transition only at
+  // interaction time — statically naming all 14 cards makes the browser
+  // snapshot every one of them on navigation to pair just one.
+  document.addEventListener('click', (event) => {
+    const media = (event.target as HTMLElement)
+      .closest('.card-link')
+      ?.querySelector<HTMLElement>('[data-vt]');
+    if (media?.dataset.vt) media.style.viewTransitionName = media.dataset.vt;
+  });
+</script>
 
 <style>
   .work-grid {
@@ -56,7 +72,13 @@ const { projects, eagerCount = 2, filterable = false, heading = 'Projects' } = A
   }
 
   .work-empty {
-    color: var(--color-ink-mute);
+    color: var(--color-ink-soft);
     padding-block: var(--space-2xl);
+  }
+
+  .work-empty a {
+    color: var(--color-ink);
+    font-weight: 500;
+    text-decoration-color: var(--color-accent);
   }
 </style>

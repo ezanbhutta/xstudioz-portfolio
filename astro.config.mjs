@@ -12,11 +12,14 @@ export default defineConfig({
     responsiveStyles: true,
   },
   build: {
-    // Inline small page styles to avoid a render-blocking request.
-    inlineStylesheets: 'always',
+    // Small page styles inline; the shared bundle externalizes into one
+    // hashed, immutable-cacheable file (see public/_headers).
+    inlineStylesheets: 'auto',
   },
   prefetch: {
-    prefetchAll: true,
-    defaultStrategy: 'viewport',
+    // Opt-in per link (hover/tap dwell) — viewport prefetching all 21
+    // same-origin documents from home wasted ~125 KB per visit.
+    prefetchAll: false,
+    defaultStrategy: 'hover',
   },
 });

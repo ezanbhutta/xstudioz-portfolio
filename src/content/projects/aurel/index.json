@@ -5,23 +5,27 @@
   "order": 1,
   "summary": "A refined monogram for a contemporary jewelry house — drawn from a single continuous curve and set in warm metallics.",
   "cover": "./cover.png",
-  "coverAlt": "Aurel logo mark centered on a deep color field with fine registration marks",
+  "coverAlt": "Aurel logo mark — an open ring facing an orbit dot — in cream on near-black with muted gold, centered between fine registration marks",
   "images": [
     {
+      "src": "./cover.png",
+      "alt": "Aurel logo mark — an open ring facing an orbit dot — in cream on near-black with muted gold, centered between fine registration marks"
+    },
+    {
       "src": "./01.png",
-      "alt": "Aurel logo mark in dark ink on a light background"
+      "alt": "Aurel logo mark, an open ring facing an orbit dot, in dark ink on a light field"
     },
     {
       "src": "./02.png",
-      "alt": "Construction grid showing the geometry behind the Aurel logo mark"
+      "alt": "Construction grid showing the circular geometry behind the Aurel mark"
     },
     {
       "src": "./03.png",
-      "alt": "Repeating pattern tile built from the Aurel logo mark"
+      "alt": "Repeating brand pattern tiled from the Aurel mark"
     },
     {
       "src": "./04.png",
-      "alt": "Aurel horizontal logo lockup with wordmark placeholder"
+      "alt": "Aurel horizontal lockup: the mark beside abstract wordmark bars"
     }
   ]
 }

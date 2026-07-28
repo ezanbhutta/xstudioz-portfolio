@@ -1,39 +1,45 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { SITE } from '@/config/site';
-import { PACKAGES } from '@/data/packages';
+import { PACKAGES, PROCESS_STEPS } from '@/data/packages';
+import { siteGraph, ORGANIZATION_ID } from '@/lib/schema';
 
 const description =
   'Three clear ways to work with XStudioz — Starter, Identity and Signature packages with fixed scope, fast delivery and full ownership rights.';
 
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'Service',
-  name: `${SITE.name} design packages`,
-  provider: { '@id': `${SITE.url}/#organization` },
-  serviceType: 'Brand identity design',
-  url: new URL('/packages/', SITE.url).href,
-  hasOfferCatalog: {
-    '@type': 'OfferCatalog',
-    name: 'Design packages',
-    itemListElement: PACKAGES.map((pkg) => ({
-      '@type': 'Offer',
-      name: pkg.name,
-      description: pkg.summary,
-    })),
-  },
+  '@graph': [
+    ...siteGraph(),
+    {
+      '@type': 'Service',
+      name: `${SITE.name} design packages`,
+      provider: { '@id': ORGANIZATION_ID },
+      serviceType: 'Brand identity design',
+      url: new URL('/packages/', SITE.url).href,
+      hasOfferCatalog: {
+        '@type': 'OfferCatalog',
+        name: 'Design packages',
+        itemListElement: PACKAGES.map((pkg) => ({
+          '@type': 'Offer',
+          name: pkg.name,
+          description: pkg.summary,
+        })),
+      },
+    },
+  ],
 };
 ---
 
-<BaseLayout title="Packages" description={description}>
-  <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} slot="head" />
-
-  <section class="packages-hero container">
+<BaseLayout title="Packages" description={description} jsonLd={jsonLd}>
+  <section class="page-hero container">
     <p class="overline">Packages</p>
-    <h1 class="packages-title">Pick a scope.<br />We craft the rest<span class="accent-dot">.</span></h1>
-    <p class="packages-lede">
-      Every package is delivered through Fiverr with clear milestones, source
-      files and full ownership rights — no surprises, no upsells mid-project.
+    <h1 class="page-title">
+      Pick a scope.<br />We craft the rest<span class="accent-dot">.</span>
+    </h1>
+    <p class="page-lede">
+      Every package is delivered through Fiverr with clear milestones, source files and full
+      ownership rights — no surprises, no upsells mid-project.
     </p>
   </section>
 
@@ -41,7 +47,7 @@ const jsonLd = {
     <ul class="package-grid" role="list">
       {
         PACKAGES.map((pkg) => (
-          <li class:list={['package', { 'package--highlight': pkg.highlighted }]}>
+          <li id={pkg.id} class:list={['package', { 'package--highlight': pkg.highlighted }]}>
             {pkg.highlighted && <p class="package-flag">Most popular</p>}
             <div class="package-head">
               <h2 class="package-name">{pkg.name}</h2>
@@ -88,7 +94,8 @@ const jsonLd = {
                 pkg.highlighted ? 'button--paper' : 'button--primary',
               ]}
               href={pkg.href ?? SITE.fiverrUrl}
-              rel="noopener"
+              target="_blank"
+              rel="noopener noreferrer"
             >
               Start {pkg.name} <span aria-hidden="true">↗</span>
             </a>
@@ -97,32 +104,37 @@ const jsonLd = {
       }
     </ul>
     <p class="packages-note">
-      Need something between two tiers? <a href={SITE.fiverrUrl} rel="noopener">Message us on Fiverr</a>
-      — we’ll shape a custom offer around your scope.
+      Final scope and price are agreed in the Fiverr order before work starts — “from” covers extras
+      like rush delivery or additional concepts, never mid-project surprises. Need something between
+      two tiers?
+      <a href={SITE.fiverrUrl} target="_blank" rel="noopener noreferrer"
+        >Message us on Fiverr <span aria-hidden="true">↗</span></a
+      > and we’ll shape a custom offer.
     </p>
+  </section>
+
+  <section class="container process" aria-labelledby="process-heading">
+    <p class="overline">How it works</p>
+    <h2 id="process-heading" class="process-title">
+      Four steps, no drama<span class="accent-dot">.</span>
+    </h2>
+    <ol class="process-steps" role="list">
+      {
+        PROCESS_STEPS.map((step, i) => (
+          <li class="process-step">
+            <span class="process-num" aria-hidden="true">
+              0{i + 1}
+            </span>
+            <h3 class="process-step-title">{step.title}</h3>
+            <p class="process-step-text">{step.text}</p>
+          </li>
+        ))
+      }
+    </ol>
   </section>
 </BaseLayout>
 
 <style>
-  .packages-hero {
-    padding-block: var(--space-2xl) var(--space-2xl);
-  }
-
-  .packages-title {
-    font-size: var(--text-display);
-    margin-block: var(--space-sm) var(--space-md);
-  }
-
-  .accent-dot {
-    color: var(--color-accent);
-  }
-
-  .packages-lede {
-    font-size: var(--text-lg);
-    color: var(--color-ink-soft);
-    max-width: var(--measure);
-  }
-
   .package-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -130,17 +142,18 @@ const jsonLd = {
     list-style: none;
     padding: 0;
     margin: 0;
-    align-items: start;
   }
 
   .package {
     position: relative;
     display: grid;
+    grid-template-rows: auto auto 1fr auto;
     gap: var(--space-md);
     border: 1px solid var(--color-line-strong);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     padding: var(--space-lg);
     background: var(--color-paper-raised);
+    scroll-margin-block-start: var(--space-lg);
   }
 
   .package--highlight {
@@ -156,8 +169,8 @@ const jsonLd = {
     background: var(--color-accent);
     color: var(--color-paper);
     font-size: var(--text-xs);
-    font-weight: 600;
-    letter-spacing: 0.06em;
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
     padding: var(--space-3xs) var(--space-xs);
     border-radius: var(--radius-pill);
@@ -165,14 +178,13 @@ const jsonLd = {
 
   .package-name {
     font-size: var(--text-2xl);
-    font-weight: 560;
+    font-weight: var(--weight-display);
   }
 
   .package-summary {
     margin-block-start: var(--space-2xs);
     color: var(--color-ink-soft);
     font-size: var(--text-sm);
-    min-height: 2.6em;
   }
 
   .package--highlight .package-summary {
@@ -182,26 +194,27 @@ const jsonLd = {
   .package-price {
     font-family: var(--font-display);
     font-size: var(--text-2xl);
-    font-weight: 620;
+    font-weight: var(--weight-wordmark);
     letter-spacing: var(--tracking-tight);
     margin-block-start: var(--space-sm);
   }
 
   .package-meta {
     display: flex;
-    gap: var(--space-xl);
+    flex-wrap: wrap;
+    gap: clamp(var(--space-sm), 4vw, var(--space-xl));
     margin: 0;
     border-block: 1px solid var(--color-line);
     padding-block: var(--space-sm);
   }
 
   .package--highlight .package-meta {
-    border-color: rgb(255 255 255 / 15%);
+    border-color: var(--color-line-on-ink);
   }
 
   .package-meta dt {
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
     color: var(--color-ink-mute);
@@ -213,12 +226,13 @@ const jsonLd = {
 
   .package-meta dd {
     margin: var(--space-3xs) 0 0;
-    font-weight: 540;
+    font-weight: var(--weight-medium);
   }
 
   .package-includes {
     display: grid;
     gap: var(--space-2xs);
+    align-content: start;
     list-style: none;
     padding: 0;
     margin: 0;
@@ -248,23 +262,75 @@ const jsonLd = {
   .packages-note {
     margin-block-start: var(--space-xl);
     color: var(--color-ink-soft);
-    max-width: var(--measure);
+    max-width: var(--measure-wide);
   }
 
   .packages-note a {
     color: var(--color-accent);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
   }
 
-  @media (max-width: 899px) {
+  .process {
+    margin-block-start: var(--space-section);
+    border-block-start: 1px solid var(--color-line);
+    padding-block-start: var(--space-3xl);
+  }
+
+  .process-title {
+    font-size: var(--text-3xl);
+    margin-block: var(--space-sm) var(--space-lg);
+  }
+
+  .process-steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-lg);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    counter-reset: step;
+  }
+
+  .process-num {
+    display: block;
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-display);
+    color: var(--color-accent);
+    letter-spacing: var(--tracking-tight);
+  }
+
+  .process-step-title {
+    font-family: var(--font-sans);
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    letter-spacing: normal;
+    margin-block: var(--space-2xs);
+  }
+
+  .process-step-text {
+    color: var(--color-ink-soft);
+    font-size: var(--text-sm);
+  }
+
+  /* The 3-up grid's min-content exceeds the container below ~930px */
+  @media (max-width: 929px) {
     .package-grid {
       grid-template-columns: 1fr;
       max-width: 30rem;
       margin-inline: auto;
     }
+  }
 
-    .package--highlight {
-      order: -1;
+  @media (max-width: 819px) {
+    .process-steps {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 479px) {
+    .process-steps {
+      grid-template-columns: 1fr;
     }
   }
 </style>

@@ -1,0 +1,82 @@
+---
+/**
+ * Client-side filtering for the home work grid. Rendered only where the
+ * FilterBar is `enhanced`, so category pages don't ship a script that can
+ * never run there.
+ */
+---
+
+<script>
+  const bar = document.querySelector<HTMLElement>('[data-filterbar]');
+  const gridWrap = document.querySelector<HTMLElement>('[data-work-grid]');
+
+  if (bar && gridWrap) {
+    const links = [...bar.querySelectorAll<HTMLAnchorElement>('a[data-filter]')];
+    const items = [...gridWrap.querySelectorAll<HTMLLIElement>('li[data-category]')];
+    const status = gridWrap.querySelector<HTMLElement>('[data-filter-status]');
+    const empty = gridWrap.querySelector<HTMLElement>('[data-work-empty]');
+    const valid = new Set(links.map((l) => l.dataset.filter));
+
+    const apply = (category: string) => {
+      let shown = 0;
+      let label = 'All work';
+      for (const li of items) {
+        const show = category === 'all' || li.dataset.category === category;
+        li.hidden = !show;
+        if (show) shown += 1;
+      }
+      for (const link of links) {
+        if (link.dataset.filter === category) {
+          link.setAttribute('aria-current', 'true');
+          label = link.dataset.label ?? label;
+        } else {
+          link.removeAttribute('aria-current');
+        }
+      }
+      if (empty) empty.hidden = shown > 0;
+      if (status) {
+        status.textContent = `${label}: showing ${shown} ${shown === 1 ? 'project' : 'projects'}`;
+      }
+    };
+
+    const applyWithTransition = (category: string) => {
+      const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (document.startViewTransition && !reduceMotion) {
+        document.startViewTransition(() => apply(category));
+      } else {
+        apply(category);
+      }
+    };
+
+    const fromUrl = () => {
+      const byPath = location.pathname.match(/^\/([^/]+)\/?$/)?.[1];
+      if (byPath && valid.has(byPath)) return byPath;
+      const byQuery = new URLSearchParams(location.search).get('category');
+      return byQuery && valid.has(byQuery) ? byQuery : 'all';
+    };
+
+    bar.addEventListener('click', (event) => {
+      const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[data-filter]');
+      if (!link || event.metaKey || event.ctrlKey || event.shiftKey) return;
+      event.preventDefault();
+      const category = link.dataset.filter ?? 'all';
+      applyWithTransition(category);
+      // Push the canonical URL so Back undoes the filter step by step.
+      history.pushState(null, '', link.getAttribute('href'));
+      // Keep the grid in view when filtering from deep in the page
+      // (scroll-padding on <html> clears the sticky bar).
+      if (gridWrap.getBoundingClientRect().top < 0) {
+        gridWrap.scrollIntoView({ block: 'start' });
+      }
+    });
+
+    window.addEventListener('popstate', () => apply(fromUrl()));
+
+    const initial = fromUrl();
+    if (initial !== 'all') {
+      apply(initial);
+      // Normalize legacy ?category= deep links to the canonical path.
+      if (location.search) history.replaceState(null, '', `/${initial}/`);
+    }
+  }
+</script>

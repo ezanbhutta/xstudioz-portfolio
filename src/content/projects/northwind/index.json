@@ -5,23 +5,27 @@
   "order": 4,
   "summary": "A sturdy compass-inspired monogram for an outdoor supply company, built to hold up from favicon to storefront.",
   "cover": "./cover.png",
-  "coverAlt": "Northwind logo mark centered on a deep color field with fine registration marks",
+  "coverAlt": "Northwind logo mark — a crescent with an orbit dot — in mist white and sage on deep pine, centered between fine registration marks",
   "images": [
     {
+      "src": "./cover.png",
+      "alt": "Northwind logo mark — a crescent with an orbit dot — in mist white and sage on deep pine, centered between fine registration marks"
+    },
+    {
       "src": "./01.png",
-      "alt": "Northwind logo mark in dark ink on a light background"
+      "alt": "Northwind logo mark, a crescent with an orbit dot, in dark ink on a light field"
     },
     {
       "src": "./02.png",
-      "alt": "Construction grid showing the geometry behind the Northwind logo mark"
+      "alt": "Construction grid showing the circular geometry behind the Northwind mark"
     },
     {
       "src": "./03.png",
-      "alt": "Repeating pattern tile built from the Northwind logo mark"
+      "alt": "Repeating brand pattern tiled from the Northwind mark"
     },
     {
       "src": "./04.png",
-      "alt": "Northwind horizontal logo lockup with wordmark placeholder"
+      "alt": "Northwind horizontal lockup: the mark beside abstract wordmark bars"
     }
   ]
 }

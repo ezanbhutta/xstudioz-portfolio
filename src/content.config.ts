@@ -52,8 +52,16 @@ const projects = defineCollection({
       guidelineType: z.preprocess(emptyToUndef, z.enum(GUIDELINE_TYPES).optional()),
       /** Powers the per-category Industry dropdown filter. */
       industry: z.preprocess(emptyToUndef, z.string().optional()),
-      /** The brand's live website; linked on the project page only when set. */
+      /**
+       * Brand links, every one optional — the project page only renders
+       * the ones that are set. Socials accept a full link or a bare
+       * username; otherLinks covers any platform not named here.
+       */
       website: z.preprocess(urlize, z.string().optional()),
+      instagram: z.preprocess(emptyToUndef, z.string().optional()),
+      facebook: z.preprocess(emptyToUndef, z.string().optional()),
+      linkedin: z.preprocess(emptyToUndef, z.string().optional()),
+      otherLinks: z.preprocess(emptyToUndef, z.array(z.string()).optional()),
       /**
        * Extra elements included beyond the core sections (Social Media Kit,
        * Mockups…). Listed on the project page — not filterable.

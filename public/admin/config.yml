@@ -106,6 +106,26 @@ collections:
         widget: string
         required: false
         hint: 'Optional, e.g. brandname.com. Shown as a link on the project page only when filled.'
+      - name: instagram
+        label: Instagram
+        widget: string
+        required: false
+        hint: 'Optional. Paste the profile link or just the username.'
+      - name: facebook
+        label: Facebook
+        widget: string
+        required: false
+        hint: 'Optional. Paste the page link or just the username.'
+      - name: linkedin
+        label: LinkedIn
+        widget: string
+        required: false
+        hint: 'Optional. Paste the company or profile link, or just the company name in the URL.'
+      - name: otherLinks
+        label: Other links
+        widget: list
+        required: false
+        hint: 'Any other social or platform link, one per row (TikTok, Behance, X…). Only shown when filled.'
       - name: order
         label: Grid position
         widget: number

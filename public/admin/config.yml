@@ -98,9 +98,21 @@ collections:
         hint: Add anything the list above does not cover, one item per row.
       - name: industry
         label: Industry
+        widget: select
+        required: false
+        hint: 'Pick an existing industry when one fits — the goal is 4–5 projects per industry. Powers the Industry filter on the site.'
+        # Rebuilt from every project on each deploy by scripts/sync-industries.mjs — do not edit by hand.
+        # industries:begin
+        options:
+          - "Capital & Investment"
+          - "Sustainable Materials & Biotechnology"
+          - "Tattoo"
+        # industries:end
+      - name: industryNew
+        label: New industry
         widget: string
         required: false
-        hint: 'e.g. Jewelry. Powers the Industry filter dropdown; new industries appear automatically.'
+        hint: 'Industry not in the dropdown yet? Leave the dropdown empty and type it here — it joins the dropdown automatically after the next deploy. Prefer general industries so each one grows to 4–5 projects.'
       - name: website
         label: Brand website
         widget: string

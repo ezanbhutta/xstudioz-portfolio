@@ -119,6 +119,16 @@
     // Back/forward replays the same motion as the click that created it.
     window.addEventListener('popstate', () => applyWithTransition(fromUrl()));
 
+    // Returning from a project can be a fresh load whose dropdown values the
+    // browser restores AFTER our first paint — the select would show a choice
+    // the grid isn't honoring. Re-apply once restored so Back lands on the
+    // exact stage the visitor left. (bfcache restores live state untouched.)
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) return;
+      const category = fromUrl();
+      if (activeSelects(category).some((s) => s.value)) apply(category);
+    });
+
     // The server already rendered the state '/' maps to; re-applying it
     // here would mark every card visible and skip the entrance reveals.
     const initial = fromUrl();

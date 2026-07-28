@@ -115,6 +115,11 @@ const widths = [640, 960, 1280, 1600];
 >
   <article class="project">
     <header class="container page-hero project-header">
+      <p class="project-back">
+        <a class="back-link" href={`/${category}/`} data-back>
+          <span class="back-link-arrow" aria-hidden="true">←</span> Back
+        </a>
+      </p>
       <p class="overline">
         <a class="overline-link" href={`/${category}/`} data-astro-prefetch>{categoryInfo.title}</a>
         {
@@ -234,11 +239,56 @@ const widths = [640, 960, 1280, 1600];
   </article>
 </BaseLayout>
 
+<script>
+  // Back returns to the exact stage the visitor left — same filters, same
+  // scroll offset — by walking real history. Only visitors who arrived from
+  // within the site have that history; anyone landing from a shared link or
+  // search follows the href to the project's category instead.
+  document.querySelector<HTMLAnchorElement>('[data-back]')?.addEventListener('click', (event) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+    if (history.length > 1 && document.referrer.startsWith(location.origin)) {
+      event.preventDefault();
+      history.back();
+    }
+  });
+</script>
+
 <style>
   /* Exhibition spacing: the wall text sits further from the first work
      than the works sit from each other. */
   .project-header {
     padding-block-end: var(--space-3xl);
+  }
+
+  .project-back {
+    margin-block-end: var(--space-md);
+  }
+
+  .back-link {
+    display: inline-block;
+    /* 44px hit area without growing the line box */
+    padding-block: 0.75rem;
+    margin-block: -0.75rem;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-ink-soft);
+    text-decoration: none;
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  .back-link-arrow {
+    display: inline-block;
+    transition: translate var(--duration-fast) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .back-link:hover {
+      color: var(--color-accent);
+    }
+
+    .back-link:hover .back-link-arrow {
+      translate: -0.25em 0;
+    }
   }
 
   .overline-link {

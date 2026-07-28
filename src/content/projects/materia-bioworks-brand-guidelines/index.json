@@ -13,7 +13,188 @@
   "order": 98,
   "summary": "A forward-thinking brand identity created for Materia Bioworks, a biotechnology company accelerating the commercialization of next-generation sustainable materials. The visual system balances scientific precision with modern innovation, establishing a trusted and scalable identity that reflects collaboration, advanced engineering, and a commitment to shaping a more sustainable future.",
   "pdf": "Materia Bioworks Brand Guidelines.pdf",
-  "cover": "",
-  "coverAlt": "",
-  "images": []
+  "cover": "./cover.png",
+  "coverAlt": "Materia Bioworks Brand Guidelines presentation cover",
+  "images": [
+    {
+      "src": "./page-01.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 1 of 45"
+    },
+    {
+      "src": "./page-02.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 2 of 45"
+    },
+    {
+      "src": "./page-03.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 3 of 45"
+    },
+    {
+      "src": "./page-04.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 4 of 45"
+    },
+    {
+      "src": "./page-05.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 5 of 45"
+    },
+    {
+      "src": "./page-06.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 6 of 45"
+    },
+    {
+      "src": "./page-07.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 7 of 45"
+    },
+    {
+      "src": "./page-08.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 8 of 45"
+    },
+    {
+      "src": "./page-09.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 9 of 45"
+    },
+    {
+      "src": "./page-10.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 10 of 45"
+    },
+    {
+      "src": "./page-11.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 11 of 45"
+    },
+    {
+      "src": "./page-12.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 12 of 45"
+    },
+    {
+      "src": "./page-13.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 13 of 45"
+    },
+    {
+      "src": "./page-14.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 14 of 45"
+    },
+    {
+      "src": "./page-15.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 15 of 45"
+    },
+    {
+      "src": "./page-16.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 16 of 45"
+    },
+    {
+      "src": "./page-17.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 17 of 45"
+    },
+    {
+      "src": "./page-18.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 18 of 45"
+    },
+    {
+      "src": "./page-19.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 19 of 45"
+    },
+    {
+      "src": "./page-20.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 20 of 45"
+    },
+    {
+      "src": "./page-21.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 21 of 45"
+    },
+    {
+      "src": "./page-22.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 22 of 45"
+    },
+    {
+      "src": "./page-23.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 23 of 45"
+    },
+    {
+      "src": "./page-24.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 24 of 45"
+    },
+    {
+      "src": "./page-25.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 25 of 45"
+    },
+    {
+      "src": "./page-26.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 26 of 45"
+    },
+    {
+      "src": "./page-27.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 27 of 45"
+    },
+    {
+      "src": "./page-28.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 28 of 45"
+    },
+    {
+      "src": "./page-29.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 29 of 45"
+    },
+    {
+      "src": "./page-30.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 30 of 45"
+    },
+    {
+      "src": "./page-31.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 31 of 45"
+    },
+    {
+      "src": "./page-32.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 32 of 45"
+    },
+    {
+      "src": "./page-33.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 33 of 45"
+    },
+    {
+      "src": "./page-34.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 34 of 45"
+    },
+    {
+      "src": "./page-35.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 35 of 45"
+    },
+    {
+      "src": "./page-36.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 36 of 45"
+    },
+    {
+      "src": "./page-37.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 37 of 45"
+    },
+    {
+      "src": "./page-38.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 38 of 45"
+    },
+    {
+      "src": "./page-39.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 39 of 45"
+    },
+    {
+      "src": "./page-40.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 40 of 45"
+    },
+    {
+      "src": "./page-41.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 41 of 45"
+    },
+    {
+      "src": "./page-42.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 42 of 45"
+    },
+    {
+      "src": "./page-43.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 43 of 45"
+    },
+    {
+      "src": "./page-44.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 44 of 45"
+    },
+    {
+      "src": "./page-45.png",
+      "alt": "Materia Bioworks Brand Guidelines presentation, page 45 of 45"
+    }
+  ]
 }

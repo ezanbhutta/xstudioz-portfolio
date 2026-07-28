@@ -99,6 +99,12 @@ const groups = CATEGORIES.map((c) => ({
         }
       });
     }
+
+    // Coming Back from a project, the browser may restore dropdown values
+    // after our first paint; re-filter so the grid matches what it shows.
+    window.addEventListener('pageshow', (event) => {
+      if (!event.persisted && selects.some((s) => s.value)) apply();
+    });
   }
 </script>
 
@@ -150,10 +156,15 @@ const groups = CATEGORIES.map((c) => ({
 </style>
 
 <script>
-  // Mark selects with a chosen value so CSS can show the active ring.
-  for (const s of document.querySelectorAll<HTMLSelectElement>('[data-subfilters] select')) {
-    const sync = () => s.classList.toggle('has-value', s.value !== '');
-    s.addEventListener('change', sync);
-    sync();
+  // Mark selects with a chosen value so CSS can show the active ring —
+  // re-synced on pageshow because Back can restore values after first paint.
+  const selects = [...document.querySelectorAll<HTMLSelectElement>('[data-subfilters] select')];
+  const syncAll = () => {
+    for (const s of selects) s.classList.toggle('has-value', s.value !== '');
+  };
+  for (const s of selects) {
+    s.addEventListener('change', () => s.classList.toggle('has-value', s.value !== ''));
   }
+  syncAll();
+  window.addEventListener('pageshow', syncAll);
 </script>

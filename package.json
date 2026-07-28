@@ -6,13 +6,14 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "build": "node scripts/ingest.mjs && astro build && node scripts/prune-dist.mjs",
+    "build": "node scripts/ingest.mjs && node scripts/sync-industries.mjs && astro build && node scripts/prune-dist.mjs",
     "preview": "astro preview",
     "check": "astro check",
     "placeholders": "node scripts/generate-placeholders.mjs",
     "og": "node scripts/generate-og.mjs",
     "format": "prettier --write \"src/**/*.{astro,ts,css}\" \"scripts/*.mjs\" \"*.mjs\"",
-    "ingest": "node scripts/ingest.mjs"
+    "ingest": "node scripts/ingest.mjs",
+    "industries": "node scripts/sync-industries.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.4.1",

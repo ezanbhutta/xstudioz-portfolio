@@ -4,9 +4,9 @@
  * FilterBar is `enhanced`, so category pages don't ship a script that can
  * never run there.
  *
- * There is no "All" chip: clicking the active category chip deselects it
- * and the full grid returns. Logo Design additionally exposes Type and
- * Industry dropdowns that refine within the category.
+ * One category is always selected — Logo Design by default on landing.
+ * Clicking another chip switches to it; Logo Design additionally exposes
+ * Type and Industry dropdowns that refine within the category.
  */
 ---
 
@@ -82,22 +82,26 @@
       }
     };
 
+    // The home page IS the Logo Design view — '/' maps to it.
+    const DEFAULT = 'logo-design';
+
     const fromUrl = () => {
       const byPath = location.pathname.match(/^\/([^/]+)\/?$/)?.[1];
       if (byPath && valid.has(byPath)) return byPath;
       const byQuery = new URLSearchParams(location.search).get('category');
-      return byQuery && valid.has(byQuery) ? byQuery : 'all';
+      return byQuery && valid.has(byQuery) ? byQuery : DEFAULT;
     };
 
     const current = () =>
-      links.find((l) => l.hasAttribute('aria-current'))?.dataset.filter ?? 'all';
+      links.find((l) => l.hasAttribute('aria-current'))?.dataset.filter ?? DEFAULT;
 
     bar.addEventListener('click', (event) => {
       const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[data-filter]');
       if (!link || event.metaKey || event.ctrlKey || event.shiftKey) return;
       event.preventDefault();
-      // Clicking the active chip deselects it — the whole grid returns.
-      const category = link.hasAttribute('aria-current') ? 'all' : (link.dataset.filter ?? 'all');
+      // One chip is always selected; re-clicking it changes nothing.
+      if (link.hasAttribute('aria-current')) return;
+      const category = link.dataset.filter ?? DEFAULT;
       // Scroll FIRST (instantly) so both view-transition snapshots are
       // captured at the same offset — no slide-then-jump.
       if (gridWrap.getBoundingClientRect().top < 0) {
@@ -105,7 +109,7 @@
       }
       applyWithTransition(category);
       // Push the canonical URL so Back undoes the filter step by step.
-      history.pushState(null, '', category === 'all' ? '/' : `/${category}/`);
+      history.pushState(null, '', category === DEFAULT ? '/' : `/${category}/`);
     });
 
     for (const s of subSelects) {
@@ -115,8 +119,10 @@
     // Back/forward replays the same motion as the click that created it.
     window.addEventListener('popstate', () => applyWithTransition(fromUrl()));
 
+    // The server already rendered the state '/' maps to; re-applying it
+    // here would mark every card visible and skip the entrance reveals.
     const initial = fromUrl();
-    if (initial !== 'all') {
+    if (initial !== current()) {
       apply(initial);
       // Normalize legacy ?category= deep links to the canonical path.
       if (location.search) history.replaceState(null, '', `/${initial}/`);

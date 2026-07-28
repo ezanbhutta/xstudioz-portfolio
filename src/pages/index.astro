@@ -46,9 +46,21 @@ const jsonLd = {
   </section>
 
   <section id="work" class="work-section" aria-label="Portfolio">
-    <FilterBar counts={counts} total={projects.length} industries={industries} enhanced />
+    <FilterBar
+      counts={counts}
+      total={projects.length}
+      industries={industries}
+      active="logo-design"
+      enhanced
+    />
     <div class="container work-container">
-      <WorkGrid projects={projects} eagerCount={2} filterable heading="Selected work" />
+      <WorkGrid
+        projects={projects}
+        eagerCount={2}
+        filterable
+        heading="Selected work"
+        initialCategory="logo-design"
+      />
     </div>
   </section>
 

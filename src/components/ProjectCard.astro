@@ -10,9 +10,13 @@ interface Props {
   eager?: boolean;
   /** Stagger position for the entrance reveal. */
   index?: number;
+  /** Rendered but not shown until the filter script reveals it. */
+  hidden?: boolean;
+  /** The first visible card paints instantly instead of scroll-revealing. */
+  lead?: boolean;
 }
 
-const { project, eager = false, index = 0 } = Astro.props;
+const { project, eager = false, index = 0, hidden = false, lead = index === 0 } = Astro.props;
 const { title, category, cover, logoType, industry } = project.data;
 const categoryLabel = getCategory(category).title;
 const meta = [categoryLabel, industry].filter(Boolean).join(' · ');
@@ -28,13 +32,19 @@ const placeholder = await lqipStyle(cover);
     desktop the whole first row sits below the fold, so it reveals like
     every other row — consistency reads as polish. */
 }
-<li class="card" data-category={category} data-logo-type={logoType} data-industry={industry}>
+<li
+  class="card"
+  data-category={category}
+  data-logo-type={logoType}
+  data-industry={industry}
+  hidden={hidden}
+>
   <a
     class="card-link"
     href={href}
     data-astro-prefetch
-    data-reveal={index === 0 ? undefined : ''}
-    style={index === 0 ? undefined : `--reveal-delay:${delay}ms`}
+    data-reveal={lead ? undefined : ''}
+    style={lead ? undefined : `--reveal-delay:${delay}ms`}
   >
     <div class="card-media" data-vt={`work-${project.id}`}>
       <Picture

@@ -5,23 +5,23 @@
   "order": 11,
   "summary": "A campaign system for a modern Indian restaurant — spice-toned tiles and templates for menus, openings and seasonal dishes.",
   "cover": "./cover.png",
-  "coverAlt": "Three Saffron Table social media post designs arranged as a set",
+  "coverAlt": "Three Saffron Table social post designs in saffron and cream on dark cocoa, arranged as a staggered set",
   "images": [
     {
       "src": "./01.png",
-      "alt": "Saffron Table Instagram feed grid of six coordinated posts"
+      "alt": "Saffron Table feed grid of six coordinated post designs"
     },
     {
       "src": "./02.png",
-      "alt": "Saffron Table featured social post design"
+      "alt": "Saffron Table featured social post with the mark and headline block"
     },
     {
       "src": "./03.png",
-      "alt": "Saffron Table story template design"
+      "alt": "Saffron Table story template with hero panel and action button"
     },
     {
       "src": "./04.png",
-      "alt": "Saffron Table carousel post sequence"
+      "alt": "Saffron Table carousel sequence of four posts with position dots"
     }
   ]
 }

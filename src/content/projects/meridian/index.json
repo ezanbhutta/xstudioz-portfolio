@@ -5,23 +5,23 @@
   "order": 2,
   "summary": "A full identity system for a fintech startup — a precise geometric mark, confident type and a disciplined two-color world.",
   "cover": "./cover.png",
-  "coverAlt": "Meridian brand identity overview — mark, pattern, type and color side by side",
+  "coverAlt": "Meridian brand identity overview in ice grey and steel blue on deep navy — mark, pattern, type block and palette in a four-tile grid",
   "images": [
     {
       "src": "./01.png",
-      "alt": "Meridian primary brand mark on the core brand color"
+      "alt": "Meridian primary mark, a triangle interlocked with a circle, on the core brand color"
     },
     {
       "src": "./02.png",
-      "alt": "Meridian brand color palette with primary and secondary swatches"
+      "alt": "Meridian color palette: primary and secondary swatch rows with labels"
     },
     {
       "src": "./03.png",
-      "alt": "Meridian brand card application with logo and supporting text"
+      "alt": "Meridian brand card application with the mark and supporting text lines"
     },
     {
       "src": "./04.png",
-      "alt": "Meridian brand pattern in accent color on a dark field"
+      "alt": "Meridian brand pattern of repeated marks in accent color on a dark field"
     }
   ]
 }

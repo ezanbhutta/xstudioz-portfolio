@@ -5,51 +5,41 @@ import WorkGrid from '@/components/WorkGrid.astro';
 import { SITE } from '@/config/site';
 import { PACKAGES } from '@/data/packages';
 import { getSortedProjects, countByCategory } from '@/lib/projects';
+import { siteGraph } from '@/lib/schema';
 
 const projects = await getSortedProjects();
 const counts = countByCategory(projects);
 
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@graph': [
-    {
-      '@type': 'Organization',
-      '@id': `${SITE.url}/#organization`,
-      name: SITE.name,
-      url: `${SITE.url}/`,
-      description: SITE.description,
-      logo: new URL('/apple-touch-icon.png', SITE.url).href,
-      sameAs: [SITE.fiverrUrl],
-    },
-    {
-      '@type': 'WebSite',
-      '@id': `${SITE.url}/#website`,
-      name: SITE.name,
-      url: `${SITE.url}/`,
-      publisher: { '@id': `${SITE.url}/#organization` },
-    },
-  ],
+  '@graph': siteGraph(),
 };
 ---
 
 <BaseLayout
   title={`${SITE.name} — Logos, Brand Identity & Motion`}
   description={SITE.description}
+  jsonLd={jsonLd}
 >
-  <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} slot="head" />
-
   <section class="hero container">
     <p class="overline">Independent Design Studio</p>
-    <h1 class="hero-title">Identity, crafted<br />with intent<span class="hero-dot">.</span></h1>
-    <p class="hero-lede">
-      Logos, brand identities and visual systems for ambitious businesses —
-      designed quietly, built to last.
+    <h1 class="hero-title">Identity, crafted<br />with intent<span class="accent-dot">.</span></h1>
+    <p class="page-lede">
+      Logos, brand identities and visual systems for ambitious businesses — designed quietly, built
+      to last.
     </p>
     <div class="hero-actions">
-      <a class="button button--primary" href="#work">View the work <span aria-hidden="true">↓</span></a>
-      <a class="button button--outline" href={SITE.fiverrUrl} rel="noopener">
+      <a
+        class="button button--primary"
+        href={SITE.fiverrUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         Hire on Fiverr <span aria-hidden="true">↗</span>
       </a>
+      <a class="button button--outline" href="#work"
+        >View the work <span aria-hidden="true">↓</span></a
+      >
     </div>
   </section>
 
@@ -66,18 +56,19 @@ const jsonLd = {
         <p class="overline">Packages</p>
         <h2 id="packages-teaser-heading">Fixed scope.<br />Studio craft.</h2>
         <p class="teaser-lede">
-          Three clear ways to work together — from a first logo to a full
-          identity with motion.
+          Three clear ways to work together — from a first logo to a full identity with motion.
         </p>
       </div>
       <ul class="teaser-list" role="list">
         {
           PACKAGES.map((pkg) => (
             <li>
-              <a class="teaser-row" href="/packages/">
+              <a class="teaser-row" href={`/packages/#${pkg.id}`} data-astro-prefetch>
                 <span class="teaser-name">{pkg.name}</span>
                 <span class="teaser-price">{pkg.price}</span>
-                <span class="teaser-arrow" aria-hidden="true">→</span>
+                <span class="teaser-arrow" aria-hidden="true">
+                  →
+                </span>
               </a>
             </li>
           ))
@@ -89,23 +80,12 @@ const jsonLd = {
 
 <style>
   .hero {
-    padding-block: var(--space-3xl) var(--space-3xl);
+    padding-block: var(--space-3xl);
   }
 
   .hero-title {
     font-size: var(--text-display);
-    max-width: 12em;
-    margin-block: var(--space-md) var(--space-md);
-  }
-
-  .hero-dot {
-    color: var(--color-accent);
-  }
-
-  .hero-lede {
-    font-size: var(--text-lg);
-    color: var(--color-ink-soft);
-    max-width: var(--measure);
+    margin-block: var(--space-md);
   }
 
   .hero-actions {
@@ -117,11 +97,6 @@ const jsonLd = {
 
   .work-container {
     padding-block-start: var(--space-xl);
-  }
-
-  /* Keeps anchored + post-filter scroll positions clear of the sticky bar */
-  .work-section {
-    scroll-margin-top: var(--space-lg);
   }
 
   .packages-teaser {
@@ -144,7 +119,7 @@ const jsonLd = {
 
   .teaser-lede {
     color: var(--color-ink-soft);
-    max-width: 26rem;
+    max-width: var(--measure-narrow);
   }
 
   .teaser-list {
@@ -161,22 +136,22 @@ const jsonLd = {
     padding-block: var(--space-md);
     border-block-end: 1px solid var(--color-line);
     text-decoration: none;
-    transition: padding-inline-start var(--duration-base) var(--ease-out);
   }
 
   .teaser-list li:first-child .teaser-row {
     border-block-start: 1px solid var(--color-line);
   }
 
-  .teaser-row:hover {
-    padding-inline-start: var(--space-2xs);
-  }
-
   .teaser-name {
     font-family: var(--font-display);
     font-size: var(--text-2xl);
-    font-weight: 560;
+    font-weight: var(--weight-display);
     letter-spacing: var(--tracking-tight);
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+
+  .teaser-row:hover .teaser-name {
+    transform: translateX(var(--space-2xs));
   }
 
   .teaser-price {

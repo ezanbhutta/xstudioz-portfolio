@@ -3,6 +3,7 @@ import { SITE } from '@/config/site';
 import { CATEGORIES } from '@/data/categories';
 
 const year = new Date().getFullYear();
+const onPackages = Astro.url.pathname.startsWith('/packages');
 ---
 
 <footer class="footer">
@@ -11,24 +12,40 @@ const year = new Date().getFullYear();
       <p class="overline footer-overline">Start a project</p>
       <h2 id="footer-cta-heading">Let’s make yours next.</h2>
       <p class="footer-lede">
-        Every project starts as a conversation on Fiverr — scope, timeline and a
-        package that fits.
+        Every project starts as a conversation on Fiverr — scope, timeline and a package that fits.
       </p>
       <div class="footer-actions">
-        <a class="button button--paper" href={SITE.fiverrUrl} rel="noopener">
-          Start on Fiverr <span aria-hidden="true">↗</span>
+        <a
+          class="button button--paper"
+          href={SITE.fiverrUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Hire on Fiverr <span aria-hidden="true">↗</span>
         </a>
-        <a class="footer-secondary" href="/packages/">Compare packages</a>
+        {
+          onPackages ? (
+            <a class="footer-secondary" href="/">
+              See the work
+            </a>
+          ) : (
+            <a class="footer-secondary" href="/packages/">
+              Compare packages
+            </a>
+          )
+        }
       </div>
     </section>
 
     <div class="footer-grid">
       <div class="footer-brand">
-        <p class="footer-wordmark">XStudioz<span aria-hidden="true">.</span></p>
+        <p class="wordmark footer-wordmark">
+          XStudioz<span class="accent-dot" aria-hidden="true">.</span>
+        </p>
         <p class="footer-tag">Independent design studio.<br />The work speaks first.</p>
       </div>
-      <nav aria-label="Work categories">
-        <p class="overline footer-overline" id="footer-categories">Work</p>
+      <nav aria-label="Services">
+        <p class="overline footer-overline" id="footer-categories">Services</p>
         <ul role="list" aria-labelledby="footer-categories">
           {
             CATEGORIES.map((c) => (
@@ -42,10 +59,12 @@ const year = new Date().getFullYear();
       <nav aria-label="Studio">
         <p class="overline footer-overline" id="footer-studio">Studio</p>
         <ul role="list" aria-labelledby="footer-studio">
-          <li><a href="/">All work</a></li>
+          <li><a href="/">Work</a></li>
           <li><a href="/packages/">Packages</a></li>
           <li>
-            <a href={SITE.fiverrUrl} rel="noopener">Fiverr <span aria-hidden="true">↗</span></a>
+            <a href={SITE.fiverrUrl} target="_blank" rel="noopener noreferrer"
+              >Fiverr <span aria-hidden="true">↗</span></a
+            >
           </li>
         </ul>
       </nav>
@@ -90,6 +109,9 @@ const year = new Date().getFullYear();
   }
 
   .footer-secondary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
     color: var(--color-paper);
     font-weight: 500;
     text-decoration-color: var(--color-accent-bright);
@@ -104,19 +126,12 @@ const year = new Date().getFullYear();
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
     gap: var(--space-lg);
-    border-block-start: 1px solid rgb(255 255 255 / 12%);
+    border-block-start: 1px solid var(--color-line-on-ink);
     margin-block-start: var(--space-3xl);
     padding-block-start: var(--space-xl);
   }
 
-  .footer-wordmark {
-    font-family: var(--font-display);
-    font-size: var(--text-xl);
-    font-weight: 620;
-    letter-spacing: var(--tracking-tight);
-  }
-
-  .footer-wordmark span {
+  .footer-wordmark :global(.accent-dot) {
     color: var(--color-accent-bright);
   }
 
@@ -136,7 +151,7 @@ const year = new Date().getFullYear();
 
   .footer-grid ul a {
     display: inline-block;
-    padding-block: var(--space-3xs);
+    padding-block: var(--space-2xs);
     color: var(--color-paper-mute);
     text-decoration: none;
     transition: color var(--duration-fast) var(--ease-out);

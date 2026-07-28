@@ -11,6 +11,8 @@ npm install
 npm run dev        # local dev server
 npm run build      # production build → dist/
 npm run preview    # serve the production build locally
+npm run check      # type-check (astro check)
+npm run format     # prettier over src/ and scripts/
 ```
 
 ## Everyday maintenance
@@ -59,12 +61,22 @@ inclusions, the highlighted tier and CTA targets.
 the **Fiverr profile link** used by every CTA. Update `url` before going live —
 canonical URLs, the sitemap and robots.txt all derive from it.
 
+**Before launch, two Fiverr links matter:**
+
+1. `SITE.fiverrUrl` — the studio profile, used by global CTAs.
+2. Each package's `href` in `src/data/packages.ts` — set these to the exact
+   gig deep links (e.g. `…/gig-slug?package=premium`) so a buyer who chose
+   "Signature" lands on the Signature scope, not the generic profile.
+
 ## Design system
 
-- Tokens (color, type scale, spacing, motion) live in `src/styles/tokens.css`.
-  Every component consumes tokens — change a token, change the site.
-- Fonts are self-hosted variable subsets in `public/fonts/` (Fraunces +
-  Archivo, both SIL OFL licensed) with metric-matched fallbacks for zero CLS.
+- Tokens (color, type scale, spacing, weights, motion) live in
+  `src/styles/tokens.css`. Every component consumes tokens — change a token,
+  change the site.
+- Fonts are self-hosted variable subsets in `src/assets/fonts/` (Fraunces +
+  Archivo, both SIL OFL licensed, sourced from the `@fontsource-variable`
+  packages) with metric-matched fallbacks for zero CLS. The build gives them
+  content-hashed URLs so they cache immutably (see `public/_headers`).
 - Interactive motion respects `prefers-reduced-motion` everywhere.
 
 ## Generated assets
@@ -78,10 +90,11 @@ canonical URLs, the sitemap and robots.txt all derive from it.
 
 ## Performance & SEO
 
-- Fully static output; the only JavaScript shipped is ~2 KB for category
-  filtering and scroll reveals.
-- Images: build-time AVIF/WebP, responsive `srcset`/`sizes`, lazy-loaded below
-  the fold, explicit dimensions (no layout shift).
+- Fully static output. Client JavaScript is ~4 KB total: ~2.2 KB Astro
+  prefetch runtime plus ~1.8 KB for category filtering and scroll reveals.
+- Images: build-time AVIF/WebP (WebP fallback — no PNG payload), responsive
+  `srcset`/`sizes`, lazy-loaded below the fold, explicit dimensions (no
+  layout shift).
 - Per-page canonical URLs, Open Graph + Twitter cards, JSON-LD
   (Organization, CreativeWork, BreadcrumbList, CollectionPage, OfferCatalog),
   `sitemap-index.xml` and `robots.txt` out of the box.
@@ -89,5 +102,6 @@ canonical URLs, the sitemap and robots.txt all derive from it.
 ## Deploying
 
 `npm run build` produces a fully static `dist/` — host it anywhere (Netlify,
-Vercel, Cloudflare Pages, GitHub Pages…). Serve `public/fonts/` and Astro's
-`_astro/` assets with long-lived cache headers if your host doesn't already.
+Vercel, Cloudflare Pages, GitHub Pages…). `public/_headers` ships immutable
+cache headers for the content-hashed `_astro/` assets on Netlify/Cloudflare;
+mirror it in your host's config elsewhere.

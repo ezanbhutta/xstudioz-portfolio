@@ -5,23 +5,23 @@
   "order": 13,
   "summary": "A tactile stationery suite for a boutique letterpress shop — cards, notecards and wraps in forest and cream.",
   "cover": "./cover.png",
-  "coverAlt": "Paper & Pine stationery flat lay — letterhead and business cards",
+  "coverAlt": "Paper & Pine stationery flat lay in moss green and cream on deep pine — letterhead with two business cards",
   "images": [
     {
       "src": "./01.png",
-      "alt": "Paper & Pine business cards, front and back"
+      "alt": "Paper & Pine business cards, front and back, at a slight angle"
     },
     {
       "src": "./02.png",
-      "alt": "Paper & Pine letterhead design"
+      "alt": "Paper & Pine letterhead with the mark top-left and address line top-right"
     },
     {
       "src": "./03.png",
-      "alt": "Paper & Pine branded envelope"
+      "alt": "Paper & Pine envelope with the mark at the flap"
     },
     {
       "src": "./04.png",
-      "alt": "Complete Paper & Pine stationery suite arranged on brand color"
+      "alt": "Complete Paper & Pine stationery suite arranged on the brand accent color"
     }
   ]
 }

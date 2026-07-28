@@ -5,6 +5,7 @@ import WorkGrid from '@/components/WorkGrid.astro';
 import { SITE } from '@/config/site';
 import { CATEGORIES } from '@/data/categories';
 import { getSortedProjects, countByCategory } from '@/lib/projects';
+import { siteGraph, WEBSITE_ID } from '@/lib/schema';
 
 export async function getStaticPaths() {
   return CATEGORIES.map((category) => ({
@@ -20,24 +21,31 @@ const projects = allProjects.filter((p) => p.data.category === category.id);
 
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'CollectionPage',
-  name: `${category.title} — ${SITE.name}`,
-  description: category.description,
-  url: new URL(`/${category.id}/`, SITE.url).href,
-  isPartOf: { '@id': `${SITE.url}/#website` },
+  '@graph': [
+    ...siteGraph(),
+    {
+      '@type': 'CollectionPage',
+      name: `${category.title} — ${SITE.name}`,
+      description: category.description,
+      url: new URL(`/${category.id}/`, SITE.url).href,
+      isPartOf: { '@id': WEBSITE_ID },
+    },
+  ],
 };
 ---
 
-<BaseLayout title={`${category.title} Portfolio`} description={category.description}>
-  <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} slot="head" />
-
-  <section class="category-hero container">
+<BaseLayout
+  title={`${category.title} Portfolio`}
+  description={category.description}
+  jsonLd={jsonLd}
+>
+  <section class="page-hero container">
     <p class="overline">
       {projects.length}
       {projects.length === 1 ? 'project' : 'projects'}
     </p>
-    <h1 class="category-title">{category.title}</h1>
-    <p class="category-lede">{category.description}</p>
+    <h1 class="page-title">{category.title}</h1>
+    <p class="page-lede">{category.description}</p>
   </section>
 
   <section aria-label={`${category.title} projects`}>
@@ -49,21 +57,6 @@ const jsonLd = {
 </BaseLayout>
 
 <style>
-  .category-hero {
-    padding-block: var(--space-2xl) var(--space-xl);
-  }
-
-  .category-title {
-    font-size: var(--text-display);
-    margin-block: var(--space-sm) var(--space-md);
-  }
-
-  .category-lede {
-    font-size: var(--text-lg);
-    color: var(--color-ink-soft);
-    max-width: var(--measure);
-  }
-
   .category-grid {
     padding-block-start: var(--space-xl);
   }

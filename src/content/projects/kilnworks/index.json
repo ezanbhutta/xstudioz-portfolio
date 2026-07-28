@@ -5,23 +5,23 @@
   "order": 10,
   "summary": "Compact, practical guidelines for a ceramics studio — warm earth tones and rules that keep the craft feeling handmade.",
   "cover": "./cover.png",
-  "coverAlt": "Open spread of the Kilnworks brand guidelines book",
+  "coverAlt": "Open spread of the Kilnworks brand guidelines book in terracotta and cream on kiln brown",
   "images": [
     {
       "src": "./01.png",
-      "alt": "Front cover of the Kilnworks brand guidelines"
+      "alt": "Front cover of the Kilnworks brand guidelines with centered mark"
     },
     {
       "src": "./02.png",
-      "alt": "Typography specimen page from the Kilnworks guidelines"
+      "alt": "Typography scale page from the Kilnworks guidelines"
     },
     {
       "src": "./03.png",
-      "alt": "Color system page from the Kilnworks guidelines"
+      "alt": "Color system page from the Kilnworks guidelines with three swatch panels"
     },
     {
       "src": "./04.png",
-      "alt": "Logo usage grid from the Kilnworks guidelines showing correct applications"
+      "alt": "Logo usage grid from the Kilnworks guidelines: the mark on four background treatments"
     }
   ]
 }

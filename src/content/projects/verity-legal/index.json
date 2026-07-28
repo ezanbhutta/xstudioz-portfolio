@@ -5,23 +5,23 @@
   "order": 8,
   "summary": "A restrained stationery suite for a boutique law firm — engraved-feeling cards and letterhead that signal quiet authority.",
   "cover": "./cover.png",
-  "coverAlt": "Verity Legal stationery flat lay — letterhead and business cards",
+  "coverAlt": "Verity Legal stationery flat lay in bone and slate blue on dark navy — letterhead with two business cards",
   "images": [
     {
       "src": "./01.png",
-      "alt": "Verity Legal business cards, front and back"
+      "alt": "Verity Legal business cards, front and back, at a slight angle"
     },
     {
       "src": "./02.png",
-      "alt": "Verity Legal letterhead design"
+      "alt": "Verity Legal letterhead with the mark top-left and address line top-right"
     },
     {
       "src": "./03.png",
-      "alt": "Verity Legal branded envelope"
+      "alt": "Verity Legal envelope with the mark at the flap"
     },
     {
       "src": "./04.png",
-      "alt": "Complete Verity Legal stationery suite arranged on brand color"
+      "alt": "Complete Verity Legal stationery suite arranged on the brand accent color"
     }
   ]
 }

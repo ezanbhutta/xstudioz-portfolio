@@ -5,23 +5,23 @@
   "order": 6,
   "summary": "A rhythmic logo reveal for a music-tech brand — the mark assembles beat by beat over 2.4 seconds.",
   "cover": "./cover.png",
-  "coverAlt": "Pulse animated logo hero frame with orbital motion trails",
+  "coverAlt": "Pulse animated logo hero frame in magenta and bone on near-black — the mark inside dotted orbital trails",
   "images": [
     {
       "src": "./01.png",
-      "alt": "Four key frames from the Pulse logo animation"
+      "alt": "Four key frames of the Pulse mark scaling up as its reveal progresses"
     },
     {
       "src": "./02.png",
-      "alt": "Easing curve diagram for the Pulse motion system"
+      "alt": "Easing curve for the Pulse motion system plotted on a grid"
     },
     {
       "src": "./03.png",
-      "alt": "Pulse mark with motion blur trail"
+      "alt": "Pulse mark, an open ring facing an orbit dot, with a motion trail of fading copies"
     },
     {
       "src": "./04.png",
-      "alt": "Pulse animation storyboard with frame sequence"
+      "alt": "Pulse animation storyboard: three frames with timing bars beneath"
     }
   ]
 }

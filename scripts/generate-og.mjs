@@ -39,5 +39,7 @@ const touchIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="1
 </svg>`;
 
 await sharp(Buffer.from(og)).png({ compressionLevel: 9 }).toFile('public/og.png');
-await sharp(Buffer.from(touchIcon)).png({ compressionLevel: 9 }).toFile('public/apple-touch-icon.png');
+await sharp(Buffer.from(touchIcon))
+  .png({ compressionLevel: 9 })
+  .toFile('public/apple-touch-icon.png');
 console.log('✓ public/og.png\n✓ public/apple-touch-icon.png');

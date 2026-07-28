@@ -5,23 +5,23 @@
   "order": 7,
   "summary": "A soft botanical identity for a florist — organic mark, seasonal palette and packaging that feels hand-tended.",
   "cover": "./cover.png",
-  "coverAlt": "Bloom & Bough brand identity overview — mark, pattern, type and color side by side",
+  "coverAlt": "Bloom & Bough brand identity overview in blush clay and cream on warm umber — mark, pattern, type block and palette in a four-tile grid",
   "images": [
     {
       "src": "./01.png",
-      "alt": "Bloom & Bough primary brand mark on the core brand color"
+      "alt": "Bloom & Bough primary mark, a crescent with an orbit dot, on the core brand color"
     },
     {
       "src": "./02.png",
-      "alt": "Bloom & Bough brand color palette with primary and secondary swatches"
+      "alt": "Bloom & Bough color palette: primary and secondary swatch rows with labels"
     },
     {
       "src": "./03.png",
-      "alt": "Bloom & Bough brand card application with logo and supporting text"
+      "alt": "Bloom & Bough brand card application with the mark and supporting text lines"
     },
     {
       "src": "./04.png",
-      "alt": "Bloom & Bough brand pattern in accent color on a dark field"
+      "alt": "Bloom & Bough brand pattern of repeated marks in accent color on a dark field"
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "name": "xstudioz-portfolio",
-  "description": "XStudioz — design studio portfolio",
+  "description": "XStudioz \u2014 design studio portfolio",
   "type": "module",
   "version": "1.0.0",
   "private": true,
@@ -10,7 +10,8 @@
     "preview": "astro preview",
     "check": "astro check",
     "placeholders": "node scripts/generate-placeholders.mjs",
-    "og": "node scripts/generate-og.mjs"
+    "og": "node scripts/generate-og.mjs",
+    "format": "prettier --write \"src/**/*.{astro,ts,css}\" \"scripts/*.mjs\" \"*.mjs\""
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.4.1",
@@ -18,8 +19,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "@fontsource-variable/archivo": "^5.2.5",
-    "@fontsource-variable/fraunces": "^5.2.5",
+    "prettier": "^3.9.6",
+    "prettier-plugin-astro": "^0.14.1",
     "sharp": "^0.34.2",
     "typescript": "^5.9.3"
   }

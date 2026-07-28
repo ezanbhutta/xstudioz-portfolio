@@ -5,23 +5,23 @@
   "order": 14,
   "summary": "A motion identity for a space-data company — orbital paths trace the mark before settling into the static lockup.",
   "cover": "./cover.png",
-  "coverAlt": "Orbita animated logo hero frame with orbital motion trails",
+  "coverAlt": "Orbita animated logo hero frame in cornflower blue and ice on midnight navy — the mark inside dotted orbital trails",
   "images": [
     {
       "src": "./01.png",
-      "alt": "Four key frames from the Orbita logo animation"
+      "alt": "Four key frames of the Orbita mark scaling up as its reveal progresses"
     },
     {
       "src": "./02.png",
-      "alt": "Easing curve diagram for the Orbita motion system"
+      "alt": "Easing curve for the Orbita motion system plotted on a grid"
     },
     {
       "src": "./03.png",
-      "alt": "Orbita mark with motion blur trail"
+      "alt": "Orbita mark, two interlocking arcs, with a motion trail of fading copies"
     },
     {
       "src": "./04.png",
-      "alt": "Orbita animation storyboard with frame sequence"
+      "alt": "Orbita animation storyboard: three frames with timing bars beneath"
     }
   ]
 }

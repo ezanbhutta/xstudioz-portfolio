@@ -5,23 +5,23 @@
   "order": 12,
   "summary": "An identity for a specialty coffee roaster — a globe-and-bean mark with packaging built for the shelf and the feed.",
   "cover": "./cover.png",
-  "coverAlt": "Atlas Roasters brand identity overview — mark, pattern, type and color side by side",
+  "coverAlt": "Atlas Roasters brand identity overview in caramel and cream on espresso — mark, pattern, type block and palette in a four-tile grid",
   "images": [
     {
       "src": "./01.png",
-      "alt": "Atlas Roasters primary brand mark on the core brand color"
+      "alt": "Atlas Roasters primary mark, three ascending bars, on the core brand color"
     },
     {
       "src": "./02.png",
-      "alt": "Atlas Roasters brand color palette with primary and secondary swatches"
+      "alt": "Atlas Roasters color palette: primary and secondary swatch rows with labels"
     },
     {
       "src": "./03.png",
-      "alt": "Atlas Roasters brand card application with logo and supporting text"
+      "alt": "Atlas Roasters brand card application with the mark and supporting text lines"
     },
     {
       "src": "./04.png",
-      "alt": "Atlas Roasters brand pattern in accent color on a dark field"
+      "alt": "Atlas Roasters brand pattern of repeated marks in accent color on a dark field"
     }
   ]
 }

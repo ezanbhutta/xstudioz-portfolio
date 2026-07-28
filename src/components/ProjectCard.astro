@@ -13,20 +13,31 @@ interface Props {
 
 const { project, eager = false, index = 0 } = Astro.props;
 const { title, category, year, cover } = project.data;
-const categoryLabel = getCategory(category).label;
+const categoryLabel = getCategory(category).title;
 const href = `/work/${project.id}/`;
-const delay = Math.min(index % 4, 3) * 60;
+const delay = (index % 4) * 60;
 ---
 
+{
+  /* Eager cards skip the scroll reveal so their high-priority fetch paints
+    immediately instead of arriving invisible. */
+}
 <li class="card" data-category={category}>
-  <a class="card-link" href={href} data-reveal style={`--reveal-delay:${delay}ms`}>
-    <div class="card-media" style={`view-transition-name: work-${project.id}`}>
+  <a
+    class="card-link"
+    href={href}
+    data-astro-prefetch
+    data-reveal={eager ? undefined : ''}
+    style={eager ? undefined : `--reveal-delay:${delay}ms`}
+  >
+    <div class="card-media" data-vt={`work-${project.id}`}>
       <Picture
         src={cover}
         alt=""
         formats={['avif', 'webp']}
+        fallbackFormat="webp"
         widths={[480, 800, 1200, 1600]}
-        sizes="(min-width: 1488px) 592px, (min-width: 680px) 45vw, 92vw"
+        sizes="(min-width: 1360px) 592px, (min-width: 680px) 45vw, 92vw"
         loading={eager ? 'eager' : 'lazy'}
         fetchpriority={eager ? 'high' : 'auto'}
       />
@@ -66,7 +77,7 @@ const delay = Math.min(index % 4, 3) * 60;
 
   .card-title {
     font-size: var(--text-xl);
-    font-weight: 560;
+    font-weight: var(--weight-display);
     background-image: linear-gradient(var(--color-accent), var(--color-accent));
     background-repeat: no-repeat;
     background-size: 0% 2px;

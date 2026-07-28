@@ -22,6 +22,7 @@
   /* On dark (ink) surfaces */
   --color-paper-mute: #b8b2a9;
   --color-accent-bright: #d97b4a;
+  --color-line-on-ink: rgb(255 255 255 / 12%);
 
   /* Typography */
   --font-display: 'Fraunces', 'Fraunces-fallback', georgia, 'Times New Roman', serif;
@@ -36,9 +37,16 @@
   --text-2xl: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
   --text-3xl: clamp(1.9rem, 1.4rem + 2.5vw, 3.25rem);
   --text-display: clamp(2.625rem, 1.5rem + 5.625vw, 6rem);
+  --text-wordmark: 1.5rem;
+
+  /* Weights — both fonts are variable; retune the voice from here */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-display: 560; /* Fraunces headings */
+  --weight-semibold: 600; /* overlines, labels */
+  --weight-wordmark: 620;
 
   --leading-tight: 1.05;
-  --leading-snug: 1.25;
   --leading-body: 1.6;
 
   --tracking-tight: -0.02em;
@@ -55,15 +63,22 @@
   --space-2xl: 4rem;
   --space-3xl: 6rem;
   --space-section: clamp(4.5rem, 3rem + 7vw, 9rem);
+  --space-gallery: clamp(1.5rem, 1rem + 2.5vw, 3rem);
 
   /* Layout */
   --container-max: 85rem; /* 1360px */
   --gutter: clamp(1.25rem, 5vw, 4rem);
   --measure: 38rem; /* comfortable reading width ≈ 66ch */
+  --measure-wide: 44rem;
+  --measure-narrow: 26rem;
 
-  /* Shape — print-like sharp imagery, pill actions */
-  --radius-pill: 999px;
+  /* Controls */
+  --control-h: 2.75rem; /* 44px touch target */
+
+  /* Shape — print-like sharp imagery, soft panels, pill actions */
   --radius-xs: 2px;
+  --radius-md: 12px;
+  --radius-pill: 999px;
 
   /* Motion */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -73,6 +88,5 @@
 
   /* Elevation for sticky surfaces */
   --z-skip-link: 100;
-  --z-header: 50;
   --z-filter: 40;
 }

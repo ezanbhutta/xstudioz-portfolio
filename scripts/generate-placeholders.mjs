@@ -5,11 +5,17 @@
  * sharp. Real client imagery can replace any file in place — same filename,
  * same folder — without touching code.
  *
- * Usage: node scripts/generate-placeholders.mjs
+ * Usage: node scripts/generate-placeholders.mjs [--force]
+ *
+ * Existing project folders are SKIPPED unless --force is passed, so a stray
+ * run can never overwrite real client work that replaced the placeholders.
  */
 import { mkdir, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
+
+const FORCE = process.argv.includes('--force');
 
 const OUT_ROOT = path.resolve('src/content/projects');
 const W = 1600;
@@ -47,6 +53,7 @@ const rng = (key) => mulberry32(hashString(key));
 const PROJECTS = [
   {
     slug: 'aurel',
+    colors: 'cream on near-black with muted gold',
     title: 'Aurel',
     category: 'logo-design',
     year: 2026,
@@ -57,6 +64,7 @@ const PROJECTS = [
   },
   {
     slug: 'meridian',
+    colors: 'ice grey and steel blue on deep navy',
     title: 'Meridian',
     category: 'brand-identity',
     year: 2026,
@@ -67,6 +75,7 @@ const PROJECTS = [
   },
   {
     slug: 'solace',
+    colors: 'sage and off-white on forest green',
     title: 'Solace',
     category: 'brand-guidelines',
     year: 2025,
@@ -77,6 +86,7 @@ const PROJECTS = [
   },
   {
     slug: 'northwind',
+    colors: 'mist white and sage on deep pine',
     title: 'Northwind',
     category: 'logo-design',
     year: 2025,
@@ -87,6 +97,7 @@ const PROJECTS = [
   },
   {
     slug: 'nova-fitness',
+    colors: 'ember orange and bone on charcoal',
     title: 'Nova Fitness',
     category: 'social-media',
     year: 2025,
@@ -97,6 +108,7 @@ const PROJECTS = [
   },
   {
     slug: 'pulse',
+    colors: 'magenta and bone on near-black',
     title: 'Pulse',
     category: 'animation',
     year: 2025,
@@ -107,6 +119,7 @@ const PROJECTS = [
   },
   {
     slug: 'bloom-and-bough',
+    colors: 'blush clay and cream on warm umber',
     title: 'Bloom & Bough',
     category: 'brand-identity',
     year: 2025,
@@ -117,6 +130,7 @@ const PROJECTS = [
   },
   {
     slug: 'verity-legal',
+    colors: 'bone and slate blue on dark navy',
     title: 'Verity Legal',
     category: 'stationery',
     year: 2025,
@@ -127,6 +141,7 @@ const PROJECTS = [
   },
   {
     slug: 'terra-forma',
+    colors: 'olive gold and parchment on earth brown',
     title: 'Terra Forma',
     category: 'logo-design',
     year: 2025,
@@ -137,6 +152,7 @@ const PROJECTS = [
   },
   {
     slug: 'kilnworks',
+    colors: 'terracotta and cream on kiln brown',
     title: 'Kilnworks',
     category: 'brand-guidelines',
     year: 2024,
@@ -147,6 +163,7 @@ const PROJECTS = [
   },
   {
     slug: 'saffron-table',
+    colors: 'saffron and cream on dark cocoa',
     title: 'Saffron Table',
     category: 'social-media',
     year: 2024,
@@ -157,6 +174,7 @@ const PROJECTS = [
   },
   {
     slug: 'atlas-roasters',
+    colors: 'caramel and cream on espresso',
     title: 'Atlas Roasters',
     category: 'brand-identity',
     year: 2024,
@@ -167,6 +185,7 @@ const PROJECTS = [
   },
   {
     slug: 'paper-and-pine',
+    colors: 'moss green and cream on deep pine',
     title: 'Paper & Pine',
     category: 'stationery',
     year: 2024,
@@ -177,6 +196,7 @@ const PROJECTS = [
   },
   {
     slug: 'orbita',
+    colors: 'cornflower blue and ice on midnight navy',
     title: 'Orbita',
     category: 'animation',
     year: 2024,
@@ -213,8 +233,7 @@ function greekLines(r, x, y, width, rows, lineH, gap, color, opacity = 1) {
 }
 
 /** Offset "print" shadow — crisp, riso-style, renderer-safe. */
-const printShadow = (x, y, w, h, rx = 0) =>
-  rect(x + 14, y + 18, w, h, 'rgba(0,0,0,0.18)', rx);
+const printShadow = (x, y, w, h, rx = 0) => rect(x + 14, y + 18, w, h, 'rgba(0,0,0,0.18)', rx);
 
 /**
  * Seeded geometric mark, drawn inside a ±100 coordinate box.
@@ -258,9 +277,7 @@ function cropMarks(color, inset = 70, size = 22, sw = 2.5) {
 
 function swatchRow(x, y, w, h, colors, gap = 18, rx = 8) {
   const each = (w - gap * (colors.length - 1)) / colors.length;
-  return colors
-    .map((c, i) => rect(x + i * (each + gap), y, each, h, c, rx))
-    .join('');
+  return colors.map((c, i) => rect(x + i * (each + gap), y, each, h, c, rx)).join('');
 }
 
 /** Repeating mark tile pattern. */
@@ -287,9 +304,7 @@ function composeLogo(p) {
       rect(W / 2 - 60, H / 2 + 290, 120, 8, accent, 4),
   );
   const inverted = svgDoc(
-    rect(0, 0, W, H, paper) +
-      cropMarks(ink) +
-      placeMark(p.slug, ink, W / 2, H / 2, 2.9),
+    rect(0, 0, W, H, paper) + cropMarks(ink) + placeMark(p.slug, ink, W / 2, H / 2, 2.9),
   );
   const guides = `stroke="${paper}" stroke-width="2" opacity="0.28"`;
   const construction = svgDoc(
@@ -330,7 +345,15 @@ function composeIdentity(p) {
       rect(g, g * 2 + hh, hw, hh, ink, 4) +
       greekLines(r, g + 70, g * 2 + hh + 90, hw - 220, 5, 30, 36, paper) +
       rect(g * 2 + hw, g * 2 + hh, hw, hh, paper, 4) +
-      swatchRow(g * 2 + hw + 70, g * 2 + hh + hh / 2 - 55, hw - 140, 110, [field, accent, ink], 20, 8),
+      swatchRow(
+        g * 2 + hw + 70,
+        g * 2 + hh + hh / 2 - 55,
+        hw - 140,
+        110,
+        [field, accent, ink],
+        20,
+        8,
+      ),
   );
   const markImg = svgDoc(
     rect(0, 0, W, H, field) + placeMark(p.slug, paper, W / 2, H / 2, 2.7) + cropMarks(paper),
@@ -444,11 +467,12 @@ function composeStationery(p) {
     rect(90, 760, 180, 10, accent, 5) +
     '</g>';
   const cover = svgDoc(
-    rect(0, 0, W, H, field) + letterhead(190, 140, -3) + card(830, 330, 4) + card(950, 640, -5, false),
+    rect(0, 0, W, H, field) +
+      letterhead(190, 140, -3) +
+      card(830, 330, 4) +
+      card(950, 640, -5, false),
   );
-  const cards = svgDoc(
-    rect(0, 0, W, H, field) + card(240, 320, -4) + card(840, 560, 3, false),
-  );
+  const cards = svgDoc(rect(0, 0, W, H, field) + card(240, 320, -4) + card(840, 560, 3, false));
   const letterheadImg = svgDoc(rect(0, 0, W, H, field) + letterhead(480, 120, 2, 1.1));
   const envelope = svgDoc(
     rect(0, 0, W, H, field) +
@@ -497,16 +521,17 @@ function composeSocial(p) {
     return `<g transform="translate(${x} ${y}) scale(${s})">${printShadow(0, 0, tw, th, 10)}${inner}</g>`;
   };
   const cover = svgDoc(
-    rect(0, 0, W, H, field) + tile(55, 340, 1.15, 0) + tile(560, 240, 1.15, 1) + tile(1065, 340, 1.15, 2),
+    rect(0, 0, W, H, field) +
+      tile(55, 340, 1.15, 0) +
+      tile(560, 240, 1.15, 1) +
+      tile(1065, 340, 1.15, 2),
   );
   const grid = svgDoc(
     rect(0, 0, W, H, field) +
       [0, 1, 2].map((i) => tile(150 + i * 460, 90, 1, (i + 1) % 3)).join('') +
       [0, 1, 2].map((i) => tile(150 + i * 460, 660, 0.98, i % 3)).join(''),
   );
-  const single = svgDoc(
-    rect(0, 0, W, H, field) + tile(W / 2 - 380, 40, 1.8, 0),
-  );
+  const single = svgDoc(rect(0, 0, W, H, field) + tile(W / 2 - 380, 40, 1.8, 0));
   const story = svgDoc(
     rect(0, 0, W, H, field) +
       printShadow(W / 2 - 290, 60, 580, 1080, 18) +
@@ -523,7 +548,17 @@ function composeSocial(p) {
       tile(360, 300, 1.1, 0) +
       tile(880, 300, 1.1, 1) +
       tile(1400, 300, 1.1, 2) +
-      [0, 1, 2, 3].map((i) => circle(W / 2 - 60 + i * 40, H - 60, i === 1 ? 10 : 7, paper, i === 1 ? '' : 'opacity="0.45"')).join(''),
+      [0, 1, 2, 3]
+        .map((i) =>
+          circle(
+            W / 2 - 60 + i * 40,
+            H - 60,
+            i === 1 ? 10 : 7,
+            paper,
+            i === 1 ? '' : 'opacity="0.45"',
+          ),
+        )
+        .join(''),
   );
   return [cover, grid, single, story, carousel];
 }
@@ -541,7 +576,17 @@ function composeAnimation(p) {
     rect(0, 0, W, H, field) +
       arcs(W / 2, H / 2, paper) +
       placeMark(p.slug, accent, W / 2, H / 2, 2.2) +
-      [0, 1, 2, 3, 4].map((i) => circle(W / 2 - 160 + i * 80, H - 110, i === 4 ? 12 : 8, paper, i === 4 ? '' : 'opacity="0.4"')).join(''),
+      [0, 1, 2, 3, 4]
+        .map((i) =>
+          circle(
+            W / 2 - 160 + i * 80,
+            H - 110,
+            i === 4 ? 12 : 8,
+            paper,
+            i === 4 ? '' : 'opacity="0.4"',
+          ),
+        )
+        .join(''),
   );
   const frame = (x, i, total) => {
     const fw = 330;
@@ -558,26 +603,44 @@ function composeAnimation(p) {
   );
   const easing = svgDoc(
     rect(0, 0, W, H, field) +
-      Array.from({ length: 11 }, (_, i) => line(200 + i * 120, 160, 200 + i * 120, H - 160, paper, 1.5, 'opacity="0.14"')).join('') +
-      Array.from({ length: 8 }, (_, i) => line(200, 160 + i * 126, W - 200, 160 + i * 126, paper, 1.5, 'opacity="0.14"')).join('') +
+      Array.from({ length: 11 }, (_, i) =>
+        line(200 + i * 120, 160, 200 + i * 120, H - 160, paper, 1.5, 'opacity="0.14"'),
+      ).join('') +
+      Array.from({ length: 8 }, (_, i) =>
+        line(200, 160 + i * 126, W - 200, 160 + i * 126, paper, 1.5, 'opacity="0.14"'),
+      ).join('') +
       `<path d="M 200 ${H - 160} C 560 ${H - 160}, 680 160, ${W - 200} 160" fill="none" stroke="${accent}" stroke-width="10" stroke-linecap="round"/>` +
       circle(200, H - 160, 16, paper) +
       circle(W - 200, 160, 16, paper),
   );
   const motionBlur = svgDoc(
     rect(0, 0, W, H, field) +
-      [0.12, 0.24, 0.45].map((o, i) => `<g opacity="${o}">${placeMark(p.slug, paper, W / 2 - 340 + i * 130, H / 2, 2)}</g>`).join('') +
+      [0.12, 0.24, 0.45]
+        .map(
+          (o, i) =>
+            `<g opacity="${o}">${placeMark(p.slug, paper, W / 2 - 340 + i * 130, H / 2, 2)}</g>`,
+        )
+        .join('') +
       placeMark(p.slug, accent, W / 2 + 100, H / 2, 2),
   );
   const storyboard = svgDoc(
     rect(0, 0, W, H, paper) +
-      [0, 1, 2].map((i) =>
-        rect(120 + i * 460, 180, 420, 315, field, 10) +
-        `<g transform="translate(${330 + i * 460} ${337}) scale(${0.6 + i * 0.25})" opacity="${0.45 + i * 0.27}">${mark(p.slug, i === 2 ? accent : paper)}</g>`,
-      ).join('') +
-      [0, 1, 2].map((i) => rect(120 + i * 460, 540, 300 - i * 60, 14, ink, 7, 'opacity="0.6"')).join('') +
+      [0, 1, 2]
+        .map(
+          (i) =>
+            rect(120 + i * 460, 180, 420, 315, field, 10) +
+            `<g transform="translate(${330 + i * 460} ${337}) scale(${0.6 + i * 0.25})" opacity="${0.45 + i * 0.27}">${mark(p.slug, i === 2 ? accent : paper)}</g>`,
+        )
+        .join('') +
+      [0, 1, 2]
+        .map((i) => rect(120 + i * 460, 540, 300 - i * 60, 14, ink, 7, 'opacity="0.6"'))
+        .join('') +
       rect(120, 700, W - 240, 4, ink, 2, 'opacity="0.12"') +
-      [0, 1, 2, 3, 4, 5, 6, 7].map((i) => rect(120 + i * 170, 760, 120, 200, i % 2 ? field : ink, 8, `opacity="${0.9 - i * 0.09}"`)).join(''),
+      [0, 1, 2, 3, 4, 5, 6, 7]
+        .map((i) =>
+          rect(120 + i * 170, 760, 120, 200, i % 2 ? field : ink, 8, `opacity="${0.9 - i * 0.09}"`),
+        )
+        .join(''),
   );
   return [cover, frames, easing, motionBlur, storyboard];
 }
@@ -591,49 +654,67 @@ const COMPOSERS = {
   animation: composeAnimation,
 };
 
-/** Human alt text per category, per image position (cover first). */
+/** Plain-language description of the seeded mark archetype for alt text. */
+const MARK_DESCRIPTIONS = [
+  'an open ring facing an orbit dot',
+  'two interlocking arcs',
+  'a triangle interlocked with a circle',
+  'three ascending bars',
+  'a crescent with an orbit dot',
+  'a stacked double chevron',
+];
+
+function markDescription(slug) {
+  const r = rng(`${slug}-mark`);
+  return MARK_DESCRIPTIONS[Math.floor(r() * 6) % 6];
+}
+
+/**
+ * Human alt text per category, per image position (cover first).
+ * `mark` describes the actual mark geometry; `colors` the actual palette.
+ */
 const ALTS = {
-  'logo-design': (t) => [
-    `${t} logo mark centered on a deep color field with fine registration marks`,
-    `${t} logo mark in dark ink on a light background`,
-    `Construction grid showing the geometry behind the ${t} logo mark`,
-    `Repeating pattern tile built from the ${t} logo mark`,
-    `${t} horizontal logo lockup with wordmark placeholder`,
+  'logo-design': (t, mark, colors) => [
+    `${t} logo mark — ${mark} — in ${colors}, centered between fine registration marks`,
+    `${t} logo mark, ${mark}, in dark ink on a light field`,
+    `Construction grid showing the circular geometry behind the ${t} mark`,
+    `Repeating brand pattern tiled from the ${t} mark`,
+    `${t} horizontal lockup: the mark beside abstract wordmark bars`,
   ],
-  'brand-identity': (t) => [
-    `${t} brand identity overview — mark, pattern, type and color side by side`,
-    `${t} primary brand mark on the core brand color`,
-    `${t} brand color palette with primary and secondary swatches`,
-    `${t} brand card application with logo and supporting text`,
-    `${t} brand pattern in accent color on a dark field`,
+  'brand-identity': (t, mark, colors) => [
+    `${t} brand identity overview in ${colors} — mark, pattern, type block and palette in a four-tile grid`,
+    `${t} primary mark, ${mark}, on the core brand color`,
+    `${t} color palette: primary and secondary swatch rows with labels`,
+    `${t} brand card application with the mark and supporting text lines`,
+    `${t} brand pattern of repeated marks in accent color on a dark field`,
   ],
-  'brand-guidelines': (t) => [
-    `Open spread of the ${t} brand guidelines book`,
-    `Front cover of the ${t} brand guidelines`,
-    `Typography specimen page from the ${t} guidelines`,
-    `Color system page from the ${t} guidelines`,
-    `Logo usage grid from the ${t} guidelines showing correct applications`,
+  'brand-guidelines': (t, _mark, colors) => [
+    `Open spread of the ${t} brand guidelines book in ${colors}`,
+    `Front cover of the ${t} brand guidelines with centered mark`,
+    `Typography scale page from the ${t} guidelines`,
+    `Color system page from the ${t} guidelines with three swatch panels`,
+    `Logo usage grid from the ${t} guidelines: the mark on four background treatments`,
   ],
-  stationery: (t) => [
-    `${t} stationery flat lay — letterhead and business cards`,
-    `${t} business cards, front and back`,
-    `${t} letterhead design`,
-    `${t} branded envelope`,
-    `Complete ${t} stationery suite arranged on brand color`,
+  stationery: (t, _mark, colors) => [
+    `${t} stationery flat lay in ${colors} — letterhead with two business cards`,
+    `${t} business cards, front and back, at a slight angle`,
+    `${t} letterhead with the mark top-left and address line top-right`,
+    `${t} envelope with the mark at the flap`,
+    `Complete ${t} stationery suite arranged on the brand accent color`,
   ],
-  'social-media': (t) => [
-    `Three ${t} social media post designs arranged as a set`,
-    `${t} Instagram feed grid of six coordinated posts`,
-    `${t} featured social post design`,
-    `${t} story template design`,
-    `${t} carousel post sequence`,
+  'social-media': (t, _mark, colors) => [
+    `Three ${t} social post designs in ${colors}, arranged as a staggered set`,
+    `${t} feed grid of six coordinated post designs`,
+    `${t} featured social post with the mark and headline block`,
+    `${t} story template with hero panel and action button`,
+    `${t} carousel sequence of four posts with position dots`,
   ],
-  animation: (t) => [
-    `${t} animated logo hero frame with orbital motion trails`,
-    `Four key frames from the ${t} logo animation`,
-    `Easing curve diagram for the ${t} motion system`,
-    `${t} mark with motion blur trail`,
-    `${t} animation storyboard with frame sequence`,
+  animation: (t, mark, colors) => [
+    `${t} animated logo hero frame in ${colors} — the mark inside dotted orbital trails`,
+    `Four key frames of the ${t} mark scaling up as its reveal progresses`,
+    `Easing curve for the ${t} motion system plotted on a grid`,
+    `${t} mark, ${mark}, with a motion trail of fading copies`,
+    `${t} animation storyboard: three frames with timing bars beneath`,
   ],
 };
 
@@ -642,9 +723,22 @@ const ALTS = {
 /* ------------------------------------------------------------------ */
 async function renderProject(p) {
   const dir = path.join(OUT_ROOT, p.slug);
+  if (existsSync(dir) && !FORCE) return { slug: p.slug, skipped: true };
+  const compose = COMPOSERS[p.category];
+  if (!compose) {
+    throw new Error(
+      `No composer for category "${p.category}" (project "${p.slug}"). ` +
+        `Add it to COMPOSERS and ALTS in this script.`,
+    );
+  }
   await mkdir(dir, { recursive: true });
-  const svgs = COMPOSERS[p.category](p);
+  const svgs = compose(p);
   const names = ['cover', '01', '02', '03', '04'];
+  if (svgs.length !== names.length) {
+    throw new Error(
+      `Composer for "${p.category}" returned ${svgs.length} images; expected ${names.length}.`,
+    );
+  }
   await Promise.all(
     svgs.map((svg, i) =>
       sharp(Buffer.from(svg))
@@ -652,9 +746,8 @@ async function renderProject(p) {
         .toFile(path.join(dir, `${names[i]}.png`)),
     ),
   );
-  const alts = ALTS[p.category](p.title);
+  const alts = ALTS[p.category](p.title, markDescription(p.slug), p.colors);
   const meta = {
-    $schema: '../schema-note.md',
     title: p.title,
     category: p.category,
     year: p.year,
@@ -664,13 +757,14 @@ async function renderProject(p) {
     coverAlt: alts[0],
     images: names.slice(1).map((n, i) => ({ src: `./${n}.png`, alt: alts[i + 1] })),
   };
-  delete meta.$schema;
   await writeFile(path.join(dir, 'index.json'), JSON.stringify(meta, null, 2) + '\n');
-  return p.slug;
+  return { slug: p.slug, skipped: false };
 }
 
+let generated = 0;
 for (const p of PROJECTS) {
-  const slug = await renderProject(p);
-  console.log(`✓ ${slug}`);
+  const { slug, skipped } = await renderProject(p);
+  console.log(skipped ? `- ${slug} (exists, skipped — use --force to overwrite)` : `✓ ${slug}`);
+  if (!skipped) generated += 1;
 }
-console.log(`\nGenerated ${PROJECTS.length} projects → ${OUT_ROOT}`);
+console.log(`\nGenerated ${generated}/${PROJECTS.length} projects → ${OUT_ROOT}`);

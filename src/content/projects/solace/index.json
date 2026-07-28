@@ -5,23 +5,23 @@
   "order": 3,
   "summary": "A 48-page brand book for a wellness brand — rules for logo, color, type and imagery that any future designer can follow.",
   "cover": "./cover.png",
-  "coverAlt": "Open spread of the Solace brand guidelines book",
+  "coverAlt": "Open spread of the Solace brand guidelines book in sage and off-white on forest green",
   "images": [
     {
       "src": "./01.png",
-      "alt": "Front cover of the Solace brand guidelines"
+      "alt": "Front cover of the Solace brand guidelines with centered mark"
     },
     {
       "src": "./02.png",
-      "alt": "Typography specimen page from the Solace guidelines"
+      "alt": "Typography scale page from the Solace guidelines"
     },
     {
       "src": "./03.png",
-      "alt": "Color system page from the Solace guidelines"
+      "alt": "Color system page from the Solace guidelines with three swatch panels"
     },
     {
       "src": "./04.png",
-      "alt": "Logo usage grid from the Solace guidelines showing correct applications"
+      "alt": "Logo usage grid from the Solace guidelines: the mark on four background treatments"
     }
   ]
 }

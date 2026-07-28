@@ -3,12 +3,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import FilterBar from '@/components/FilterBar.astro';
 import WorkGrid from '@/components/WorkGrid.astro';
 import { SITE } from '@/config/site';
-import { getSortedProjects, countByCategory, logoIndustries } from '@/lib/projects';
+import { getSortedProjects, countByCategory, industriesByCategory } from '@/lib/projects';
 import { siteGraph } from '@/lib/schema';
 
 const projects = await getSortedProjects();
 const counts = countByCategory(projects);
-const industries = logoIndustries(projects);
+const industries = industriesByCategory(projects);
 
 const jsonLd = {
   '@context': 'https://schema.org',

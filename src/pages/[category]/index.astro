@@ -4,7 +4,7 @@ import FilterBar from '@/components/FilterBar.astro';
 import WorkGrid from '@/components/WorkGrid.astro';
 import { SITE } from '@/config/site';
 import { CATEGORIES } from '@/data/categories';
-import { getSortedProjects, countByCategory, logoIndustries } from '@/lib/projects';
+import { getSortedProjects, countByCategory, industriesByCategory } from '@/lib/projects';
 import { siteGraph, WEBSITE_ID } from '@/lib/schema';
 
 export async function getStaticPaths() {
@@ -17,7 +17,7 @@ export async function getStaticPaths() {
 const { category } = Astro.props;
 const allProjects = await getSortedProjects();
 const counts = countByCategory(allProjects);
-const industries = logoIndustries(allProjects);
+const industries = industriesByCategory(allProjects);
 const projects = allProjects.filter((p) => p.data.category === category.id);
 
 const jsonLd = {

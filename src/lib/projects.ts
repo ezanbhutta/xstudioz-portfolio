@@ -33,13 +33,25 @@ export async function getSortedProjects(): Promise<ReadyProject[]> {
   );
 }
 
-/** Distinct industries across logo-design projects, for the Industry filter. */
-export function logoIndustries(projects: Project[]): string[] {
-  const set = new Set<string>();
+/** Distinct industries per category, for each category's Industry filter. */
+export function industriesByCategory(projects: Project[]): Partial<Record<CategoryId, string[]>> {
+  const sets = new Map<CategoryId, Set<string>>();
   for (const p of projects) {
-    if (p.data.category === 'logo-design' && p.data.industry) set.add(p.data.industry);
+    if (!p.data.industry) continue;
+    const set = sets.get(p.data.category) ?? new Set<string>();
+    set.add(p.data.industry);
+    sets.set(p.data.category, set);
   }
-  return [...set].sort((a, b) => a.localeCompare(b));
+  const out: Partial<Record<CategoryId, string[]>> = {};
+  for (const [category, set] of sets) {
+    out[category] = [...set].sort((a, b) => a.localeCompare(b));
+  }
+  return out;
+}
+
+/** Preset + custom extra elements, in the order they were entered. */
+export function projectExtras(data: Project['data']): string[] {
+  return [...(data.extras ?? []), ...(data.extrasCustom ?? [])];
 }
 
 /** Previous/next neighbours in the overall sequence, wrapping at the ends. */

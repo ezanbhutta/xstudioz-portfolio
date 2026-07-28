@@ -3,7 +3,7 @@ import { Picture, getImage } from 'astro:assets';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { SITE } from '@/config/site';
 import { getCategory } from '@/data/categories';
-import { getSortedProjects, adjacentProjects } from '@/lib/projects';
+import { getSortedProjects, adjacentProjects, projectExtras } from '@/lib/projects';
 import { siteGraph, ORGANIZATION_ID } from '@/lib/schema';
 import { lqipStyle } from '@/lib/lqip';
 
@@ -16,8 +16,11 @@ export async function getStaticPaths() {
 }
 
 const { project, projects } = Astro.props;
-const { title, category, summary, cover, coverAlt, images, logoType, industry } = project.data;
+const { title, category, summary, cover, coverAlt, images, logoType, guidelineType, industry } =
+  project.data;
 const categoryInfo = getCategory(category);
+const kind = logoType ?? guidelineType;
+const extras = projectExtras(project.data);
 const { prev, next } = adjacentProjects(projects, project.id);
 
 // Social card + structured data use the processed cover, cropped to the
@@ -77,10 +80,10 @@ const widths = [640, 960, 1280, 1600];
       <p class="overline">
         <a class="overline-link" href={`/${category}/`} data-astro-prefetch>{categoryInfo.title}</a>
         {
-          logoType && (
+          kind && (
             <span>
               <span aria-hidden="true"> · </span>
-              {logoType}
+              {kind}
             </span>
           )
         }
@@ -95,6 +98,16 @@ const widths = [640, 960, 1280, 1600];
       </p>
       <h1 class="page-title">{title}</h1>
       <p class="page-lede">{summary}</p>
+      {
+        extras.length > 0 && (
+          <p class="project-includes">
+            <span class="project-includes-label">Also includes</span>
+            {extras.map((item) => (
+              <span class="project-includes-item">{item}</span>
+            ))}
+          </p>
+        )
+      }
     </header>
 
     {
@@ -198,6 +211,31 @@ const widths = [640, 960, 1280, 1600];
       color: var(--color-accent);
       text-decoration-color: currentColor;
     }
+  }
+
+  /* Extra elements read as a quiet spec line, pill-tagged like the filter
+     vocabulary but non-interactive — informational, never competing. */
+  .project-includes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2xs);
+    margin-block-start: var(--space-md);
+  }
+
+  .project-includes-label {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-ink-soft);
+    margin-inline-end: var(--space-3xs);
+  }
+
+  .project-includes-item {
+    font-size: var(--text-sm);
+    color: var(--color-ink-soft);
+    box-shadow: inset 0 0 0 1px var(--color-line-strong);
+    border-radius: var(--radius-pill);
+    padding: 0.25rem 0.75rem;
   }
 
   .project-gallery {

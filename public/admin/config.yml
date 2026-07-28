@@ -104,9 +104,9 @@ collections:
         # Rebuilt from every project on each deploy by scripts/sync-industries.mjs — do not edit by hand.
         # industries:begin
         options:
+          - "Capital & Investment"
           - "Sustainable Materials & Biotechnology"
-          - "Tattoo Studio"
-          - "Venture Capital & Investment"
+          - "Tattoo"
         # industries:end
       - name: industryNew
         label: New industry

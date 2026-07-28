@@ -193,6 +193,11 @@ collections:
             label: Fiverr profile URL
             widget: string
             hint: Every "Hire on Fiverr" button points here.
+          - name: linkedinUrl
+            label: Studio LinkedIn URL
+            widget: string
+            required: false
+            hint: 'Your LinkedIn page or profile link. When filled, "Connect on LinkedIn" buttons appear site-wide so visitors can add you. Leave empty to hide them.'
           - { name: locale, label: Locale, widget: string, default: en }
       - name: categories
         label: Categories

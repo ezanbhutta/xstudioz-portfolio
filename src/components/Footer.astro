@@ -24,6 +24,18 @@ const year = new Date().getFullYear();
         >
           Message us on Fiverr <span aria-hidden="true">↗</span>
         </a>
+        {
+          SITE.linkedinUrl && (
+            <a
+              class="button button--ghost"
+              href={SITE.linkedinUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Connect on LinkedIn <span aria-hidden="true">↗</span>
+            </a>
+          )
+        }
       </div>
     </section>
 
@@ -58,6 +70,15 @@ const year = new Date().getFullYear();
               >Fiverr <span aria-hidden="true">↗</span></a
             >
           </li>
+          {
+            SITE.linkedinUrl && (
+              <li>
+                <a href={SITE.linkedinUrl} target="_blank" rel="noopener noreferrer">
+                  LinkedIn <span aria-hidden="true">↗</span>
+                </a>
+              </li>
+            )
+          }
         </ul>
       </nav>
     </div>

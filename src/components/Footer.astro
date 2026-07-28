@@ -1,6 +1,7 @@
 ---
 import { SITE } from '@/config/site';
 import { CATEGORIES } from '@/data/categories';
+import Logo from '@/components/Logo.astro';
 
 const year = new Date().getFullYear();
 ---
@@ -27,7 +28,8 @@ const year = new Date().getFullYear();
 
     <div class="footer-grid">
       <div class="footer-brand">
-        <p class="wordmark footer-wordmark">
+        <p class="wordmark wordmark-lockup footer-wordmark">
+          <Logo size={30} />
           XStudioz<span class="accent-dot" aria-hidden="true">.</span>
         </p>
         <p class="footer-tag">Independent design studio.<br />The work speaks first.</p>

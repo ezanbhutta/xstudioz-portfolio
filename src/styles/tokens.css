@@ -1,32 +1,38 @@
 /* ---------------------------------------------------------------------------
    XStudioz design tokens — the single source of truth for the visual system.
+   Brand: white X mark on a violet→magenta gradient; clean geometric sans.
    Colors are chosen for WCAG contrast on their intended surfaces:
-     ink       on paper  → 16.7:1
-     ink-soft  on paper  →  7.3:1
-     ink-mute  on paper  →  5.0:1
-     accent    on paper  →  5.7:1
-     paper     on accent →  5.7:1
-     paper-mute on ink   →  8.4:1
+     ink       on paper  → 16.9:1
+     ink-soft  on paper  →  7.4:1
+     ink-mute  on paper  →  5.1:1
+     accent    on paper  →  5.1:1
+     paper     on accent-deep → 6.6:1
+     paper-mute on ink   →  8.5:1
+     accent-bright on ink → 7.2:1
 --------------------------------------------------------------------------- */
 :root {
-  /* Color — warm gallery palette. The work provides the color; the UI stays quiet. */
-  --color-paper: #faf8f5;
+  /* Color — cool violet-tinted gallery neutrals; the work stays the hero. */
+  --color-paper: #faf9fc;
   --color-paper-raised: #ffffff;
-  --color-ink: #1a1815;
-  --color-ink-soft: #57524b;
-  --color-ink-mute: #6f6a62;
-  --color-line: #e7e2da;
-  --color-line-strong: #d5cfc5;
-  --color-accent: #a6431a;
-  --color-accent-deep: #8c3512;
+  --color-ink: #1a1523;
+  --color-ink-soft: #554e60;
+  --color-ink-mute: #6e6879;
+  --color-line: #e9e5ef;
+  --color-line-strong: #d6d0df;
+  --color-accent: #9333ea;
+  --color-accent-deep: #7e22ce;
+  /* Brand gradient (logo, og image) */
+  --color-brand-violet: #5e17b8;
+  --color-brand-purple: #a928d9;
+  --color-brand-magenta: #ed4fcf;
   /* On dark (ink) surfaces */
-  --color-paper-mute: #b8b2a9;
-  --color-accent-bright: #d97b4a;
-  --color-line-on-ink: rgb(255 255 255 / 12%);
+  --color-paper-mute: #b6b0c2;
+  --color-accent-bright: #e879f9;
+  --color-line-on-ink: rgb(255 255 255 / 14%);
 
-  /* Typography */
-  --font-display: 'Fraunces', 'Fraunces-fallback', georgia, 'Times New Roman', serif;
-  --font-sans: 'Archivo', 'Archivo-fallback', 'Helvetica Neue', arial, sans-serif;
+  /* Typography — clean geometric sans throughout */
+  --font-display: 'Outfit', 'Outfit-fallback', 'Helvetica Neue', arial, sans-serif;
+  --font-sans: 'Manrope', 'Manrope-fallback', 'Helvetica Neue', arial, sans-serif;
 
   /* Fluid type scale — minor third on mobile opening to wider jumps on desktop */
   --text-xs: 0.75rem;
@@ -42,9 +48,9 @@
   /* Weights — both fonts are variable; retune the voice from here */
   --weight-regular: 400;
   --weight-medium: 500;
-  --weight-display: 560; /* Fraunces headings */
+  --weight-display: 600; /* Outfit headings */
   --weight-semibold: 600; /* overlines, labels */
-  --weight-wordmark: 620;
+  --weight-wordmark: 700;
 
   --leading-tight: 1.05;
   --leading-body: 1.6;

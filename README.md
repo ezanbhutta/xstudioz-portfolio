@@ -16,6 +16,36 @@ npm run check      # type-check (astro check)
 npm run format     # prettier over src/ and scripts/
 ```
 
+## Editing content — the CMS
+
+The site ships with a git-based CMS ([Sveltia](https://github.com/sveltia/sveltia-cms))
+at **`/admin/`** on the deployed site. It edits projects (with image
+uploads), categories, packages and the site settings (including the Fiverr
+URL) through forms — every save is a commit to `main`, and the host
+rebuilds the site automatically. No database, no extra service.
+
+**Signing in** (one-time setup, pick one):
+
+1. **Personal access token** — create a GitHub
+   [fine-grained token](https://github.com/settings/personal-access-tokens)
+   scoped to this repo with *Contents: read & write*, open `/admin/`, and
+   sign in with the token.
+2. **One-click OAuth** — deploy the free
+   [sveltia-cms-auth](https://github.com/sveltia/sveltia-cms-auth)
+   Cloudflare Worker and add its URL as `base_url` in
+   `public/admin/config.yml`.
+3. **Locally** — run `npm run dev`, open `localhost:4321/admin/` and choose
+   "Work with local repository". No sign-in needed.
+
+Notes:
+- New project images uploaded in the CMS land inside that project's own
+  folder; site-wide uploads go to `public/uploads/`.
+- Adding a category in the CMS? Also add its id to the Projects category
+  dropdown options in `public/admin/config.yml` (one list, commented).
+- PDFs: the CMS is for images + copy. For a PDF-based portfolio, use the
+  `npm run ingest` flow below — it renders pages and wires the download
+  link automatically.
+
 ## Everyday maintenance
 
 ### Add a project (one asset per brand)

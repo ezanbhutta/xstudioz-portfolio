@@ -8,6 +8,10 @@
   "coverAlt": "Bloom & Bough brand identity overview in blush clay and cream on warm umber — mark, pattern, type block and palette in a four-tile grid",
   "images": [
     {
+      "src": "./cover.png",
+      "alt": "Bloom & Bough brand identity overview in blush clay and cream on warm umber — mark, pattern, type block and palette in a four-tile grid"
+    },
+    {
       "src": "./01.png",
       "alt": "Bloom & Bough primary mark, a crescent with an orbit dot, on the core brand color"
     },

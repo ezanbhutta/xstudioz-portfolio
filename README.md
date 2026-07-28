@@ -11,38 +11,42 @@ npm install
 npm run dev        # local dev server
 npm run build      # production build → dist/
 npm run preview    # serve the production build locally
+npm run ingest     # turn dropped portfolio.pdf / sheet.png files into projects
 npm run check      # type-check (astro check)
 npm run format     # prettier over src/ and scripts/
 ```
 
 ## Everyday maintenance
 
-### Add a project
+### Add a project (one asset per brand)
 
-Create a folder under `src/content/projects/<slug>/` containing the images and
-an `index.json`:
+Each portfolio is a single presentation — one tall image or one PDF. The
+workflow:
 
-```json
-{
-  "title": "Aurel",
-  "category": "logo-design",
-  "year": 2026,
-  "order": 1,
-  "summary": "One sentence about the project.",
-  "cover": "./cover.png",
-  "coverAlt": "What the cover shows",
-  "images": [{ "src": "./01.png", "alt": "What this image shows" }]
-}
-```
+1. Create a folder: `src/content/projects/<slug>/`
+2. Drop the asset in, named by convention:
+   - `portfolio.pdf` — a multi-page presentation (brand book, stationery
+     suite, social kit…)
+   - `sheet.png` / `sheet.jpg` / `sheet.webp` — a single tall presentation
+     image
+3. Run `npm run ingest`
 
-That's it — the grid, filters, category pages, prev/next navigation, sitemap
-and structured data all update automatically. `order` controls grid position
-(lower = earlier). Delete the folder to remove the project.
+The ingest step renders PDF pages to crisp 1600px images, crops a 4:3 grid
+cover from the top of page 1 (or the sheet), copies the PDF to
+`public/downloads/<slug>.pdf` for the project page's download link, and
+writes `index.json`. Then open `index.json` and set `title`, `category`,
+`year`, `order` (lower = earlier in the grid) and a one-sentence `summary` —
+ingest never overwrites those once set. Alt text is generated per page and
+can be refined in the same file.
 
-**Replacing placeholder art with real work:** overwrite the image files in the
-project folder (any raster format works — update the filenames in `index.json`
-if they change). Aim for ≥1600px wide sources; the build generates responsive
-AVIF/WebP automatically.
+The grid, filters, category pages, prev/next navigation, sitemap and
+structured data all update automatically on the next build. Delete the
+folder to remove a project. The `solace` project is a working PDF-based
+example.
+
+Hand-assembled sets still work too — list any images in `index.json`'s
+`images` array yourself and skip ingest. Aim for ≥1600px wide sources; the
+build generates responsive AVIF/WebP automatically.
 
 ### Add a category
 

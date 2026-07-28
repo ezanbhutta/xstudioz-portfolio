@@ -8,6 +8,10 @@
   "coverAlt": "Three Nova Fitness social post designs in ember orange and bone on charcoal, arranged as a staggered set",
   "images": [
     {
+      "src": "./cover.png",
+      "alt": "Three Nova Fitness social post designs in ember orange and bone on charcoal, arranged as a staggered set"
+    },
+    {
       "src": "./01.png",
       "alt": "Nova Fitness feed grid of six coordinated post designs"
     },

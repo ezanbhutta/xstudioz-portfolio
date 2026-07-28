@@ -8,6 +8,10 @@
   "coverAlt": "Meridian brand identity overview in ice grey and steel blue on deep navy — mark, pattern, type block and palette in a four-tile grid",
   "images": [
     {
+      "src": "./cover.png",
+      "alt": "Meridian brand identity overview in ice grey and steel blue on deep navy — mark, pattern, type block and palette in a four-tile grid"
+    },
+    {
       "src": "./01.png",
       "alt": "Meridian primary mark, a triangle interlocked with a circle, on the core brand color"
     },

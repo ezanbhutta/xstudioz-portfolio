@@ -8,20 +8,25 @@
   "coverAlt": "Open spread of the Solace brand guidelines book in sage and off-white on forest green",
   "images": [
     {
-      "src": "./01.png",
-      "alt": "Front cover of the Solace brand guidelines with centered mark"
+      "src": "./page-01.png",
+      "alt": "Solace presentation, page 1 of 5"
     },
     {
-      "src": "./02.png",
-      "alt": "Typography scale page from the Solace guidelines"
+      "src": "./page-02.png",
+      "alt": "Solace presentation, page 2 of 5"
     },
     {
-      "src": "./03.png",
-      "alt": "Color system page from the Solace guidelines with three swatch panels"
+      "src": "./page-03.png",
+      "alt": "Solace presentation, page 3 of 5"
     },
     {
-      "src": "./04.png",
-      "alt": "Logo usage grid from the Solace guidelines: the mark on four background treatments"
+      "src": "./page-04.png",
+      "alt": "Solace presentation, page 4 of 5"
+    },
+    {
+      "src": "./page-05.png",
+      "alt": "Solace presentation, page 5 of 5"
     }
-  ]
+  ],
+  "download": "/downloads/solace.pdf"
 }

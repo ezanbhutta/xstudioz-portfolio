@@ -7,8 +7,12 @@ import { CATEGORY_IDS } from './data/categories';
  *   index.json  — metadata (this schema)
  *   *.png|jpg…  — images referenced relatively from index.json
  *
+ * Real portfolios arrive as ONE asset per brand — either a tall
+ * presentation image (`sheet.png`) or a `portfolio.pdf`. Drop it in the
+ * folder and run `npm run ingest` (see scripts/ingest.mjs): page images,
+ * the 4:3 grid cover and the download link are generated automatically.
+ *
  * Adding a project = add a folder. Removing one = delete the folder.
- * Images can be swapped in place without touching any layout code.
  */
 const projects = defineCollection({
   loader: glob({
@@ -25,14 +29,20 @@ const projects = defineCollection({
       order: z.number().default(99),
       /** One-sentence description shown on the project page + meta description. */
       summary: z.string(),
+      /** 4:3 grid thumbnail. The detail page shows `images`, not this. */
       cover: image(),
       coverAlt: z.string(),
-      images: z.array(
-        z.object({
-          src: image(),
-          alt: z.string(),
-        }),
-      ),
+      /** The portfolio content, in order: PDF pages, one tall sheet, or a set. */
+      images: z
+        .array(
+          z.object({
+            src: image(),
+            alt: z.string(),
+          }),
+        )
+        .min(1),
+      /** Site-absolute path to a downloadable source (e.g. the full PDF). */
+      download: z.string().optional(),
     }),
 });
 

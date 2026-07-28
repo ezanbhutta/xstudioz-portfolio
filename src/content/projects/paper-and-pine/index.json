@@ -8,6 +8,10 @@
   "coverAlt": "Paper & Pine stationery flat lay in moss green and cream on deep pine — letterhead with two business cards",
   "images": [
     {
+      "src": "./cover.png",
+      "alt": "Paper & Pine stationery flat lay in moss green and cream on deep pine — letterhead with two business cards"
+    },
+    {
       "src": "./01.png",
       "alt": "Paper & Pine business cards, front and back, at a slight angle"
     },

@@ -755,7 +755,9 @@ async function renderProject(p) {
     summary: p.summary,
     cover: './cover.png',
     coverAlt: alts[0],
-    images: names.slice(1).map((n, i) => ({ src: `./${n}.png`, alt: alts[i + 1] })),
+    // The cover composition opens the gallery — the detail page renders
+    // `images` only, while `cover` stays the grid thumbnail.
+    images: names.map((n, i) => ({ src: `./${n}.png`, alt: alts[i] })),
   };
   await writeFile(path.join(dir, 'index.json'), JSON.stringify(meta, null, 2) + '\n');
   return { slug: p.slug, skipped: false };

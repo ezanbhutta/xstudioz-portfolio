@@ -8,6 +8,10 @@
   "coverAlt": "Aurel logo mark — an open ring facing an orbit dot — in cream on near-black with muted gold, centered between fine registration marks",
   "images": [
     {
+      "src": "./cover.png",
+      "alt": "Aurel logo mark — an open ring facing an orbit dot — in cream on near-black with muted gold, centered between fine registration marks"
+    },
+    {
       "src": "./01.png",
       "alt": "Aurel logo mark, an open ring facing an orbit dot, in dark ink on a light field"
     },

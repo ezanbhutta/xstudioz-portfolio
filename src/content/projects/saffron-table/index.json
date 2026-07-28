@@ -8,6 +8,10 @@
   "coverAlt": "Three Saffron Table social post designs in saffron and cream on dark cocoa, arranged as a staggered set",
   "images": [
     {
+      "src": "./cover.png",
+      "alt": "Three Saffron Table social post designs in saffron and cream on dark cocoa, arranged as a staggered set"
+    },
+    {
       "src": "./01.png",
       "alt": "Saffron Table feed grid of six coordinated post designs"
     },

@@ -8,6 +8,10 @@
   "coverAlt": "Terra Forma logo mark — an open ring facing an orbit dot — in olive gold and parchment on earth brown, centered between fine registration marks",
   "images": [
     {
+      "src": "./cover.png",
+      "alt": "Terra Forma logo mark — an open ring facing an orbit dot — in olive gold and parchment on earth brown, centered between fine registration marks"
+    },
+    {
       "src": "./01.png",
       "alt": "Terra Forma logo mark, an open ring facing an orbit dot, in dark ink on a light field"
     },

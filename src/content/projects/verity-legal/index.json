@@ -8,6 +8,10 @@
   "coverAlt": "Verity Legal stationery flat lay in bone and slate blue on dark navy — letterhead with two business cards",
   "images": [
     {
+      "src": "./cover.png",
+      "alt": "Verity Legal stationery flat lay in bone and slate blue on dark navy — letterhead with two business cards"
+    },
+    {
       "src": "./01.png",
       "alt": "Verity Legal business cards, front and back, at a slight angle"
     },

@@ -11,7 +11,8 @@
     "check": "astro check",
     "placeholders": "node scripts/generate-placeholders.mjs",
     "og": "node scripts/generate-og.mjs",
-    "format": "prettier --write \"src/**/*.{astro,ts,css}\" \"scripts/*.mjs\" \"*.mjs\""
+    "format": "prettier --write \"src/**/*.{astro,ts,css}\" \"scripts/*.mjs\" \"*.mjs\"",
+    "ingest": "node scripts/ingest.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.4.1",
@@ -19,6 +20,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@napi-rs/canvas": "^1.0.3",
+    "pdfjs-dist": "^6.1.200",
     "prettier": "^3.9.6",
     "prettier-plugin-astro": "^0.14.1",
     "sharp": "^0.34.2",

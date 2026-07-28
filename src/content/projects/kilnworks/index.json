@@ -8,6 +8,10 @@
   "coverAlt": "Open spread of the Kilnworks brand guidelines book in terracotta and cream on kiln brown",
   "images": [
     {
+      "src": "./cover.png",
+      "alt": "Open spread of the Kilnworks brand guidelines book in terracotta and cream on kiln brown"
+    },
+    {
       "src": "./01.png",
       "alt": "Front cover of the Kilnworks brand guidelines with centered mark"
     },

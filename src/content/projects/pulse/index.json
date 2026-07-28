@@ -8,6 +8,10 @@
   "coverAlt": "Pulse animated logo hero frame in magenta and bone on near-black — the mark inside dotted orbital trails",
   "images": [
     {
+      "src": "./cover.png",
+      "alt": "Pulse animated logo hero frame in magenta and bone on near-black — the mark inside dotted orbital trails"
+    },
+    {
       "src": "./01.png",
       "alt": "Four key frames of the Pulse mark scaling up as its reveal progresses"
     },

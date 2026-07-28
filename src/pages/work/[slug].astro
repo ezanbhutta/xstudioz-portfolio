@@ -15,7 +15,7 @@ export async function getStaticPaths() {
 }
 
 const { project, projects } = Astro.props;
-const { title, category, year, summary, cover, coverAlt, images } = project.data;
+const { title, category, year, summary, cover, coverAlt, images, download } = project.data;
 const categoryInfo = getCategory(category);
 const { prev, next } = adjacentProjects(projects, project.id);
 
@@ -80,24 +80,28 @@ const widths = [640, 960, 1280, 1600];
       </p>
       <h1 class="page-title">{title}</h1>
       <p class="page-lede">{summary}</p>
+      {
+        download && (
+          <a class="button button--outline project-download" href={download} download>
+            Download the full presentation (PDF)
+            <span aria-hidden="true">↓</span>
+          </a>
+        )
+      }
     </header>
 
+    {
+      /* The first image pairs with the grid card's view transition and loads
+        with priority; the rest reveal lazily as the visitor scrolls. */
+    }
     <div class="container project-gallery">
-      <figure class="project-figure" style={`view-transition-name: work-${project.id}`}>
-        <Picture
-          src={cover}
-          alt={coverAlt}
-          formats={['avif', 'webp']}
-          fallbackFormat="webp"
-          widths={widths}
-          sizes={sizes}
-          loading="eager"
-          fetchpriority="high"
-        />
-      </figure>
       {
-        images.map((img) => (
-          <figure class="project-figure" data-reveal>
+        images.map((img, i) => (
+          <figure
+            class="project-figure"
+            data-reveal={i === 0 ? undefined : ''}
+            style={i === 0 ? `view-transition-name: work-${project.id}` : undefined}
+          >
             <Picture
               src={img.src}
               alt={img.alt}
@@ -105,7 +109,8 @@ const widths = [640, 960, 1280, 1600];
               fallbackFormat="webp"
               widths={widths}
               sizes={sizes}
-              loading="lazy"
+              loading={i === 0 ? 'eager' : 'lazy'}
+              fetchpriority={i === 0 ? 'high' : 'auto'}
             />
           </figure>
         ))
@@ -169,6 +174,10 @@ const widths = [640, 960, 1280, 1600];
 
   .overline-link:hover {
     color: var(--color-accent);
+  }
+
+  .project-download {
+    margin-block-start: var(--space-md);
   }
 
   .project-gallery {

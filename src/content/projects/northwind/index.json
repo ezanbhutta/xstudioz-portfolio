@@ -8,6 +8,10 @@
   "coverAlt": "Northwind logo mark — a crescent with an orbit dot — in mist white and sage on deep pine, centered between fine registration marks",
   "images": [
     {
+      "src": "./cover.png",
+      "alt": "Northwind logo mark — a crescent with an orbit dot — in mist white and sage on deep pine, centered between fine registration marks"
+    },
+    {
       "src": "./01.png",
       "alt": "Northwind logo mark, a crescent with an orbit dot, in dark ink on a light field"
     },

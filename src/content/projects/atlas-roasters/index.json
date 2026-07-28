@@ -8,6 +8,10 @@
   "coverAlt": "Atlas Roasters brand identity overview in caramel and cream on espresso — mark, pattern, type block and palette in a four-tile grid",
   "images": [
     {
+      "src": "./cover.png",
+      "alt": "Atlas Roasters brand identity overview in caramel and cream on espresso — mark, pattern, type block and palette in a four-tile grid"
+    },
+    {
       "src": "./01.png",
       "alt": "Atlas Roasters primary mark, three ascending bars, on the core brand color"
     },

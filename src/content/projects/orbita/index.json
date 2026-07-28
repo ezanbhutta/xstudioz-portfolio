@@ -8,6 +8,10 @@
   "coverAlt": "Orbita animated logo hero frame in cornflower blue and ice on midnight navy — the mark inside dotted orbital trails",
   "images": [
     {
+      "src": "./cover.png",
+      "alt": "Orbita animated logo hero frame in cornflower blue and ice on midnight navy — the mark inside dotted orbital trails"
+    },
+    {
       "src": "./01.png",
       "alt": "Four key frames of the Orbita mark scaling up as its reveal progresses"
     },

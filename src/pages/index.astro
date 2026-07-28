@@ -3,7 +3,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import FilterBar from '@/components/FilterBar.astro';
 import WorkGrid from '@/components/WorkGrid.astro';
 import { SITE } from '@/config/site';
-import { PACKAGES } from '@/data/packages';
 import { getSortedProjects, countByCategory } from '@/lib/projects';
 import { siteGraph } from '@/lib/schema';
 
@@ -50,32 +49,7 @@ const jsonLd = {
     </div>
   </section>
 
-  <section class="packages-teaser" aria-labelledby="packages-teaser-heading">
-    <div class="container teaser-grid">
-      <div>
-        <p class="overline">Packages</p>
-        <h2 id="packages-teaser-heading">Fixed scope.<br />Studio craft.</h2>
-        <p class="teaser-lede">
-          Three clear ways to work together — from a first logo to a full identity with motion.
-        </p>
-      </div>
-      <ul class="teaser-list" role="list">
-        {
-          PACKAGES.map((pkg) => (
-            <li>
-              <a class="teaser-row" href={`/packages/#${pkg.id}`} data-astro-prefetch>
-                <span class="teaser-name">{pkg.name}</span>
-                <span class="teaser-price">{pkg.price}</span>
-                <span class="teaser-arrow" aria-hidden="true">
-                  →
-                </span>
-              </a>
-            </li>
-          ))
-        }
-      </ul>
-    </div>
-  </section>
+
 </BaseLayout>
 
 <style>
@@ -97,81 +71,5 @@ const jsonLd = {
 
   .work-container {
     padding-block-start: var(--space-xl);
-  }
-
-  .packages-teaser {
-    margin-block-start: var(--space-section);
-    border-block-start: 1px solid var(--color-line);
-    padding-block-start: var(--space-3xl);
-  }
-
-  .teaser-grid {
-    display: grid;
-    grid-template-columns: 1fr 1.2fr;
-    gap: var(--space-2xl);
-    align-items: start;
-  }
-
-  .teaser-grid h2 {
-    font-size: var(--text-3xl);
-    margin-block: var(--space-sm);
-  }
-
-  .teaser-lede {
-    color: var(--color-ink-soft);
-    max-width: var(--measure-narrow);
-  }
-
-  .teaser-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .teaser-row {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    align-items: baseline;
-    gap: var(--space-md);
-    padding-block: var(--space-md);
-    border-block-end: 1px solid var(--color-line);
-    text-decoration: none;
-  }
-
-  .teaser-list li:first-child .teaser-row {
-    border-block-start: 1px solid var(--color-line);
-  }
-
-  .teaser-name {
-    font-family: var(--font-display);
-    font-size: var(--text-2xl);
-    font-weight: var(--weight-display);
-    letter-spacing: var(--tracking-tight);
-    transition: transform var(--duration-base) var(--ease-out);
-  }
-
-  .teaser-row:hover .teaser-name {
-    transform: translateX(var(--space-2xs));
-  }
-
-  .teaser-price {
-    color: var(--color-ink-mute);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .teaser-arrow {
-    color: var(--color-accent);
-    transition: transform var(--duration-base) var(--ease-out);
-  }
-
-  .teaser-row:hover .teaser-arrow {
-    transform: translateX(4px);
-  }
-
-  @media (max-width: 819px) {
-    .teaser-grid {
-      grid-template-columns: 1fr;
-      gap: var(--space-lg);
-    }
   }
 </style>

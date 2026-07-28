@@ -3,7 +3,7 @@
   "category": "brand-guidelines",
   "year": 2025,
   "order": 3,
-  "summary": "A 48-page brand book for a wellness brand — rules for logo, color, type and imagery that any future designer can follow.",
+  "summary": "A 48-page brand book for a wellness brand \u2014 rules for logo, color, type and imagery that any future designer can follow.",
   "cover": "./cover.png",
   "coverAlt": "Open spread of the Solace brand guidelines book in sage and off-white on forest green",
   "images": [
@@ -27,6 +27,5 @@
       "src": "./page-05.png",
       "alt": "Solace presentation, page 5 of 5"
     }
-  ],
-  "download": "/downloads/solace.pdf"
+  ]
 }

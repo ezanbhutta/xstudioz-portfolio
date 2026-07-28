@@ -1,7 +1,7 @@
 ---
 import { CATEGORIES, type CategoryId } from '@/data/categories';
 import FilterBarEnhancer from '@/components/FilterBarEnhancer.astro';
-import LogoSubfilters from '@/components/LogoSubfilters.astro';
+import Subfilters from '@/components/Subfilters.astro';
 
 interface Props {
   counts: Partial<Record<CategoryId, number>>;
@@ -13,11 +13,11 @@ interface Props {
    * filtering. Without JS — or on category pages — they are plain links.
    */
   enhanced?: boolean;
-  /** Distinct industries across logo-design projects (for the dropdowns). */
-  industries?: string[];
+  /** Distinct industries per category (for the Industry dropdowns). */
+  industries?: Partial<Record<CategoryId, string[]>>;
 }
 
-const { counts, total, active = 'all', enhanced = false, industries = [] } = Astro.props;
+const { counts, total, active = 'all', enhanced = false, industries = {} } = Astro.props;
 
 // On category pages these are real links to the current page → 'page'.
 // On the enhanced home bar they mark the active filter state → 'true'.
@@ -49,11 +49,7 @@ const current = enhanced ? 'true' : 'page';
         ))
       }
     </ul>
-    {
-      (enhanced || active === 'logo-design') && (
-        <LogoSubfilters industries={industries} visible={active === 'logo-design'} />
-      )
-    }
+    <Subfilters industries={industries} active={active} enhanced={enhanced} />
   </div>
 </nav>
 

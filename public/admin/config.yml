@@ -58,7 +58,7 @@ collections:
         widget: select
         required: false
         hint: Logo Design projects only. Powers the Type filter dropdown.
-        # Keep in sync with src/data/logo-filters.ts
+        # Keep in sync with src/data/filters.ts
         options:
           - Wordmark
           - Abstract
@@ -67,11 +67,40 @@ collections:
           - Mascot
           - Emblem
           - Lettermark
+      - name: guidelineType
+        label: Guidelines type
+        widget: select
+        required: false
+        hint: Brand Guidelines projects only. Powers the Type filter dropdown.
+        # Keep in sync with src/data/filters.ts
+        options:
+          - Short Brand Guidelines
+          - Full Brand Guidelines
+          - Premium Brand Guidelines
+      - name: extras
+        label: Extra elements
+        widget: select
+        multiple: true
+        required: false
+        hint: Anything included beyond the core sections. Listed on the project page, not a filter.
+        # Keep in sync with src/data/filters.ts
+        options:
+          - Social Media Kit
+          - Stationery Design Kit
+          - Mockups
+          - Apparel Design
+          - Merchandise
+          - Marketing Materials
+      - name: extrasCustom
+        label: Custom extra elements
+        widget: list
+        required: false
+        hint: Add anything the list above does not cover, one item per row.
       - name: industry
         label: Industry
         widget: string
         required: false
-        hint: 'Logo Design projects only, e.g. Jewelry. New industries appear in the filter automatically.'
+        hint: 'e.g. Jewelry. Powers the Industry filter dropdown; new industries appear automatically.'
       - name: order
         label: Grid position
         widget: number

@@ -1,48 +1,70 @@
 ---
-import { LOGO_TYPES } from '@/data/logo-filters';
+import { CATEGORIES, type CategoryId } from '@/data/categories';
+import { TYPE_FILTERS } from '@/data/filters';
 
 /**
- * Logo Design refinements: Type and Industry dropdowns. Rendered inside the
- * filter bar and shown only while Logo Design is the active category — on
- * category pages it is visible from the start, on home the filter script
- * toggles it. Industries come from project data, so the list grows itself.
+ * Per-category refinements rendered inside the filter bar. Categories with
+ * a fixed taxonomy (Logo Design, Brand Guidelines) get a Type dropdown;
+ * every category gets an Industry dropdown as soon as its projects carry
+ * industries — the lists build themselves from project data.
+ *
+ * On the enhanced home bar every category's group renders (hidden) so the
+ * filter script can swap them without a page load; on category pages only
+ * the active group renders, visible from the start.
  */
 interface Props {
-  industries: string[];
-  /** Server-rendered visible (the /logo-design/ page). */
-  visible?: boolean;
+  industries: Partial<Record<CategoryId, string[]>>;
+  active: CategoryId | 'all';
+  enhanced?: boolean;
 }
 
-const { industries, visible = false } = Astro.props;
+const { industries, active, enhanced = false } = Astro.props;
+
+const groups = CATEGORIES.map((c) => ({
+  id: c.id,
+  title: c.title,
+  type: TYPE_FILTERS[c.id],
+  industries: industries[c.id] ?? [],
+})).filter((g) => (enhanced ? true : g.id === active) && (g.type || g.industries.length > 0));
 ---
 
-<div class:list={['subfilters', { 'is-active': visible }]} data-subfilters>
-  <label class="subfilter">
-    <span class="visually-hidden">Filter by logo type</span>
-    <select data-subfilter="logoType">
-      <option value="">All types</option>
-      {LOGO_TYPES.map((t) => <option value={t}>{t}</option>)}
-    </select>
-  </label>
-  {
-    industries.length > 0 && (
-      <label class="subfilter">
-        <span class="visually-hidden">Filter by industry</span>
-        <select data-subfilter="industry">
-          <option value="">All industries</option>
-          {industries.map((i) => (
-            <option value={i}>{i}</option>
-          ))}
-        </select>
-      </label>
-    )
-  }
-</div>
+{
+  groups.map((g) => (
+    <div
+      class:list={['subfilters', { 'is-active': active === g.id }]}
+      data-subfilters
+      data-subgroup={g.id}
+    >
+      {g.type && (
+        <label class="subfilter">
+          <span class="visually-hidden">Filter {g.title} by type</span>
+          <select data-key={g.type.key}>
+            <option value="">All types</option>
+            {g.type.options.map((t) => (
+              <option value={t}>{t}</option>
+            ))}
+          </select>
+        </label>
+      )}
+      {g.industries.length > 0 && (
+        <label class="subfilter">
+          <span class="visually-hidden">Filter {g.title} by industry</span>
+          <select data-key="industry">
+            <option value="">All industries</option>
+            {g.industries.map((i) => (
+              <option value={i}>{i}</option>
+            ))}
+          </select>
+        </label>
+      )}
+    </div>
+  ))
+}
 
 <script>
   // Category-page mode only: no data-filterbar script runs here, so the
-  // dropdowns filter the (all logo-design) grid directly.
-  const wrap = document.querySelector<HTMLElement>('[data-subfilters]');
+  // visible group's dropdowns filter the server-rendered grid directly.
+  const wrap = document.querySelector<HTMLElement>('[data-subfilters].is-active');
   const hasEnhancer = document.querySelector('[data-filterbar]');
 
   if (wrap && !hasEnhancer) {
@@ -52,13 +74,9 @@ const { industries, visible = false } = Astro.props;
     const empty = document.querySelector<HTMLElement>('[data-work-empty]');
 
     const apply = () => {
-      const wanted: Record<string, string> = {};
-      for (const s of selects) wanted[s.dataset.subfilter ?? ''] = s.value;
       let shown = 0;
       for (const li of items) {
-        const show =
-          (!wanted.logoType || li.dataset.logoType === wanted.logoType) &&
-          (!wanted.industry || li.dataset.industry === wanted.industry);
+        const show = selects.every((s) => !s.value || li.dataset[s.dataset.key ?? ''] === s.value);
         li.hidden = !show;
         if (show) {
           shown += 1;

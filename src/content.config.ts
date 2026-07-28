@@ -1,7 +1,7 @@
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { CATEGORY_IDS } from './data/categories';
-import { LOGO_TYPES } from './data/logo-filters';
+import { GUIDELINE_TYPES, LOGO_TYPES } from './data/filters';
 
 /**
  * One folder per project under src/content/projects/<slug>/:
@@ -38,9 +38,18 @@ const projects = defineCollection({
       title: z.string(),
       category: z.enum(CATEGORY_IDS),
       /** Logo Design projects only: powers the Type dropdown filter. */
-      logoType: z.enum(LOGO_TYPES).optional(),
-      /** Logo Design projects only: powers the Industry dropdown filter. */
-      industry: z.string().optional(),
+      logoType: z.preprocess(emptyToUndef, z.enum(LOGO_TYPES).optional()),
+      /** Brand Guidelines projects only: powers the Type dropdown filter. */
+      guidelineType: z.preprocess(emptyToUndef, z.enum(GUIDELINE_TYPES).optional()),
+      /** Powers the per-category Industry dropdown filter. */
+      industry: z.preprocess(emptyToUndef, z.string().optional()),
+      /**
+       * Extra elements included beyond the core sections (Social Media Kit,
+       * Mockups…). Listed on the project page — not filterable.
+       */
+      extras: z.preprocess(emptyToUndef, z.array(z.string()).optional()),
+      /** Free-text extras for anything the preset list doesn't cover. */
+      extrasCustom: z.preprocess(emptyToUndef, z.array(z.string()).optional()),
       /** Kept optional for older entries; no longer shown anywhere. */
       year: z.number().int().optional(),
       /** Lower numbers appear first within the grid. */

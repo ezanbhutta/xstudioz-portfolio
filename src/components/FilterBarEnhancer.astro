@@ -19,37 +19,35 @@
     const items = [...gridWrap.querySelectorAll<HTMLLIElement>('li[data-category]')];
     const status = gridWrap.querySelector<HTMLElement>('[data-filter-status]');
     const empty = gridWrap.querySelector<HTMLElement>('[data-work-empty]');
-    const subWrap = bar.querySelector<HTMLElement>('[data-subfilters]');
-    const subSelects = subWrap ? [...subWrap.querySelectorAll<HTMLSelectElement>('select')] : [];
+    const groups = [...bar.querySelectorAll<HTMLElement>('[data-subfilters]')];
     const valid = new Set(links.map((l) => l.dataset.filter));
 
-    const resetSubfilters = () => {
-      for (const s of subSelects) {
-        s.value = '';
-        s.classList.remove('has-value');
-      }
+    const activeSelects = (category: string) => {
+      const group = groups.find((g) => g.dataset.subgroup === category);
+      return group ? [...group.querySelectorAll<HTMLSelectElement>('select')] : [];
     };
 
-    const subMatch = (li: HTMLLIElement) => {
-      for (const s of subSelects) {
-        if (!s.value) continue;
-        const key = s.dataset.subfilter === 'logoType' ? 'logoType' : 'industry';
-        if (li.dataset[key] !== s.value) return false;
-      }
-      return true;
-    };
+    const subMatch = (li: HTMLLIElement, selects: HTMLSelectElement[]) =>
+      selects.every((s) => !s.value || li.dataset[s.dataset.key ?? ''] === s.value);
 
     const apply = (category: string) => {
-      const refining = category === 'logo-design';
-      if (subWrap) {
-        subWrap.classList.toggle('is-active', refining);
-        if (!refining) resetSubfilters();
+      // Swap in the category's own refinement dropdowns; hidden groups
+      // reset so a stale choice never filters the next visit invisibly.
+      for (const g of groups) {
+        const on = g.dataset.subgroup === category;
+        g.classList.toggle('is-active', on);
+        if (!on) {
+          for (const s of g.querySelectorAll<HTMLSelectElement>('select')) {
+            s.value = '';
+            s.classList.remove('has-value');
+          }
+        }
       }
+      const selects = activeSelects(category);
       let shown = 0;
       let label = 'All work';
       for (const li of items) {
-        const show =
-          (category === 'all' || li.dataset.category === category) && (!refining || subMatch(li));
+        const show = li.dataset.category === category && subMatch(li, selects);
         li.hidden = !show;
         if (show) {
           shown += 1;
@@ -112,8 +110,10 @@
       history.pushState(null, '', category === DEFAULT ? '/' : `/${category}/`);
     });
 
-    for (const s of subSelects) {
-      s.addEventListener('change', () => applyWithTransition(current()));
+    for (const g of groups) {
+      for (const s of g.querySelectorAll<HTMLSelectElement>('select')) {
+        s.addEventListener('change', () => applyWithTransition(current()));
+      }
     }
 
     // Back/forward replays the same motion as the click that created it.

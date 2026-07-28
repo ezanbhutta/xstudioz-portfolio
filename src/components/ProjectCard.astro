@@ -17,7 +17,7 @@ interface Props {
 }
 
 const { project, eager = false, index = 0, hidden = false, lead = index === 0 } = Astro.props;
-const { title, category, cover, logoType, industry } = project.data;
+const { title, category, cover, logoType, guidelineType, industry } = project.data;
 const categoryLabel = getCategory(category).title;
 const meta = [categoryLabel, industry].filter(Boolean).join(' · ');
 const href = `/work/${project.id}/`;
@@ -36,6 +36,7 @@ const placeholder = await lqipStyle(cover);
   class="card"
   data-category={category}
   data-logo-type={logoType}
+  data-guideline-type={guidelineType}
   data-industry={industry}
   hidden={hidden}
 >

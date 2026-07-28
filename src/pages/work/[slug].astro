@@ -206,6 +206,18 @@ const widths = [640, 960, 1280, 1600];
         >
           Hire on Fiverr <span aria-hidden="true">↗</span>
         </a>
+        {
+          SITE.linkedinUrl && (
+            <a
+              class="button button--outline"
+              href={SITE.linkedinUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Connect on LinkedIn <span aria-hidden="true">↗</span>
+            </a>
+          )
+        }
       </div>
     </aside>
 

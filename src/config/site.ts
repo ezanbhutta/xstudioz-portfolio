@@ -12,6 +12,13 @@ export interface SiteConfig {
   description: string;
   /** Primary conversion — all "hire us" CTAs point here. */
   fiverrUrl: string;
+  /**
+   * Studio LinkedIn page/profile. When set, "Connect on LinkedIn" actions
+   * render site-wide (footer CTA, footer nav, project pages) so visitors
+   * arriving from Behance or search can become LinkedIn connections.
+   * Empty string = the LinkedIn actions simply don't render.
+   */
+  linkedinUrl: string;
   /** Used in Open Graph locale + <html lang>. */
   locale: string;
 }

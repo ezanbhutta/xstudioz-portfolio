@@ -6,11 +6,11 @@
  *
  *   portfolio.pdf          → every page (any size, any dimensions) is
  *                            rendered to page-NN.png at 1600px wide and a
- *                            4:3 grid cover is cropped from page 1.
+ *                            grid cover is generated from page 1.
  *
  *   sheet.png|jpg|jpeg|webp → the single (usually tall) presentation image
- *                            becomes the whole portfolio; a 4:3 grid cover
- *                            is cropped from its top.
+ *                            becomes the whole portfolio and its own
+ *                            grid cover.
  *
  * Then run:  npm run ingest
  *
@@ -60,12 +60,23 @@ async function renderPdf(pdfPath, dir) {
   return names;
 }
 
-/** Top-anchored 4:3 crop used as the grid cover. */
-async function makeCover(sourcePath, dir) {
-  await sharp(sourcePath)
-    .resize({ width: PAGE_WIDTH, height: (PAGE_WIDTH * 3) / 4, fit: 'cover', position: 'top' })
-    .png({ compressionLevel: 9 })
-    .toFile(path.join(dir, 'cover.png'));
+/**
+ * Grid cover. Brand guidelines decks always preview as a full 1920×1080
+ * frame (nothing cropped; letterboxed on white if the deck isn't 16:9).
+ * Every other category shows the uploaded asset in full, keeping its own
+ * proportions.
+ */
+async function makeCover(sourcePath, dir, category) {
+  const out = path.join(dir, 'cover.png');
+  const image = sharp(sourcePath);
+  if (category === 'brand-guidelines') {
+    await image
+      .resize({ width: 1920, height: 1080, fit: 'contain', background: '#ffffff' })
+      .png({ compressionLevel: 9 })
+      .toFile(out);
+  } else {
+    await image.resize({ width: PAGE_WIDTH }).png({ compressionLevel: 9 }).toFile(out);
+  }
 }
 
 async function readMeta(dir, slug) {
@@ -108,7 +119,7 @@ async function ingestProject(slug) {
       if (/^page-\d+\.png$/.test(f)) await rm(path.join(dir, f));
     }
     const pages = await renderPdf(pdfPath, dir);
-    await makeCover(path.join(dir, pages[0]), dir);
+    await makeCover(path.join(dir, pages[0]), dir, meta.category);
     meta.cover = './cover.png';
     meta.coverAlt = meta.coverAlt || `${title} presentation cover`;
     meta.images = pages.map((name, i) => ({
@@ -118,7 +129,7 @@ async function ingestProject(slug) {
     delete meta.download;
     console.log(`✓ ${slug} — ${pages.length} PDF pages rendered`);
   } else {
-    await makeCover(path.join(dir, sheetName), dir);
+    await makeCover(path.join(dir, sheetName), dir, meta.category);
     meta.cover = './cover.png';
     meta.coverAlt = meta.coverAlt || `${title} presentation cover`;
     meta.images = [{ src: `./${sheetName}`, alt: `${title} — full portfolio presentation` }];

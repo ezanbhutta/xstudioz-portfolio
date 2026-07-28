@@ -1,6 +1,7 @@
 ---
 import ProjectCard from '@/components/ProjectCard.astro';
 import { SITE } from '@/config/site';
+import type { CategoryId } from '@/data/categories';
 import type { ReadyProject } from '@/lib/projects';
 
 interface Props {
@@ -11,9 +12,27 @@ interface Props {
   filterable?: boolean;
   /** Screen-reader heading that keeps the document outline sequential. */
   heading?: string;
+  /**
+   * Category pre-selected on first paint (home defaults to Logo Design).
+   * Other cards still render — hidden — so the filter script can reveal
+   * them without a network round trip.
+   */
+  initialCategory?: CategoryId | 'all';
 }
 
-const { projects, eagerCount = 2, filterable = false, heading = 'Projects' } = Astro.props;
+const {
+  projects,
+  eagerCount = 2,
+  filterable = false,
+  heading = 'Projects',
+  initialCategory = 'all',
+} = Astro.props;
+
+let visibleCount = 0;
+const cards = projects.map((project) => {
+  const shown = initialCategory === 'all' || project.data.category === initialCategory;
+  return { project, shown, vi: shown ? visibleCount++ : -1 };
+});
 ---
 
 <div class="work" data-work-grid={filterable ? '' : undefined}>
@@ -21,13 +40,19 @@ const { projects, eagerCount = 2, filterable = false, heading = 'Projects' } = A
   <p class="visually-hidden" role="status" data-filter-status></p>
   <ul class="work-grid" role="list">
     {
-      projects.map((project, i) => (
-        <ProjectCard project={project} index={i} eager={i < eagerCount} />
+      cards.map(({ project, shown, vi }, i) => (
+        <ProjectCard
+          project={project}
+          index={shown ? vi : i}
+          eager={shown && vi < eagerCount}
+          hidden={!shown}
+          lead={vi === 0}
+        />
       ))
     }
   </ul>
-  <p class="work-empty" data-work-empty hidden={projects.length > 0}>
-    No projects in this category yet. <a href="/">See all work</a> or
+  <p class="work-empty" data-work-empty hidden={visibleCount > 0}>
+    No projects in this category yet. Pick another category above, or
     <a href={SITE.fiverrUrl} target="_blank" rel="noopener noreferrer"
       >ask about this service on Fiverr <span aria-hidden="true">↗</span></a
     >.

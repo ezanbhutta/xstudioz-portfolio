@@ -3,15 +3,44 @@ import type { CategoryId } from '@/data/categories';
 
 export type Project = CollectionEntry<'projects'>;
 
-/** All projects in display order (curated `order`, then newest, then A–Z). */
-export async function getSortedProjects(): Promise<Project[]> {
+/** A project whose visuals exist (ingest has run, or images were provided). */
+export type ReadyProject = Project & {
+  data: Project['data'] & {
+    cover: NonNullable<Project['data']['cover']>;
+    coverAlt: string;
+    images: NonNullable<Project['data']['images']>;
+  };
+};
+
+/**
+ * All displayable projects in order (curated `order`, then A–Z). Entries
+ * without visuals yet (e.g. a CMS entry saved without a PDF or images) are
+ * skipped with a build warning instead of breaking the site.
+ */
+export async function getSortedProjects(): Promise<ReadyProject[]> {
   const all = await getCollection('projects');
-  return all.sort(
-    (a, b) =>
-      a.data.order - b.data.order ||
-      b.data.year - a.data.year ||
-      a.data.title.localeCompare(b.data.title),
+  const ready = all.filter((p): p is ReadyProject =>
+    Boolean(p.data.cover && p.data.coverAlt && p.data.images?.length),
   );
+  for (const p of all) {
+    if (!ready.includes(p as ReadyProject)) {
+      console.warn(
+        `[projects] "${p.id}" skipped: no visuals yet. Upload a PDF (the build renders it) or add images in the CMS.`,
+      );
+    }
+  }
+  return ready.sort(
+    (a, b) => a.data.order - b.data.order || a.data.title.localeCompare(b.data.title),
+  );
+}
+
+/** Distinct industries across logo-design projects, for the Industry filter. */
+export function logoIndustries(projects: Project[]): string[] {
+  const set = new Set<string>();
+  for (const p of projects) {
+    if (p.data.category === 'logo-design' && p.data.industry) set.add(p.data.industry);
+  }
+  return [...set].sort((a, b) => a.localeCompare(b));
 }
 
 /** Previous/next neighbours in the overall sequence, wrapping at the ends. */

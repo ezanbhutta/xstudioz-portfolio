@@ -36,7 +36,7 @@ collections:
     delete: true
     identifier_field: title
     slug: '{{slug}}'
-    summary: '{{title}} — {{category}} · {{year}}'
+    summary: '{{title}} — {{category}}'
     sortable_fields:
       fields: [order, year, title]
       default:
@@ -54,7 +54,25 @@ collections:
           - stationery
           - social-media
           - animation
-      - { name: year, label: Year, widget: number, value_type: int }
+      - name: logoType
+        label: Logo type
+        widget: select
+        required: false
+        hint: Logo Design projects only. Powers the Type filter dropdown.
+        # Keep in sync with src/data/logo-filters.ts
+        options:
+          - Wordmark
+          - Abstract
+          - Pictorial
+          - Combination
+          - Mascot
+          - Emblem
+          - Lettermark
+      - name: industry
+        label: Industry
+        widget: string
+        required: false
+        hint: 'Logo Design projects only, e.g. Jewelry. New industries appear in the filter automatically.'
       - name: order
         label: Grid position
         widget: number
@@ -62,23 +80,30 @@ collections:
         default: 99
         hint: Lower numbers appear earlier in the grid.
       - name: summary
-        label: Summary
+        label: Details
         widget: text
-        hint: One sentence shown on the project page and in search results.
+        hint: A sentence or two about the project, shown under the brand name.
+      - name: pdf
+        label: Portfolio PDF
+        widget: file
+        required: false
+        hint: 'Upload the presentation PDF and you are done: the next deploy renders every page and the grid thumbnail automatically. Skip the fields below.'
       - name: cover
-        label: Grid thumbnail
+        label: Grid thumbnail (only if not using a PDF)
         widget: image
-        hint: 4:3 image shown in the work grid (1600×1200 recommended).
+        required: false
+        hint: 4:3 image shown in the work grid. Leave empty when a PDF is uploaded.
       - name: coverAlt
         label: Thumbnail alt text
         widget: string
-        hint: Describe what the thumbnail shows, for screen readers and SEO.
+        required: false
+        hint: Describe what the thumbnail shows. Leave empty when a PDF is uploaded.
       - name: images
-        label: Portfolio images
+        label: Portfolio images (only if not using a PDF)
         label_singular: Image
         widget: list
-        min: 1
-        hint: The presentation itself, in order — one tall sheet or multiple pages.
+        required: false
+        hint: The presentation as images, in order. Leave empty when a PDF is uploaded.
         fields:
           - { name: src, label: Image, widget: image }
           - { name: alt, label: Alt text, widget: string }

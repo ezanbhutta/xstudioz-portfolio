@@ -2,10 +2,10 @@
 import { Picture } from 'astro:assets';
 import { getCategory } from '@/data/categories';
 import { lqipStyle } from '@/lib/lqip';
-import type { Project } from '@/lib/projects';
+import type { ReadyProject } from '@/lib/projects';
 
 interface Props {
-  project: Project;
+  project: ReadyProject;
   /** Above-the-fold cards load eagerly with high priority. */
   eager?: boolean;
   /** Stagger position for the entrance reveal. */
@@ -13,8 +13,9 @@ interface Props {
 }
 
 const { project, eager = false, index = 0 } = Astro.props;
-const { title, category, year, cover } = project.data;
+const { title, category, cover, logoType, industry } = project.data;
 const categoryLabel = getCategory(category).title;
+const meta = [categoryLabel, industry].filter(Boolean).join(' · ');
 const href = `/work/${project.id}/`;
 // Two-column grid: the left card leads its right neighbour by one beat.
 const delay = (index % 2) * 60;
@@ -27,7 +28,7 @@ const placeholder = await lqipStyle(cover);
     desktop the whole first row sits below the fold, so it reveals like
     every other row — consistency reads as polish. */
 }
-<li class="card" data-category={category}>
+<li class="card" data-category={category} data-logo-type={logoType} data-industry={industry}>
   <a
     class="card-link"
     href={href}
@@ -51,7 +52,7 @@ const placeholder = await lqipStyle(cover);
     {/* Museum-label caption: quiet, stacked, secondary to the image. */}
     <div class="card-caption">
       <h3 class="card-title">{title}</h3>
-      <p class="card-meta">{categoryLabel} · {year}</p>
+      <p class="card-meta">{meta}</p>
     </div>
   </a>
 </li>

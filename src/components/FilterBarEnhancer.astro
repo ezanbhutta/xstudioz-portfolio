@@ -3,6 +3,10 @@
  * Client-side filtering for the home work grid. Rendered only where the
  * FilterBar is `enhanced`, so category pages don't ship a script that can
  * never run there.
+ *
+ * There is no "All" chip: clicking the active category chip deselects it
+ * and the full grid returns. Logo Design additionally exposes Type and
+ * Industry dropdowns that refine within the category.
  */
 ---
 
@@ -15,13 +19,37 @@
     const items = [...gridWrap.querySelectorAll<HTMLLIElement>('li[data-category]')];
     const status = gridWrap.querySelector<HTMLElement>('[data-filter-status]');
     const empty = gridWrap.querySelector<HTMLElement>('[data-work-empty]');
+    const subWrap = bar.querySelector<HTMLElement>('[data-subfilters]');
+    const subSelects = subWrap ? [...subWrap.querySelectorAll<HTMLSelectElement>('select')] : [];
     const valid = new Set(links.map((l) => l.dataset.filter));
 
+    const resetSubfilters = () => {
+      for (const s of subSelects) {
+        s.value = '';
+        s.classList.remove('has-value');
+      }
+    };
+
+    const subMatch = (li: HTMLLIElement) => {
+      for (const s of subSelects) {
+        if (!s.value) continue;
+        const key = s.dataset.subfilter === 'logoType' ? 'logoType' : 'industry';
+        if (li.dataset[key] !== s.value) return false;
+      }
+      return true;
+    };
+
     const apply = (category: string) => {
+      const refining = category === 'logo-design';
+      if (subWrap) {
+        subWrap.classList.toggle('is-active', refining);
+        if (!refining) resetSubfilters();
+      }
       let shown = 0;
       let label = 'All work';
       for (const li of items) {
-        const show = category === 'all' || li.dataset.category === category;
+        const show =
+          (category === 'all' || li.dataset.category === category) && (!refining || subMatch(li));
         li.hidden = !show;
         if (show) {
           shown += 1;
@@ -42,6 +70,7 @@
       if (status) {
         status.textContent = `${label}: showing ${shown} ${shown === 1 ? 'project' : 'projects'}`;
       }
+      return shown;
     };
 
     const applyWithTransition = (category: string) => {
@@ -60,11 +89,15 @@
       return byQuery && valid.has(byQuery) ? byQuery : 'all';
     };
 
+    const current = () =>
+      links.find((l) => l.hasAttribute('aria-current'))?.dataset.filter ?? 'all';
+
     bar.addEventListener('click', (event) => {
       const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[data-filter]');
       if (!link || event.metaKey || event.ctrlKey || event.shiftKey) return;
       event.preventDefault();
-      const category = link.dataset.filter ?? 'all';
+      // Clicking the active chip deselects it — the whole grid returns.
+      const category = link.hasAttribute('aria-current') ? 'all' : (link.dataset.filter ?? 'all');
       // Scroll FIRST (instantly) so both view-transition snapshots are
       // captured at the same offset — no slide-then-jump.
       if (gridWrap.getBoundingClientRect().top < 0) {
@@ -72,8 +105,12 @@
       }
       applyWithTransition(category);
       // Push the canonical URL so Back undoes the filter step by step.
-      history.pushState(null, '', link.getAttribute('href'));
+      history.pushState(null, '', category === 'all' ? '/' : `/${category}/`);
     });
+
+    for (const s of subSelects) {
+      s.addEventListener('change', () => applyWithTransition(current()));
+    }
 
     // Back/forward replays the same motion as the click that created it.
     window.addEventListener('popstate', () => applyWithTransition(fromUrl()));

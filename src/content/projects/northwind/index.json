@@ -1,7 +1,8 @@
 {
   "title": "Northwind",
   "category": "logo-design",
-  "year": 2025,
+  "logoType": "Abstract",
+  "industry": "Outdoor Gear",
   "order": 4,
   "summary": "A sturdy compass-inspired monogram for an outdoor supply company, built to hold up from favicon to storefront.",
   "cover": "./cover.png",

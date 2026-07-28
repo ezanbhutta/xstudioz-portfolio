@@ -16,16 +16,18 @@ const jsonLd = {
 ---
 
 <BaseLayout
-  title={`${SITE.name} — Logos, Brand Identity & Motion`}
+  title={`${SITE.name} — Logo & Brand Identity Design`}
   description={SITE.description}
   jsonLd={jsonLd}
 >
   <section class="hero container">
-    <p class="overline">Independent Design Studio</p>
-    <h1 class="hero-title">Identity, crafted<br />with intent<span class="accent-dot">.</span></h1>
+    <p class="overline">Logo & Brand Identity Studio</p>
+    <h1 class="hero-title">
+      Where your brand meets<br />creative ideas<span class="accent-dot">.</span>
+    </h1>
     <p class="page-lede">
-      Logos, brand identities and visual systems for ambitious businesses — designed quietly, built
-      to last.
+      Specialized in logo and brand identity design — modern techniques and creativity that make
+      your brand stand out and resonate with your audience.
     </p>
     <div class="hero-actions">
       <a
@@ -48,6 +50,38 @@ const jsonLd = {
       <WorkGrid projects={projects} eagerCount={2} filterable heading="Selected work" />
     </div>
   </section>
+
+  <section class="container process" aria-labelledby="process-heading">
+    <p class="overline">Our process</p>
+    <h2 id="process-heading" class="process-title">
+      With you from start to finish<span class="accent-dot">.</span>
+    </h2>
+    <p class="process-lede">
+      Four steps, one goal — your vision comes to life just as you imagined.
+    </p>
+    <ol class="process-steps" role="list">
+      <li class="process-step">
+        <span class="process-num" aria-hidden="true">01</span>
+        <h3 class="process-step-title">Listen</h3>
+        <p class="process-step-text">We start with your story — goals, audience and taste.</p>
+      </li>
+      <li class="process-step">
+        <span class="process-num" aria-hidden="true">02</span>
+        <h3 class="process-step-title">Conceptualize</h3>
+        <p class="process-step-text">Ideas take shape as directions built around your brand.</p>
+      </li>
+      <li class="process-step">
+        <span class="process-num" aria-hidden="true">03</span>
+        <h3 class="process-step-title">Create</h3>
+        <p class="process-step-text">The strongest concept is crafted into polished visuals.</p>
+      </li>
+      <li class="process-step">
+        <span class="process-num" aria-hidden="true">04</span>
+        <h3 class="process-step-title">Refine</h3>
+        <p class="process-step-text">We fine-tune with you until it feels exactly right.</p>
+      </li>
+    </ol>
+  </section>
 </BaseLayout>
 
 <style>
@@ -69,5 +103,64 @@ const jsonLd = {
 
   .work-container {
     padding-block-start: var(--space-xl);
+  }
+
+  .process {
+    margin-block-start: var(--space-section);
+    border-block-start: 1px solid var(--color-line);
+    padding-block-start: var(--space-3xl);
+  }
+
+  .process-title {
+    font-size: var(--text-3xl);
+    margin-block: var(--space-sm);
+  }
+
+  .process-lede {
+    color: var(--color-ink-soft);
+    max-width: var(--measure);
+  }
+
+  .process-steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-lg);
+    list-style: none;
+    padding: 0;
+    margin: var(--space-xl) 0 0;
+  }
+
+  .process-num {
+    display: block;
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-display);
+    color: var(--color-accent);
+    letter-spacing: var(--tracking-tight);
+  }
+
+  .process-step-title {
+    font-family: var(--font-sans);
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    letter-spacing: normal;
+    margin-block: var(--space-2xs);
+  }
+
+  .process-step-text {
+    color: var(--color-ink-soft);
+    font-size: var(--text-sm);
+  }
+
+  @media (max-width: 819px) {
+    .process-steps {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 479px) {
+    .process-steps {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

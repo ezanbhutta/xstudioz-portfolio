@@ -47,7 +47,7 @@ const og = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" vi
   <rect width="1200" height="630" fill="url(#g)"/>
   <g opacity="0.9">${mark(830, 165, 3)}</g>
   <text x="92" y="330" font-family="Outfit" font-size="110" font-weight="700" letter-spacing="-2" fill="#ffffff">XStudioz</text>
-  <text x="95" y="408" font-family="Manrope" font-size="26" font-weight="600" letter-spacing="7" fill="#ffffff" opacity="0.75">INDEPENDENT DESIGN STUDIO</text>
+  <text x="95" y="408" font-family="Manrope" font-size="26" font-weight="600" letter-spacing="6" fill="#ffffff" opacity="0.75">LOGO &amp; BRAND IDENTITY DESIGN</text>
   <rect x="97" y="456" width="72" height="6" rx="3" fill="#ffffff" opacity="0.9"/>
 </svg>`;
 

@@ -42,7 +42,26 @@ const { projects, eagerCount = 2, filterable = false, heading = 'Projects' } = A
     const media = (event.target as HTMLElement)
       .closest('.card-link')
       ?.querySelector<HTMLElement>('[data-vt]');
-    if (media?.dataset.vt) media.style.viewTransitionName = media.dataset.vt;
+    if (media?.dataset.vt) {
+      // Clear stale names first — bfcache restores keep inline styles, and
+      // every stale name is an extra snapshot on the next navigation.
+      for (const el of document.querySelectorAll<HTMLElement>('[data-vt]')) {
+        el.style.viewTransitionName = '';
+      }
+      media.style.viewTransitionName = media.dataset.vt;
+    }
+  });
+
+  // Pair the RETURN trip too: arriving back from a project page, name that
+  // project's card before first render so the cover morphs home instead of
+  // fading out alone.
+  addEventListener('pagereveal', () => {
+    const nav = (window as { navigation?: { activation?: { from?: { url?: string } } } })
+      .navigation;
+    const from = nav?.activation?.from?.url ?? document.referrer;
+    const slug = from?.match(/\/work\/([^/]+)\//)?.[1];
+    const media = slug && document.querySelector<HTMLElement>(`[data-vt="work-${slug}"]`);
+    if (media) media.style.viewTransitionName = `work-${slug}`;
   });
 </script>
 
@@ -60,13 +79,18 @@ const { projects, eagerCount = 2, filterable = false, heading = 'Projects' } = A
     .work-grid {
       grid-template-columns: 1fr 1fr;
       column-gap: var(--space-xl);
-      padding-block-end: var(--space-2xl);
     }
 
     /* Editorial offset — the right column starts lower, so pairs never sit
-       in a rigid row and each cover gets its own moment. Counts only visible
-       cards so the rhythm survives filtering (no-op in older browsers). */
-    .work-grid > :global(li:nth-child(even of :not([hidden]))) {
+       in a rigid row and each cover gets its own moment. Only on the full
+       home grid: with two or three cards on a category page the offset
+       reads as a mistake, not a rhythm. Counts only visible cards so it
+       survives filtering (no-op in older browsers). */
+    [data-work-grid] .work-grid {
+      padding-block-end: var(--space-2xl);
+    }
+
+    [data-work-grid] .work-grid > :global(li:nth-child(even of :not([hidden]))) {
       transform: translateY(var(--space-2xl));
     }
   }
@@ -78,7 +102,14 @@ const { projects, eagerCount = 2, filterable = false, heading = 'Projects' } = A
 
   .work-empty a {
     color: var(--color-ink);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     text-decoration-color: var(--color-accent);
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .work-empty a:hover {
+      color: var(--color-accent);
+    }
   }
 </style>

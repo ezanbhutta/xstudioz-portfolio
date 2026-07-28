@@ -13,7 +13,6 @@
 :root {
   /* Color — cool violet-tinted gallery neutrals; the work stays the hero. */
   --color-paper: #faf9fc;
-  --color-paper-raised: #ffffff;
   --color-ink: #1a1523;
   --color-ink-soft: #554e60;
   --color-ink-mute: #6e6879;
@@ -67,23 +66,22 @@
   --space-lg: 2rem;
   --space-xl: 3rem;
   --space-2xl: 4rem;
-  --space-3xl: 6rem;
+  /* Fluid so mobile sections keep the desktop's top-heavy ratio */
+  --space-3xl: clamp(3.5rem, 2.25rem + 5vw, 6rem);
   --space-section: clamp(4.5rem, 3rem + 7vw, 9rem);
-  --space-gallery: clamp(1.5rem, 1rem + 2.5vw, 3rem);
+  --space-gallery: clamp(2rem, 1.25rem + 3vw, 4rem);
 
   /* Layout */
   --container-max: 85rem; /* 1360px */
   --gutter: clamp(1.25rem, 5vw, 4rem);
   --measure: 38rem; /* comfortable reading width ≈ 66ch */
   --measure-wide: 44rem;
-  --measure-narrow: 26rem;
 
   /* Controls */
   --control-h: 2.75rem; /* 44px touch target */
 
   /* Shape — print-like sharp imagery, soft panels, pill actions */
   --radius-xs: 2px;
-  --radius-md: 12px;
   --radius-pill: 999px;
 
   /* Motion */

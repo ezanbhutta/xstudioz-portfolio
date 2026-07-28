@@ -62,15 +62,17 @@ const current = enhanced ? 'true' : 'page';
 
 {enhanced && <FilterBarEnhancer />}
 
-<script>
-  // Bring the active chip into view — on narrow screens the active category
-  // can otherwise sit beyond the scroll edge with no visual cue.
-  const list = document.querySelector<HTMLElement>('.filter-list');
-  const activeChip = list?.querySelector<HTMLElement>('[aria-current]');
-  if (list && activeChip) {
-    const delta = activeChip.getBoundingClientRect().left - list.getBoundingClientRect().left;
-    list.scrollLeft = Math.max(0, delta - (list.clientWidth - activeChip.clientWidth) / 2);
-  }
+<script is:inline>
+  // Bring the active chip into view — inline so it runs during parse and
+  // the sticky bar never visibly jumps after first paint.
+  (() => {
+    const list = document.querySelector('.filter-list');
+    const activeChip = list && list.querySelector('[aria-current]');
+    if (list && activeChip) {
+      const delta = activeChip.getBoundingClientRect().left - list.getBoundingClientRect().left;
+      list.scrollLeft = Math.max(0, delta - (list.clientWidth - activeChip.clientWidth) / 2);
+    }
+  })();
 </script>
 
 <style>
@@ -87,8 +89,6 @@ const current = enhanced ? 'true' : 'page';
     flex-wrap: nowrap;
     gap: var(--space-2xs);
     list-style: none;
-    /* Negative inline margin keeps the first label on the page's left rail
-       while the pill background bleeds outward. */
     margin: 0 calc(-1 * var(--space-sm));
     padding: var(--space-xs) var(--space-sm);
     overflow-x: auto;
@@ -100,23 +100,33 @@ const current = enhanced ? 'true' : 'page';
     display: none;
   }
 
-  @media (max-width: 899px) {
-    /* Fade hints that more filters sit beyond the edge; the trailing
-       padding keeps the last chip clear of the fade at full scroll. */
+  @media (min-width: 768px) {
+    /* Absorb the chip's own 1rem inline padding so the LABEL — not the
+       pill — sits on the page's left rail; the pill bleeds into the gutter. */
+    .filter-list {
+      margin-inline: calc(-1 * (var(--space-sm) + 1rem));
+      padding-inline: calc(var(--space-sm) + 1rem);
+    }
+  }
+
+  @media (max-width: 1199px) {
+    /* The chip row can overflow up to ~1200px wide; fade hints at more,
+       trailing padding keeps the last chip clear of the fade. */
     .filter-list {
       padding-inline-end: var(--space-2xl);
       mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
     }
   }
 
-  /* Compact chrome on short landscape viewports */
+  /* Compact chrome on short landscape viewports — still tappable, and the
+     list keeps enough block padding for the focus ring to render. */
   @media (max-height: 26rem) {
     .filter-list {
-      padding-block: var(--space-3xs);
+      padding-block: var(--space-2xs);
     }
 
     .filter-link {
-      min-height: 2.25rem;
+      min-height: 2.5rem;
     }
   }
 
@@ -134,17 +144,27 @@ const current = enhanced ? 'true' : 'page';
     white-space: nowrap;
     transition:
       background-color var(--duration-fast) var(--ease-out),
-      color var(--duration-fast) var(--ease-out);
+      color var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
   }
 
-  .filter-link:hover {
-    background: var(--color-line);
-    color: var(--color-ink);
+  @media (hover: hover) {
+    .filter-link:hover {
+      background: var(--color-line);
+      color: var(--color-ink);
+    }
   }
 
+  .filter-link:active {
+    transform: scale(0.98);
+  }
+
+  /* Active = the outline vocabulary the buttons already own; a solid ink
+     pill pinned over the covers stole attention from the work. */
   .filter-link[aria-current] {
-    background: var(--color-ink);
-    color: var(--color-paper);
+    background: transparent;
+    color: var(--color-ink);
+    box-shadow: inset 0 0 0 1px var(--color-ink);
   }
 
   .filter-count {

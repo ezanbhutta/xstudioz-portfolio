@@ -5,6 +5,7 @@ import { SITE } from '@/config/site';
 import { getCategory } from '@/data/categories';
 import { getSortedProjects, adjacentProjects } from '@/lib/projects';
 import { siteGraph, ORGANIZATION_ID } from '@/lib/schema';
+import { lqipStyle } from '@/lib/lqip';
 
 export async function getStaticPaths() {
   const projects = await getSortedProjects();
@@ -75,7 +76,7 @@ const widths = [640, 960, 1280, 1600];
   <article class="project">
     <header class="container page-hero project-header">
       <p class="overline">
-        <a class="overline-link" href={`/${category}/`}>{categoryInfo.title}</a>
+        <a class="overline-link" href={`/${category}/`} data-astro-prefetch>{categoryInfo.title}</a>
         <span aria-hidden="true"> · </span>{year}
       </p>
       <h1 class="page-title">{title}</h1>
@@ -84,28 +85,32 @@ const widths = [640, 960, 1280, 1600];
 
     {
       /* The first image pairs with the grid card's view transition and loads
-        with priority; the rest reveal lazily as the visitor scrolls. */
+        with priority; the rest reveal lazily as the visitor scrolls. Each
+        image carries its own blur placeholder so frames never appear empty. */
     }
     <div class="container project-gallery">
       {
-        images.map((img, i) => (
-          <figure
-            class="project-figure"
-            data-reveal={i === 0 ? undefined : ''}
-            style={i === 0 ? `view-transition-name: work-${project.id}` : undefined}
-          >
-            <Picture
-              src={img.src}
-              alt={img.alt}
-              formats={['avif', 'webp']}
-              fallbackFormat="webp"
-              widths={widths}
-              sizes={sizes}
-              loading={i === 0 ? 'eager' : 'lazy'}
-              fetchpriority={i === 0 ? 'high' : 'auto'}
-            />
-          </figure>
-        ))
+        await Promise.all(
+          images.map(async (img, i) => (
+            <figure
+              class="project-figure"
+              data-reveal={i === 0 ? undefined : ''}
+              style={i === 0 ? `view-transition-name: work-${project.id}` : undefined}
+            >
+              <Picture
+                src={img.src}
+                alt={img.alt}
+                formats={['avif', 'webp']}
+                fallbackFormat="webp"
+                widths={widths}
+                sizes={sizes}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                fetchpriority={i === 0 ? 'high' : 'auto'}
+                style={await lqipStyle(img.src)}
+              />
+            </figure>
+          )),
+        )
       }
     </div>
 
@@ -154,17 +159,31 @@ const widths = [640, 960, 1280, 1600];
 </BaseLayout>
 
 <style>
-  .overline-link {
-    display: inline-block;
-    padding-block: 0.5rem;
-    color: inherit;
-    text-decoration: none;
-    border-block-end: 1px solid var(--color-line-strong);
-    transition: color var(--duration-fast) var(--ease-out);
+  /* Exhibition spacing: the wall text sits further from the first work
+     than the works sit from each other. */
+  .project-header {
+    padding-block-end: var(--space-3xl);
   }
 
-  .overline-link:hover {
-    color: var(--color-accent);
+  .overline-link {
+    display: inline-block;
+    /* 44px hit area without growing the line box */
+    padding-block: 0.75rem;
+    margin-block: -0.75rem;
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 0.4em;
+    transition:
+      color var(--duration-fast) var(--ease-out),
+      text-decoration-color var(--duration-fast) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .overline-link:hover {
+      color: var(--color-accent);
+      text-decoration-color: currentColor;
+    }
   }
 
   .project-gallery {
@@ -190,11 +209,12 @@ const widths = [640, 960, 1280, 1600];
     padding-block: var(--space-lg);
   }
 
+  /* Quieter than the next-project titles — at a project's end, the next
+     work should win; the pill carries the CTA's authority. */
   .project-cta-text {
-    font-family: var(--font-display);
-    font-size: var(--text-xl);
-    font-weight: var(--weight-display);
-    letter-spacing: var(--tracking-tight);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-medium);
+    color: var(--color-ink-soft);
   }
 
   .project-cta-actions {
@@ -209,14 +229,12 @@ const widths = [640, 960, 1280, 1600];
     flex-wrap: wrap;
     gap: var(--space-md);
     margin-block-start: var(--space-2xl);
-    padding-block-start: var(--space-lg);
   }
 
   .project-nav-link {
     display: grid;
     gap: var(--space-3xs);
-    min-width: 0;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     text-decoration: none;
     min-height: var(--control-h);
   }
@@ -237,7 +255,7 @@ const widths = [640, 960, 1280, 1600];
     background-size: 0% 2px;
     background-position: 0 100%;
     padding-block-end: 2px;
-    transition: background-size var(--duration-base) var(--ease-out);
+    transition: background-size var(--duration-slow) var(--ease-out);
   }
 
   .project-nav-next .project-nav-title {
@@ -248,5 +266,9 @@ const widths = [640, 960, 1280, 1600];
     .project-nav-link:hover .project-nav-title {
       background-size: 100% 2px;
     }
+  }
+
+  .project-nav-link:focus-visible .project-nav-title {
+    background-size: 100% 2px;
   }
 </style>

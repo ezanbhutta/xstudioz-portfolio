@@ -1,6 +1,7 @@
 ---
 import { Picture } from 'astro:assets';
 import { getCategory } from '@/data/categories';
+import { lqipStyle } from '@/lib/lqip';
 import type { Project } from '@/lib/projects';
 
 interface Props {
@@ -15,20 +16,24 @@ const { project, eager = false, index = 0 } = Astro.props;
 const { title, category, year, cover } = project.data;
 const categoryLabel = getCategory(category).title;
 const href = `/work/${project.id}/`;
-const delay = (index % 4) * 60;
+// Two-column grid: the left card leads its right neighbour by one beat.
+const delay = (index % 2) * 60;
+const placeholder = await lqipStyle(cover);
 ---
 
 {
-  /* Eager cards skip the scroll reveal so their high-priority fetch paints
-    immediately instead of arriving invisible. */
+  /* Only the very first card skips the scroll reveal (it is the mobile LCP
+    and must paint instantly); `eager` still controls fetch priority. On
+    desktop the whole first row sits below the fold, so it reveals like
+    every other row — consistency reads as polish. */
 }
 <li class="card" data-category={category}>
   <a
     class="card-link"
     href={href}
     data-astro-prefetch
-    data-reveal={eager ? undefined : ''}
-    style={eager ? undefined : `--reveal-delay:${delay}ms`}
+    data-reveal={index === 0 ? undefined : ''}
+    style={index === 0 ? undefined : `--reveal-delay:${delay}ms`}
   >
     <div class="card-media" data-vt={`work-${project.id}`}>
       <Picture
@@ -40,8 +45,10 @@ const delay = (index % 4) * 60;
         sizes="(min-width: 1360px) 592px, (min-width: 680px) 45vw, 92vw"
         loading={eager ? 'eager' : 'lazy'}
         fetchpriority={eager ? 'high' : 'auto'}
+        style={placeholder}
       />
     </div>
+    {/* Museum-label caption: quiet, stacked, secondary to the image. */}
     <div class="card-caption">
       <h3 class="card-title">{title}</h3>
       <p class="card-meta">{categoryLabel} · {year}</p>
@@ -68,38 +75,42 @@ const delay = (index % 4) * 60;
   }
 
   .card-caption {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-sm);
     padding-block-start: var(--space-sm);
   }
 
   .card-title {
-    font-size: var(--text-xl);
+    font-size: var(--text-lg);
     font-weight: var(--weight-display);
+    letter-spacing: var(--tracking-tight);
+    display: inline-block;
     background-image: linear-gradient(var(--color-accent), var(--color-accent));
     background-repeat: no-repeat;
     background-size: 0% 2px;
     background-position: 0 100%;
     padding-block-end: 2px;
-    transition: background-size var(--duration-base) var(--ease-out);
+    /* Same clock as the image zoom — one gesture, one landing. */
+    transition: background-size var(--duration-slow) var(--ease-out);
   }
 
   .card-meta {
+    margin-block-start: var(--space-3xs);
     color: var(--color-ink-mute);
     font-size: var(--text-sm);
-    white-space: nowrap;
   }
 
   @media (hover: hover) {
     .card-link:hover .card-media :global(img) {
-      transform: scale(1.03);
+      transform: scale(1.02);
     }
 
     .card-link:hover .card-title {
       background-size: 100% 2px;
     }
+  }
+
+  /* Keyboard users get the same affordance as mouse users */
+  .card-link:focus-visible .card-title {
+    background-size: 100% 2px;
   }
 
   @media (prefers-reduced-motion: reduce) {

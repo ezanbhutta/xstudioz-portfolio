@@ -3,8 +3,13 @@ import { SITE } from '@/config/site';
 import Header from '@/components/Header.astro';
 import Footer from '@/components/Footer.astro';
 import '@/styles/global.css';
+import { existsSync } from 'node:fs';
 import outfitUrl from '@/assets/fonts/outfit-latin-var.woff2?url';
 import manropeUrl from '@/assets/fonts/manrope-latin-var.woff2?url';
+
+// Pixel-exact favicon generated from src/assets/logo-original.* when present
+// (see scripts/generate-og.mjs); the vector fallback ships otherwise.
+const hasPngFavicon = existsSync('public/favicon.png');
 
 interface Props {
   /** Full document title. The site name is appended unless it already appears. */
@@ -53,7 +58,13 @@ const ogImageUrl = ogImage ?? new URL('/og.png', SITE.url).href;
     {/* --color-paper; keep in sync with src/styles/tokens.css */}
     <meta name="theme-color" content="#faf9fc" />
 
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {
+      hasPngFavicon ? (
+        <link rel="icon" href="/favicon.png" type="image/png" />
+      ) : (
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+      )
+    }
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />
 

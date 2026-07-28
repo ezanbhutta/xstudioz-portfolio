@@ -20,8 +20,8 @@ npm run format     # prettier over src/ and scripts/
 
 The site ships with a git-based CMS ([Sveltia](https://github.com/sveltia/sveltia-cms))
 at **`/admin/`** on the deployed site. It edits projects (with image
-uploads), categories, packages and the site settings (including the Fiverr
-URL) through forms — every save is a commit to `main`, and the host
+uploads), categories and the site settings (including the Fiverr URL)
+through forms — every save is a commit to `main`, and the host
 rebuilds the site automatically. No database, no extra service.
 
 **Signing in** (one-time setup, pick one):
@@ -43,8 +43,8 @@ Notes:
 - Adding a category in the CMS? Also add its id to the Projects category
   dropdown options in `public/admin/config.yml` (one list, commented).
 - PDFs: the CMS is for images + copy. For a PDF-based portfolio, use the
-  `npm run ingest` flow below — it renders pages and wires the download
-  link automatically.
+  `npm run ingest` flow below — it renders the pages as images
+  automatically.
 
 ## Everyday maintenance
 
@@ -61,9 +61,8 @@ workflow:
      image
 3. Run `npm run ingest`
 
-The ingest step renders PDF pages to crisp 1600px images, crops a 4:3 grid
-cover from the top of page 1 (or the sheet), copies the PDF to
-`public/downloads/<slug>.pdf` for the project page's download link, and
+The ingest step renders PDF pages (any size or dimensions) to crisp 1600px
+images, crops a 4:3 grid cover from the top of page 1 (or the sheet), and
 writes `index.json`. Then open `index.json` and set `title`, `category`,
 `year`, `order` (lower = earlier in the grid) and a one-sentence `summary` —
 ingest never overwrites those once set. Alt text is generated per page and
@@ -84,23 +83,14 @@ Add one entry to `src/data/categories.ts`. The filter button and the
 `/<category-id>/` landing page are generated from it. Then tag projects with
 the new `id`.
 
-### Edit packages
-
-Everything on `/packages/` renders from `src/data/packages.ts` — copy, pricing,
-inclusions, the highlighted tier and CTA targets.
-
 ### Brand-level settings
 
 `src/config/site.ts` holds the site name, **production URL**, description and
 the **Fiverr profile link** used by every CTA. Update `url` before going live —
 canonical URLs, the sitemap and robots.txt all derive from it.
 
-**Before launch, two Fiverr links matter:**
-
-1. `SITE.fiverrUrl` — the studio profile, used by global CTAs.
-2. Each package's `href` in `src/data/packages.ts` — set these to the exact
-   gig deep links (e.g. `…/gig-slug?package=premium`) so a buyer who chose
-   "Signature" lands on the Signature scope, not the generic profile.
+**Before launch:** set `fiverrUrl` — every "Hire on Fiverr" button points
+there.
 
 ## Design system
 

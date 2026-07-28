@@ -47,8 +47,6 @@ const projects = defineCollection({
           }),
         )
         .min(1),
-      /** Site-absolute path to a downloadable source (e.g. the full PDF). */
-      download: z.string().optional(),
     }),
 });
 

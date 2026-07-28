@@ -3,7 +3,6 @@ import { SITE } from '@/config/site';
 import { CATEGORIES } from '@/data/categories';
 
 const year = new Date().getFullYear();
-const onPackages = Astro.url.pathname.startsWith('/packages');
 ---
 
 <footer class="footer">
@@ -12,7 +11,7 @@ const onPackages = Astro.url.pathname.startsWith('/packages');
       <p class="overline footer-overline">Start a project</p>
       <h2 id="footer-cta-heading">Let’s make yours next.</h2>
       <p class="footer-lede">
-        Every project starts as a conversation on Fiverr — scope, timeline and a package that fits.
+        Every project starts as a conversation on Fiverr — scope, timeline and a plan that fits.
       </p>
       <div class="footer-actions">
         <a
@@ -23,17 +22,6 @@ const onPackages = Astro.url.pathname.startsWith('/packages');
         >
           Hire on Fiverr <span aria-hidden="true">↗</span>
         </a>
-        {
-          onPackages ? (
-            <a class="footer-secondary" href="/">
-              See the work
-            </a>
-          ) : (
-            <a class="footer-secondary" href="/packages/">
-              Compare packages
-            </a>
-          )
-        }
       </div>
     </section>
 
@@ -60,7 +48,6 @@ const onPackages = Astro.url.pathname.startsWith('/packages');
         <p class="overline footer-overline" id="footer-studio">Studio</p>
         <ul role="list" aria-labelledby="footer-studio">
           <li><a href="/">Work</a></li>
-          <li><a href="/packages/">Packages</a></li>
           <li>
             <a href={SITE.fiverrUrl} target="_blank" rel="noopener noreferrer"
               >Fiverr <span aria-hidden="true">↗</span></a

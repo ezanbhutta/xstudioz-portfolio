@@ -4,10 +4,9 @@
  * Each brand's portfolio arrives as ONE asset. Drop it into
  * src/content/projects/<slug>/ using one of these conventions:
  *
- *   portfolio.pdf          → every page is rendered to page-NN.png at
- *                            1600px wide, a 4:3 grid cover is cropped from
- *                            page 1, and the PDF is copied to
- *                            public/downloads/<slug>.pdf for a download link.
+ *   portfolio.pdf          → every page (any size, any dimensions) is
+ *                            rendered to page-NN.png at 1600px wide and a
+ *                            4:3 grid cover is cropped from page 1.
  *
  *   sheet.png|jpg|jpeg|webp → the single (usually tall) presentation image
  *                            becomes the whole portfolio; a 4:3 grid cover
@@ -17,9 +16,9 @@
  *
  * index.json is created if missing (edit title/category/year/summary after)
  * and updated in place if present — your copy fields are preserved, only
- * cover/images/download are rewritten. Re-running is safe and idempotent.
+ * cover/images are rewritten. Re-running is safe and idempotent.
  */
-import { mkdir, readdir, readFile, writeFile, copyFile, rm } from 'node:fs/promises';
+import { readdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
@@ -27,7 +26,6 @@ import { createCanvas } from '@napi-rs/canvas';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 const PROJECTS_ROOT = path.resolve('src/content/projects');
-const DOWNLOADS_ROOT = path.resolve('public/downloads');
 const PAGE_WIDTH = 1600;
 const SHEET_NAMES = ['sheet.png', 'sheet.jpg', 'sheet.jpeg', 'sheet.webp'];
 
@@ -100,16 +98,14 @@ async function ingestProject(slug) {
     }
     const pages = await renderPdf(pdfPath, dir);
     await makeCover(path.join(dir, pages[0]), dir);
-    await mkdir(DOWNLOADS_ROOT, { recursive: true });
-    await copyFile(pdfPath, path.join(DOWNLOADS_ROOT, `${slug}.pdf`));
     meta.cover = './cover.png';
     meta.coverAlt = meta.coverAlt ?? `${title} presentation cover`;
     meta.images = pages.map((name, i) => ({
       src: `./${name}`,
       alt: `${title} presentation, page ${i + 1} of ${pages.length}`,
     }));
-    meta.download = `/downloads/${slug}.pdf`;
-    console.log(`✓ ${slug} — ${pages.length} PDF pages rendered + download copied`);
+    delete meta.download;
+    console.log(`✓ ${slug} — ${pages.length} PDF pages rendered`);
   } else {
     await makeCover(path.join(dir, sheetName), dir);
     meta.cover = './cover.png';

@@ -15,7 +15,7 @@ export async function getStaticPaths() {
 }
 
 const { project, projects } = Astro.props;
-const { title, category, year, summary, cover, coverAlt, images, download } = project.data;
+const { title, category, year, summary, cover, coverAlt, images } = project.data;
 const categoryInfo = getCategory(category);
 const { prev, next } = adjacentProjects(projects, project.id);
 
@@ -80,14 +80,6 @@ const widths = [640, 960, 1280, 1600];
       </p>
       <h1 class="page-title">{title}</h1>
       <p class="page-lede">{summary}</p>
-      {
-        download && (
-          <a class="button button--outline project-download" href={download} download>
-            Download the full presentation (PDF)
-            <span aria-hidden="true">↓</span>
-          </a>
-        )
-      }
     </header>
 
     {
@@ -128,7 +120,6 @@ const widths = [640, 960, 1280, 1600];
         >
           Hire on Fiverr <span aria-hidden="true">↗</span>
         </a>
-        <a class="button button--outline" href="/packages/" data-astro-prefetch>See packages</a>
       </div>
     </aside>
 
@@ -174,10 +165,6 @@ const widths = [640, 960, 1280, 1600];
 
   .overline-link:hover {
     color: var(--color-accent);
-  }
-
-  .project-download {
-    margin-block-start: var(--space-md);
   }
 
   .project-gallery {

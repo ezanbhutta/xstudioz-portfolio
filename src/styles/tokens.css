@@ -69,7 +69,7 @@
   --space-2xl: 4rem;
   --space-3xl: 6rem;
   --space-section: clamp(4.5rem, 3rem + 7vw, 9rem);
-  --space-gallery: clamp(1.5rem, 1rem + 2.5vw, 3rem);
+  --space-gallery: clamp(2rem, 1.25rem + 3vw, 4rem);
 
   /* Layout */
   --container-max: 85rem; /* 1360px */

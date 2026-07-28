@@ -5,6 +5,7 @@ import { SITE } from '@/config/site';
 import { getCategory } from '@/data/categories';
 import { getSortedProjects, adjacentProjects } from '@/lib/projects';
 import { siteGraph, ORGANIZATION_ID } from '@/lib/schema';
+import { lqipStyle } from '@/lib/lqip';
 
 export async function getStaticPaths() {
   const projects = await getSortedProjects();
@@ -84,28 +85,32 @@ const widths = [640, 960, 1280, 1600];
 
     {
       /* The first image pairs with the grid card's view transition and loads
-        with priority; the rest reveal lazily as the visitor scrolls. */
+        with priority; the rest reveal lazily as the visitor scrolls. Each
+        image carries its own blur placeholder so frames never appear empty. */
     }
     <div class="container project-gallery">
       {
-        images.map((img, i) => (
-          <figure
-            class="project-figure"
-            data-reveal={i === 0 ? undefined : ''}
-            style={i === 0 ? `view-transition-name: work-${project.id}` : undefined}
-          >
-            <Picture
-              src={img.src}
-              alt={img.alt}
-              formats={['avif', 'webp']}
-              fallbackFormat="webp"
-              widths={widths}
-              sizes={sizes}
-              loading={i === 0 ? 'eager' : 'lazy'}
-              fetchpriority={i === 0 ? 'high' : 'auto'}
-            />
-          </figure>
-        ))
+        await Promise.all(
+          images.map(async (img, i) => (
+            <figure
+              class="project-figure"
+              data-reveal={i === 0 ? undefined : ''}
+              style={i === 0 ? `view-transition-name: work-${project.id}` : undefined}
+            >
+              <Picture
+                src={img.src}
+                alt={img.alt}
+                formats={['avif', 'webp']}
+                fallbackFormat="webp"
+                widths={widths}
+                sizes={sizes}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                fetchpriority={i === 0 ? 'high' : 'auto'}
+                style={await lqipStyle(img.src)}
+              />
+            </figure>
+          )),
+        )
       }
     </div>
 

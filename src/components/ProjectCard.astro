@@ -1,6 +1,7 @@
 ---
 import { Picture } from 'astro:assets';
 import { getCategory } from '@/data/categories';
+import { lqipStyle } from '@/lib/lqip';
 import type { Project } from '@/lib/projects';
 
 interface Props {
@@ -16,6 +17,7 @@ const { title, category, year, cover } = project.data;
 const categoryLabel = getCategory(category).title;
 const href = `/work/${project.id}/`;
 const delay = (index % 4) * 60;
+const placeholder = await lqipStyle(cover);
 ---
 
 {
@@ -40,8 +42,10 @@ const delay = (index % 4) * 60;
         sizes="(min-width: 1360px) 592px, (min-width: 680px) 45vw, 92vw"
         loading={eager ? 'eager' : 'lazy'}
         fetchpriority={eager ? 'high' : 'auto'}
+        style={placeholder}
       />
     </div>
+    {/* Museum-label caption: quiet, stacked, secondary to the image. */}
     <div class="card-caption">
       <h3 class="card-title">{title}</h3>
       <p class="card-meta">{categoryLabel} · {year}</p>
@@ -64,20 +68,18 @@ const delay = (index % 4) * 60;
   .card-media :global(img) {
     width: 100%;
     height: auto;
-    transition: transform var(--duration-slow) var(--ease-out);
+    transition: transform 700ms var(--ease-out);
   }
 
   .card-caption {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-sm);
     padding-block-start: var(--space-sm);
   }
 
   .card-title {
-    font-size: var(--text-xl);
+    font-size: var(--text-lg);
     font-weight: var(--weight-display);
+    letter-spacing: var(--tracking-tight);
+    display: inline-block;
     background-image: linear-gradient(var(--color-accent), var(--color-accent));
     background-repeat: no-repeat;
     background-size: 0% 2px;
@@ -87,14 +89,14 @@ const delay = (index % 4) * 60;
   }
 
   .card-meta {
+    margin-block-start: var(--space-3xs);
     color: var(--color-ink-mute);
     font-size: var(--text-sm);
-    white-space: nowrap;
   }
 
   @media (hover: hover) {
     .card-link:hover .card-media :global(img) {
-      transform: scale(1.03);
+      transform: scale(1.02);
     }
 
     .card-link:hover .card-title {

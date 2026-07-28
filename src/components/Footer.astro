@@ -41,7 +41,9 @@ const year = new Date().getFullYear();
           {
             CATEGORIES.map((c) => (
               <li>
-                <a href={`/${c.id}/`}>{c.title}</a>
+                <a href={`/${c.id}/`} data-astro-prefetch>
+                  {c.title}
+                </a>
               </li>
             ))
           }
@@ -50,7 +52,7 @@ const year = new Date().getFullYear();
       <nav aria-label="Studio">
         <p class="overline footer-overline" id="footer-studio">Studio</p>
         <ul role="list" aria-labelledby="footer-studio">
-          <li><a href="/">Work</a></li>
+          <li><a href="/" data-astro-prefetch>Work</a></li>
           <li>
             <a href={SITE.fiverrUrl} target="_blank" rel="noopener noreferrer"
               >Fiverr <span aria-hidden="true">↗</span></a
@@ -134,8 +136,10 @@ const year = new Date().getFullYear();
     transition: color var(--duration-fast) var(--ease-out);
   }
 
-  .footer-grid ul a:hover {
-    color: var(--color-paper);
+  @media (hover: hover) {
+    .footer-grid ul a:hover {
+      color: var(--color-paper);
+    }
   }
 
   .footer-legal {

@@ -62,15 +62,17 @@ const current = enhanced ? 'true' : 'page';
 
 {enhanced && <FilterBarEnhancer />}
 
-<script>
-  // Bring the active chip into view — on narrow screens the active category
-  // can otherwise sit beyond the scroll edge with no visual cue.
-  const list = document.querySelector<HTMLElement>('.filter-list');
-  const activeChip = list?.querySelector<HTMLElement>('[aria-current]');
-  if (list && activeChip) {
-    const delta = activeChip.getBoundingClientRect().left - list.getBoundingClientRect().left;
-    list.scrollLeft = Math.max(0, delta - (list.clientWidth - activeChip.clientWidth) / 2);
-  }
+<script is:inline>
+  // Bring the active chip into view — inline so it runs during parse and
+  // the sticky bar never visibly jumps after first paint.
+  (() => {
+    const list = document.querySelector('.filter-list');
+    const activeChip = list && list.querySelector('[aria-current]');
+    if (list && activeChip) {
+      const delta = activeChip.getBoundingClientRect().left - list.getBoundingClientRect().left;
+      list.scrollLeft = Math.max(0, delta - (list.clientWidth - activeChip.clientWidth) / 2);
+    }
+  })();
 </script>
 
 <style>
@@ -116,14 +118,15 @@ const current = enhanced ? 'true' : 'page';
     }
   }
 
-  /* Compact chrome on short landscape viewports */
+  /* Compact chrome on short landscape viewports — still tappable, and the
+     list keeps enough block padding for the focus ring to render. */
   @media (max-height: 26rem) {
     .filter-list {
-      padding-block: var(--space-3xs);
+      padding-block: var(--space-2xs);
     }
 
     .filter-link {
-      min-height: 2.25rem;
+      min-height: 2.5rem;
     }
   }
 
@@ -141,12 +144,19 @@ const current = enhanced ? 'true' : 'page';
     white-space: nowrap;
     transition:
       background-color var(--duration-fast) var(--ease-out),
-      color var(--duration-fast) var(--ease-out);
+      color var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
   }
 
-  .filter-link:hover {
-    background: var(--color-line);
-    color: var(--color-ink);
+  @media (hover: hover) {
+    .filter-link:hover {
+      background: var(--color-line);
+      color: var(--color-ink);
+    }
+  }
+
+  .filter-link:active {
+    transform: scale(0.98);
   }
 
   /* Active = the outline vocabulary the buttons already own; a solid ink

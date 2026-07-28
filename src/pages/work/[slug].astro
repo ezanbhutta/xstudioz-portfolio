@@ -76,7 +76,7 @@ const widths = [640, 960, 1280, 1600];
   <article class="project">
     <header class="container page-hero project-header">
       <p class="overline">
-        <a class="overline-link" href={`/${category}/`}>{categoryInfo.title}</a>
+        <a class="overline-link" href={`/${category}/`} data-astro-prefetch>{categoryInfo.title}</a>
         <span aria-hidden="true"> · </span>{year}
       </p>
       <h1 class="page-title">{title}</h1>
@@ -168,8 +168,8 @@ const widths = [640, 960, 1280, 1600];
   .overline-link {
     display: inline-block;
     /* 44px hit area without growing the line box */
-    padding-block: 0.5rem;
-    margin-block: -0.5rem;
+    padding-block: 0.75rem;
+    margin-block: -0.75rem;
     color: inherit;
     text-decoration: underline;
     text-decoration-color: transparent;
@@ -179,9 +179,11 @@ const widths = [640, 960, 1280, 1600];
       text-decoration-color var(--duration-fast) var(--ease-out);
   }
 
-  .overline-link:hover {
-    color: var(--color-accent);
-    text-decoration-color: currentColor;
+  @media (hover: hover) {
+    .overline-link:hover {
+      color: var(--color-accent);
+      text-decoration-color: currentColor;
+    }
   }
 
   .project-gallery {
@@ -264,5 +266,9 @@ const widths = [640, 960, 1280, 1600];
     .project-nav-link:hover .project-nav-title {
       background-size: 100% 2px;
     }
+  }
+
+  .project-nav-link:focus-visible .project-nav-title {
+    background-size: 100% 2px;
   }
 </style>

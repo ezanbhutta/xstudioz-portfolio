@@ -42,7 +42,14 @@ const { projects, eagerCount = 2, filterable = false, heading = 'Projects' } = A
     const media = (event.target as HTMLElement)
       .closest('.card-link')
       ?.querySelector<HTMLElement>('[data-vt]');
-    if (media?.dataset.vt) media.style.viewTransitionName = media.dataset.vt;
+    if (media?.dataset.vt) {
+      // Clear stale names first — bfcache restores keep inline styles, and
+      // every stale name is an extra snapshot on the next navigation.
+      for (const el of document.querySelectorAll<HTMLElement>('[data-vt]')) {
+        el.style.viewTransitionName = '';
+      }
+      media.style.viewTransitionName = media.dataset.vt;
+    }
   });
 
   // Pair the RETURN trip too: arriving back from a project page, name that
@@ -95,7 +102,14 @@ const { projects, eagerCount = 2, filterable = false, heading = 'Projects' } = A
 
   .work-empty a {
     color: var(--color-ink);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     text-decoration-color: var(--color-accent);
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .work-empty a:hover {
+      color: var(--color-accent);
+    }
   }
 </style>

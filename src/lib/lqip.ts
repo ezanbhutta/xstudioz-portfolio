@@ -4,7 +4,7 @@ import type { ImageMetadata } from 'astro';
 /**
  * Build-time blur placeholders: a ~200-byte, 16px-wide WebP inlined as a
  * data URI and painted behind each portfolio image. The frame shows the
- * image's own colors instantly and the full asset fades in over it —
+ * image's own colors instantly and the full asset paints over it —
  * zero layout shift, zero requests, zero client JavaScript.
  */
 const cache = new Map<string, Promise<string | null>>();

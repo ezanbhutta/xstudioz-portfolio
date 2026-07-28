@@ -13,7 +13,6 @@
 :root {
   /* Color — cool violet-tinted gallery neutrals; the work stays the hero. */
   --color-paper: #faf9fc;
-  --color-paper-raised: #ffffff;
   --color-ink: #1a1523;
   --color-ink-soft: #554e60;
   --color-ink-mute: #6e6879;
@@ -77,14 +76,12 @@
   --gutter: clamp(1.25rem, 5vw, 4rem);
   --measure: 38rem; /* comfortable reading width ≈ 66ch */
   --measure-wide: 44rem;
-  --measure-narrow: 26rem;
 
   /* Controls */
   --control-h: 2.75rem; /* 44px touch target */
 
   /* Shape — print-like sharp imagery, soft panels, pill actions */
   --radius-xs: 2px;
-  --radius-md: 12px;
   --radius-pill: 999px;
 
   /* Motion */

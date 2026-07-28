@@ -22,16 +22,18 @@ const placeholder = await lqipStyle(cover);
 ---
 
 {
-  /* Eager cards skip the scroll reveal so their high-priority fetch paints
-    immediately instead of arriving invisible. */
+  /* Only the very first card skips the scroll reveal (it is the mobile LCP
+    and must paint instantly); `eager` still controls fetch priority. On
+    desktop the whole first row sits below the fold, so it reveals like
+    every other row — consistency reads as polish. */
 }
 <li class="card" data-category={category}>
   <a
     class="card-link"
     href={href}
     data-astro-prefetch
-    data-reveal={eager ? undefined : ''}
-    style={eager ? undefined : `--reveal-delay:${delay}ms`}
+    data-reveal={index === 0 ? undefined : ''}
+    style={index === 0 ? undefined : `--reveal-delay:${delay}ms`}
   >
     <div class="card-media" data-vt={`work-${project.id}`}>
       <Picture
@@ -104,6 +106,11 @@ const placeholder = await lqipStyle(cover);
     .card-link:hover .card-title {
       background-size: 100% 2px;
     }
+  }
+
+  /* Keyboard users get the same affordance as mouse users */
+  .card-link:focus-visible .card-title {
+    background-size: 100% 2px;
   }
 
   @media (prefers-reduced-motion: reduce) {

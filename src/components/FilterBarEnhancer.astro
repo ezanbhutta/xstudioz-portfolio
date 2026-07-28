@@ -23,7 +23,12 @@
       for (const li of items) {
         const show = category === 'all' || li.dataset.category === category;
         li.hidden = !show;
-        if (show) shown += 1;
+        if (show) {
+          shown += 1;
+          // Un-hidden cards must be visible NOW — the view transition
+          // snapshots before the reveal observer's async callback runs.
+          li.querySelector('[data-reveal]')?.classList.add('is-visible');
+        }
       }
       for (const link of links) {
         if (link.dataset.filter === category) {
@@ -64,9 +69,10 @@
       // Push the canonical URL so Back undoes the filter step by step.
       history.pushState(null, '', link.getAttribute('href'));
       // Keep the grid in view when filtering from deep in the page
-      // (scroll-padding on <html> clears the sticky bar).
+      // (scroll-padding on <html> clears the sticky bar). Instant, so the
+      // scroll doesn't animate inside the running view transition.
       if (gridWrap.getBoundingClientRect().top < 0) {
-        gridWrap.scrollIntoView({ block: 'start' });
+        gridWrap.scrollIntoView({ block: 'start', behavior: 'instant' });
       }
     });
 

@@ -16,7 +16,8 @@ const { project, eager = false, index = 0 } = Astro.props;
 const { title, category, year, cover } = project.data;
 const categoryLabel = getCategory(category).title;
 const href = `/work/${project.id}/`;
-const delay = (index % 4) * 60;
+// Two-column grid: the left card leads its right neighbour by one beat.
+const delay = (index % 2) * 60;
 const placeholder = await lqipStyle(cover);
 ---
 
@@ -68,7 +69,7 @@ const placeholder = await lqipStyle(cover);
   .card-media :global(img) {
     width: 100%;
     height: auto;
-    transition: transform 700ms var(--ease-out);
+    transition: transform var(--duration-slow) var(--ease-out);
   }
 
   .card-caption {
@@ -85,7 +86,8 @@ const placeholder = await lqipStyle(cover);
     background-size: 0% 2px;
     background-position: 0 100%;
     padding-block-end: 2px;
-    transition: background-size var(--duration-base) var(--ease-out);
+    /* Same clock as the image zoom — one gesture, one landing. */
+    transition: background-size var(--duration-slow) var(--ease-out);
   }
 
   .card-meta {

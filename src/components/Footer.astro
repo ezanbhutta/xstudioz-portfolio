@@ -30,7 +30,7 @@ const year = new Date().getFullYear();
     <div class="footer-grid">
       <div class="footer-brand">
         <p class="wordmark wordmark-lockup footer-wordmark">
-          <Logo size={30} />
+          <Logo size={26} />
           XStudioz<span class="accent-dot" aria-hidden="true">.</span>
         </p>
         <p class="footer-tag">Where your brand meets creative ideas.<br />The work speaks first.</p>
@@ -73,7 +73,7 @@ const year = new Date().getFullYear();
   }
 
   .footer-cta {
-    max-width: 44rem;
+    max-width: var(--measure-wide);
   }
 
   .footer-overline {
@@ -82,7 +82,7 @@ const year = new Date().getFullYear();
 
   .footer-cta h2 {
     font-size: var(--text-3xl);
-    margin-block: var(--space-sm) var(--space-sm);
+    margin-block: var(--space-3xs) var(--space-md);
   }
 
   .footer-lede {
@@ -96,20 +96,6 @@ const year = new Date().getFullYear();
     flex-wrap: wrap;
     gap: var(--space-md);
     margin-block-start: var(--space-lg);
-  }
-
-  .footer-secondary {
-    display: inline-flex;
-    align-items: center;
-    min-height: 2.75rem;
-    color: var(--color-paper);
-    font-weight: 500;
-    text-decoration-color: var(--color-accent-bright);
-    text-decoration-thickness: 2px;
-  }
-
-  .footer-secondary:hover {
-    color: var(--color-accent-bright);
   }
 
   .footer-grid {
@@ -141,7 +127,8 @@ const year = new Date().getFullYear();
 
   .footer-grid ul a {
     display: inline-block;
-    padding-block: var(--space-2xs);
+    /* 25.6px line + 2 × 9.2px = 44px touch target */
+    padding-block: 0.575rem;
     color: var(--color-paper-mute);
     text-decoration: none;
     transition: color var(--duration-fast) var(--ease-out);

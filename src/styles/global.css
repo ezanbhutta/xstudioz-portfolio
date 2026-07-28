@@ -145,17 +145,18 @@ p {
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
-  color: var(--color-ink-mute);
+  color: var(--color-ink-soft);
 }
 
-/* Shared page-opening rhythm: overline → display H1 → lede. */
+/* Shared page-opening rhythm: overline → display H1 → lede.
+   The kicker hugs its title (≈1:2 above/below) — they are one unit. */
 .page-hero {
   padding-block: var(--space-2xl) var(--space-xl);
 }
 
 .page-title {
   font-size: var(--text-display);
-  margin-block: var(--space-sm) var(--space-md);
+  margin-block: var(--space-3xs) var(--space-lg);
 }
 
 .page-lede {
@@ -181,7 +182,7 @@ p {
 .wordmark-lockup {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: var(--space-2xs);
 }
 
 .wordmark .accent-dot {
@@ -189,7 +190,7 @@ p {
 }
 
 a.wordmark:hover .accent-dot {
-  color: var(--color-accent-bright);
+  color: var(--color-accent-deep);
 }
 
 .visually-hidden {

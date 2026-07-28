@@ -67,7 +67,8 @@
   --space-lg: 2rem;
   --space-xl: 3rem;
   --space-2xl: 4rem;
-  --space-3xl: 6rem;
+  /* Fluid so mobile sections keep the desktop's top-heavy ratio */
+  --space-3xl: clamp(3.5rem, 2.25rem + 5vw, 6rem);
   --space-section: clamp(4.5rem, 3rem + 7vw, 9rem);
   --space-gallery: clamp(2rem, 1.25rem + 3vw, 4rem);
 

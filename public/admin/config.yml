@@ -17,7 +17,7 @@ backend:
   repo: ezanbhutta/xstudioz-portfolio
   branch: main
 
-site_url: https://xstudioz.netlify.app
+site_url: https://xstudioz.vercel.app
 media_folder: public/uploads
 public_folder: /uploads
 
@@ -49,7 +49,6 @@ collections:
         # Keep in sync with src/data/categories.json (Site settings → Categories)
         options:
           - logo-design
-          - brand-identity
           - brand-guidelines
           - stationery
           - social-media

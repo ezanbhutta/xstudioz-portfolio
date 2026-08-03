@@ -123,28 +123,32 @@ there.
   (Organization, CreativeWork, BreadcrumbList, CollectionPage, OfferCatalog),
   `sitemap-index.xml` and `robots.txt` out of the box.
 
-## Deploying — GitHub Actions → Hostinger
+## Deploying — Hostinger, straight from GitHub
 
-`npm run build` produces a fully static `dist/`. Hostinger's shared hosting
-serves files but cannot run a Node build — and this build renders every PDF
-page with sharp and pdfjs — so **GitHub Actions builds the site and uploads
-only the finished `dist/`**.
+The site is hosted on **Hostinger** at <https://xstudioz.com>, deployed by
+Hostinger's own GitHub integration. Nothing else is required: it watches
+`main`, runs `npm run build` on push, and publishes the resulting `dist/`.
+SSL, the CDN and auto-deployment are handled on their side.
 
-`.github/workflows/deploy.yml` runs on every push to `main` (which is what
-every CMS save produces) and can also be triggered by hand from the Actions
-tab. It refuses to upload if the build produced no pages, so a broken build
-can never blank the live site.
+Because every CMS save is a commit to `main`, editing content in `/admin/`
+is what triggers a deploy. A build takes roughly 4–5 minutes, most of it
+spent rendering PDF pages through sharp and pdfjs.
 
-**One-time setup.** Add four repository secrets under
-*Settings → Secrets and variables → Actions*, using the FTP details from
-Hostinger's *Files → FTP Accounts* panel:
+Hostinger's panel settings for this project:
 
-| Secret | Value |
+| Setting | Value |
 | --- | --- |
-| `FTP_SERVER` | FTP hostname, e.g. `ftp.xstudioz.com` |
-| `FTP_USERNAME` | FTP account username |
-| `FTP_PASSWORD` | FTP account password |
-| `FTP_SERVER_DIR` | Target directory, usually `public_html/` (keep the trailing slash) |
+| Framework | Astro |
+| Branch | `main` |
+| Node version | 22.x |
+| Root directory | `./` |
+| Build and output | Default (resolves to `npm run build`) |
+
+That last row matters: the build **must** run `npm run build`, not
+`astro build`. `scripts/ingest.mjs` is what renders every PDF into page
+images and generates the grid covers — skip it and every project fails the
+"has a cover and images" check, producing a site that builds cleanly with an
+empty portfolio.
 
 Server configuration lives in `public/.htaccess`, which Astro copies into
 `dist/` on every build: immutable caching for the content-hashed `_astro/`

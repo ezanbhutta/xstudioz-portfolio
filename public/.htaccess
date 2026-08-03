@@ -1,0 +1,86 @@
+# Server rules for Hostinger (Apache / LiteSpeed).
+#
+# This file lives in public/ so Astro copies it verbatim into dist/ and the
+# deploy uploads it alongside the site. It replaces what vercel.json used
+# to do: long-lived caching for hashed assets, plus the 404 page, HTTPS and
+# compression that a static host has to be told about explicitly.
+
+# ---------------------------------------------------------------------------
+# Error page — without this Apache serves its own bare 404, not the designed one
+# ---------------------------------------------------------------------------
+ErrorDocument 404 /404.html
+
+# ---------------------------------------------------------------------------
+# Canonical host + HTTPS
+#
+# Two reachable copies of the site would undo the canonical work: keep one
+# scheme and one hostname. Apex is canonical, www redirects to it.
+# ---------------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Force HTTPS (skipped behind a proxy that already terminated TLS)
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+  # www → apex
+  RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+  RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
+</IfModule>
+
+# Astro builds directory-style output (/work/slug/index.html) and the site
+# sets trailingSlash: 'always'. mod_dir already redirects /work/slug to
+# /work/slug/ when the directory exists, so no custom rule is needed — but
+# the index file has to be declared.
+DirectoryIndex index.html
+
+# Directory listings must never be served for folders without an index
+Options -Indexes
+
+# ---------------------------------------------------------------------------
+# Caching
+#
+# Everything under /_astro/ is content-hashed, so its URL changes whenever
+# its bytes do — those can be cached forever. HTML must NOT be, or a CMS
+# edit would sit invisible behind a stale cache.
+# ---------------------------------------------------------------------------
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css|woff2|avif|webp|png|jpe?g|gif|svg|ico)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # Un-hashed top-level assets: cache briefly, revalidate.
+  <FilesMatch "^(og\.png|favicon\.(png|svg)|apple-touch-icon\.png)$">
+    Header set Cache-Control "public, max-age=86400"
+  </FilesMatch>
+
+  <FilesMatch "\.(html|xml|txt|json)$">
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+  </FilesMatch>
+
+  # The CMS config drives the admin UI; a stale copy hides new fields.
+  <FilesMatch "^config\.yml$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# ---------------------------------------------------------------------------
+# Compression — text formats only; images and woff2 are already compressed
+# ---------------------------------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml
+  AddOutputFilterByType DEFLATE application/javascript application/json
+  AddOutputFilterByType DEFLATE application/xml image/svg+xml
+</IfModule>
+
+# Correct types for the formats this site serves, in case the host is old
+<IfModule mod_mime.c>
+  AddType font/woff2 .woff2
+  AddType image/avif .avif
+  AddType image/webp .webp
+  AddType application/manifest+json .webmanifest
+</IfModule>

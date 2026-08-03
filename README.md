@@ -123,9 +123,34 @@ there.
   (Organization, CreativeWork, BreadcrumbList, CollectionPage, OfferCatalog),
   `sitemap-index.xml` and `robots.txt` out of the box.
 
-## Deploying
+## Deploying — GitHub Actions → Hostinger
 
-`npm run build` produces a fully static `dist/` — host it anywhere (Netlify,
-Vercel, Cloudflare Pages, GitHub Pages…). `public/_headers` ships immutable
-cache headers for the content-hashed `_astro/` assets on Netlify/Cloudflare;
-mirror it in your host's config elsewhere.
+`npm run build` produces a fully static `dist/`. Hostinger's shared hosting
+serves files but cannot run a Node build — and this build renders every PDF
+page with sharp and pdfjs — so **GitHub Actions builds the site and uploads
+only the finished `dist/`**.
+
+`.github/workflows/deploy.yml` runs on every push to `main` (which is what
+every CMS save produces) and can also be triggered by hand from the Actions
+tab. It refuses to upload if the build produced no pages, so a broken build
+can never blank the live site.
+
+**One-time setup.** Add four repository secrets under
+*Settings → Secrets and variables → Actions*, using the FTP details from
+Hostinger's *Files → FTP Accounts* panel:
+
+| Secret | Value |
+| --- | --- |
+| `FTP_SERVER` | FTP hostname, e.g. `ftp.xstudioz.com` |
+| `FTP_USERNAME` | FTP account username |
+| `FTP_PASSWORD` | FTP account password |
+| `FTP_SERVER_DIR` | Target directory, usually `public_html/` (keep the trailing slash) |
+
+Server configuration lives in `public/.htaccess`, which Astro copies into
+`dist/` on every build: immutable caching for the content-hashed `_astro/`
+assets, no caching for HTML so CMS edits appear immediately, the custom 404,
+HTTPS and `www` → apex redirects, and compression.
+
+Changing the production URL (canonicals, sitemap, `robots.txt`, social cards)
+is a content edit, not a code one — *Site settings → Brand & links →
+Production URL* in the CMS.

@@ -13,7 +13,7 @@ export default defineConfig({
   },
   build: {
     // Small page styles inline; the shared bundle externalizes into one
-    // hashed, immutable-cacheable file (see vercel.json headers).
+    // hashed, immutable-cacheable file (see public/.htaccess headers).
     inlineStylesheets: 'auto',
   },
   prefetch: {

@@ -75,12 +75,23 @@ const placeholder = await lqipStyle(cover);
   }
 
   /* Hairline frame — these are plates on a wall, and a light cover against
-     warm paper needs an edge or it bleeds into the page. */
+     warm paper needs an edge or it bleeds into the page. The frame lifts
+     into a soft shadow on hover so the card rises toward the cursor
+     instead of only zooming inside its own box. */
   .card-media {
     overflow: hidden;
     border-radius: var(--radius-xs);
     background: var(--color-paper-raised);
     box-shadow: inset 0 0 0 1px var(--color-line);
+    transition: box-shadow var(--duration-base) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .card-link:hover .card-media {
+      box-shadow:
+        inset 0 0 0 1px var(--color-line-strong),
+        0 1rem 2.5rem -1rem rgb(23 20 27 / 22%);
+    }
   }
 
   .card-media :global(img) {

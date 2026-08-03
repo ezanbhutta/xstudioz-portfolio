@@ -120,6 +120,21 @@ const groups = CATEGORIES.map((c) => ({
     flex-wrap: wrap;
   }
 
+  /* On a phone the two selects would wrap onto separate lines and eat a
+     third of the fold; share the row instead. */
+  @media (max-width: 899px) {
+    .subfilter {
+      flex: 1 1 0;
+      min-inline-size: 0;
+    }
+
+    .subfilter select {
+      inline-size: 100%;
+      padding-inline: 0.875rem 2rem;
+      background-position: right 0.75rem center;
+    }
+  }
+
   .subfilter select {
     appearance: none;
     font: inherit;

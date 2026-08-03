@@ -24,11 +24,11 @@ const jsonLd = {
   jsonLd={jsonLd}
 >
   <section class="hero container">
-    <p class="overline">Logo &amp; Brand Identity Studio</p>
-    <h1 class="hero-title">
+    <p class="overline" data-enter style="--enter-step:0">Logo &amp; Brand Identity Studio</p>
+    <h1 class="hero-title" data-enter style="--enter-step:1">
       Where your brand meets<br />creative ideas<span class="accent-dot">.</span>
     </h1>
-    <div class="hero-body">
+    <div class="hero-body" data-enter style="--enter-step:2">
       <p class="hero-lede">
         Your brand deserves more than a logo. We design identities that stand out, get remembered,
         and win you customers.
@@ -52,7 +52,7 @@ const jsonLd = {
         </div>
       </dl>
     </div>
-    <div class="hero-actions">
+    <div class="hero-actions" data-enter style="--enter-step:3">
       <a
         class="button button--primary"
         href={SITE.fiverrUrl}
@@ -191,9 +191,9 @@ const jsonLd = {
   }
 
   .process {
-    margin-block-start: var(--space-section);
+    margin-block-start: var(--space-3xl);
     border-block-start: 1px solid var(--color-line);
-    padding-block-start: var(--space-3xl);
+    padding-block-start: var(--space-2xl);
   }
 
   .process-title {

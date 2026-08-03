@@ -30,7 +30,7 @@ const current = enhanced ? 'true' : 'page';
   data-filterbar={enhanced ? '' : undefined}
   data-total={total}
 >
-  <div class="container">
+  <div class="container filter-inner">
     <ul class="filter-list" role="list">
       {
         CATEGORIES.map((c) => {
@@ -88,8 +88,29 @@ const current = enhanced ? 'true' : 'page';
     position: sticky;
     top: 0;
     z-index: var(--z-filter);
-    background: var(--color-paper);
+    /* Translucent so the work scrolls under the bar rather than hitting a
+       hard opaque slab; the blur keeps the chips legible over any cover. */
+    background: color-mix(in srgb, var(--color-paper) 82%, transparent);
+    backdrop-filter: blur(12px) saturate(140%);
     border-block-end: 1px solid var(--color-line);
+  }
+
+  /* Chips left, refinements right — one row instead of two stacked ones.
+     Below 900px they wrap back to their own line. */
+  @media (min-width: 900px) {
+    .filter-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-lg);
+    }
+
+    /* The refinement selects sit on the same baseline as the chips now, so
+       the block padding that separated the two rows has to go. */
+    .filter-inner :global(.subfilters) {
+      padding-block-end: 0;
+      flex: none;
+    }
   }
 
   .filter-list {

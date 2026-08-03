@@ -103,6 +103,12 @@ const year = new Date().getFullYear();
     color: var(--color-paper-mute);
   }
 
+  /* The deep violet rule disappears against ink — on dark surfaces the
+     label leads with the bright end of the brand gradient instead. */
+  .footer-overline::before {
+    background: var(--color-accent-bright);
+  }
+
   .footer-cta h2 {
     font-size: var(--text-3xl);
     margin-block: var(--space-3xs) var(--space-md);

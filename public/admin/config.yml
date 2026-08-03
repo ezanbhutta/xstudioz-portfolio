@@ -104,7 +104,12 @@ collections:
         # Rebuilt from every project on each deploy by scripts/sync-industries.mjs — do not edit by hand.
         # industries:begin
         options:
+          - "Cafe"
           - "Capital & Investment"
+          - "Communication Technology"
+          - "Dental Care"
+          - "Piercing Studio"
+          - "Software & Technology"
           - "Sustainable Materials & Biotechnology"
           - "Tattoo"
         # industries:end

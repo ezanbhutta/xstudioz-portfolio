@@ -11,15 +11,23 @@
      accent-bright on ink → 7.2:1
 --------------------------------------------------------------------------- */
 :root {
-  /* Color — cool violet-tinted gallery neutrals; the work stays the hero. */
-  --color-paper: #faf9fc;
-  --color-ink: #1a1523;
-  --color-ink-soft: #554e60;
-  --color-ink-mute: #6e6879;
-  --color-line: #e9e5ef;
-  --color-line-strong: #d6d0df;
-  --color-accent: #9333ea;
-  --color-accent-deep: #7e22ce;
+  /* Color — warm bone gallery neutrals. A cool blue-white reads "software";
+     paper with warmth reads "print", which is the room this work belongs in.
+     Violet stays the brand accent but is rationed: one accent moment per view. */
+  --color-paper: #f7f5f0;
+  /* One step up from paper — panels and hovers separate without a border */
+  --color-paper-raised: #f1eee7;
+  --color-ink: #17141b;
+  --color-ink-soft: #55505c;
+  --color-ink-mute: #6d6774;
+  --color-line: #e5e0d6;
+  --color-line-strong: #d2ccc0;
+  /* Borders that are the only thing identifying a control (outline buttons,
+     the filter selects) need 3:1 against paper to satisfy WCAG 1.4.11 —
+     a decorative hairline does not. Measured 3.34:1. */
+  --color-line-control: #8f8574;
+  --color-accent: #7e22ce;
+  --color-accent-deep: #6b21a8;
   /* Brand gradient (logo, og image) */
   --color-brand-violet: #5e17b8;
   --color-brand-purple: #a928d9;
@@ -29,12 +37,16 @@
   --color-accent-bright: #e879f9;
   --color-line-on-ink: rgb(255 255 255 / 14%);
 
-  /* Typography — the native system stack: SF Pro on Apple devices,
-     Segoe UI on Windows, Roboto on Android. Zero font downloads, zero
-     layout shift, instant text. */
+  /* Typography — a split stack, chosen deliberately.
+     Display: Bricolage Grotesque (variable, self-hosted, ~77 KB) carries the
+     headlines, wordmark and labels. A brand-identity studio that sets its own
+     site in the OS default font is arguing against itself; this is the one
+     download the design earns.
+     Body: still the native stack — zero download, zero layout shift on the
+     bulk of the text. */
   --font-display:
-    -apple-system, blinkmacsystemfont, 'SF Pro Display', 'Segoe UI', roboto, 'Helvetica Neue',
-    arial, sans-serif;
+    'Bricolage Grotesque', -apple-system, blinkmacsystemfont, 'SF Pro Display', 'Segoe UI', roboto,
+    'Helvetica Neue', arial, sans-serif;
   --font-sans:
     -apple-system, blinkmacsystemfont, 'SF Pro Text', 'Segoe UI', roboto, 'Helvetica Neue', arial,
     sans-serif;
@@ -61,6 +73,8 @@
   --leading-body: 1.6;
 
   --tracking-tight: -0.02em;
+  /* Display sizes need more negative tracking than headings to look even */
+  --tracking-display: -0.035em;
   --tracking-wide: 0.14em;
 
   /* Spacing — 4px rhythm with fluid section spacing */

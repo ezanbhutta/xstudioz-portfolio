@@ -113,7 +113,11 @@ const ogImageUrl = ogImage ?? new URL('/og.png', SITE.url).href;
               }
             }
           },
-          { threshold: 0.1, rootMargin: '0px 0px -4% 0px' },
+          // Start the reveal BEFORE the card reaches the viewport: a positive
+          // bottom margin grows the observed box downward, so a fast scroll
+          // lands on finished artwork instead of on a card still fading in.
+          // (The old -4% did the opposite — it delayed the trigger.)
+          { threshold: 0, rootMargin: '0px 0px 25% 0px' },
         );
         revealed.forEach((el) => io.observe(el));
       }

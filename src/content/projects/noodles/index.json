@@ -15,7 +15,16 @@
   "order": 98,
   "summary": "A sophisticated brand identity designed for Noodles, a modern technology platform centered on warm, private, and meaningful digital communication. The visual system combines refined minimalism with a distinctive symbolic mark, creating a premium identity that conveys trust, intimacy, and contemporary elegance while standing apart from conventional technology and social platform branding.",
   "pdf": "Noodles Branding kit.pdf",
-  "cover": "",
-  "coverAlt": "",
-  "images": []
+  "cover": "./cover.png",
+  "coverAlt": "Noodles presentation cover",
+  "images": [
+    {
+      "src": "./page-01.png",
+      "alt": "Noodles presentation, page 1 of 2"
+    },
+    {
+      "src": "./page-02.png",
+      "alt": "Noodles presentation, page 2 of 2"
+    }
+  ]
 }

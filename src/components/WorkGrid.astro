@@ -107,15 +107,16 @@ const cards = projects.map((project) => {
     }
 
     /* Editorial offset — the right column starts lower, so pairs never sit
-       in a rigid row and each cover gets its own moment. Only on the full
-       home grid: with two or three cards on a category page the offset
-       reads as a mistake, not a rhythm. Counts only visible cards so it
-       survives filtering (no-op in older browsers). */
-    [data-work-grid] .work-grid {
+       in a rigid row and each cover gets its own moment. Counts only visible
+       cards so it survives filtering, and only engages once four are showing:
+       with two or three cards the stagger reads as a broken grid rather than
+       a rhythm, which is exactly how a thin category used to look. */
+    .work-grid:global(:has(> li:nth-child(4 of :not([hidden])))) {
       padding-block-end: var(--space-2xl);
     }
 
-    [data-work-grid] .work-grid > :global(li:nth-child(even of :not([hidden]))) {
+    .work-grid:global(:has(> li:nth-child(4 of :not([hidden]))))
+      > :global(li:nth-child(even of :not([hidden]))) {
       transform: translateY(var(--space-2xl));
     }
   }

@@ -30,23 +30,38 @@ const current = enhanced ? 'true' : 'page';
   data-filterbar={enhanced ? '' : undefined}
   data-total={total}
 >
-  <div class="container">
+  <div class="container filter-inner">
     <ul class="filter-list" role="list">
       {
-        CATEGORIES.map((c) => (
-          <li>
-            <a
-              class="filter-link"
-              href={!enhanced && active === c.id ? '/' : `/${c.id}/`}
-              data-filter={c.id}
-              data-label={c.title}
-              data-astro-prefetch={enhanced ? undefined : ''}
-              aria-current={active === c.id ? current : undefined}
-            >
-              {c.title} <span class="filter-count">{counts[c.id] ?? 0}</span>
-            </a>
-          </li>
-        ))
+        CATEGORIES.map((c) => {
+          const count = counts[c.id] ?? 0;
+          // A chip that leads to an empty grid is a dead end. Services with
+          // no published work still belong here — they say what the studio
+          // offers — but they read as quiet labels, not as things to click,
+          // and they never advertise a "0".
+          const empty = count === 0 && active !== c.id;
+          return (
+            <li>
+              {empty ? (
+                <span class="filter-link filter-link--empty" title={`${c.title} — coming soon`}>
+                  {c.title}
+                </span>
+              ) : (
+                <a
+                  class="filter-link"
+                  href={!enhanced && active === c.id ? '/' : `/${c.id}/`}
+                  data-filter={c.id}
+                  data-label={c.title}
+                  data-astro-prefetch={enhanced ? undefined : ''}
+                  aria-current={active === c.id ? current : undefined}
+                >
+                  {c.title}
+                  {count > 0 && <span class="filter-count">{count}</span>}
+                </a>
+              )}
+            </li>
+          );
+        })
       }
     </ul>
     <Subfilters industries={industries} active={active} enhanced={enhanced} />
@@ -73,8 +88,29 @@ const current = enhanced ? 'true' : 'page';
     position: sticky;
     top: 0;
     z-index: var(--z-filter);
-    background: var(--color-paper);
+    /* Translucent so the work scrolls under the bar rather than hitting a
+       hard opaque slab; the blur keeps the chips legible over any cover. */
+    background: color-mix(in srgb, var(--color-paper) 82%, transparent);
+    backdrop-filter: blur(12px) saturate(140%);
     border-block-end: 1px solid var(--color-line);
+  }
+
+  /* Chips left, refinements right — one row instead of two stacked ones.
+     Below 900px they wrap back to their own line. */
+  @media (min-width: 900px) {
+    .filter-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-lg);
+    }
+
+    /* The refinement selects sit on the same baseline as the chips now, so
+       the block padding that separated the two rows has to go. */
+    .filter-inner :global(.subfilters) {
+      padding-block-end: 0;
+      flex: none;
+    }
   }
 
   .filter-list {
@@ -126,10 +162,11 @@ const current = enhanced ? 'true' : 'page';
   .filter-link {
     display: inline-flex;
     align-items: center;
-    gap: 0.4em;
+    gap: 0.45em;
     min-height: var(--control-h);
     padding: 0.375rem 1rem;
     border-radius: var(--radius-pill);
+    font-family: var(--font-display);
     font-size: var(--text-sm);
     font-weight: var(--weight-medium);
     color: var(--color-ink-soft);
@@ -139,6 +176,13 @@ const current = enhanced ? 'true' : 'page';
       background-color var(--duration-fast) var(--ease-out),
       color var(--duration-fast) var(--ease-out),
       transform var(--duration-fast) var(--ease-out);
+  }
+
+  /* Services with nothing published yet: present, but plainly not a control */
+  .filter-link--empty {
+    color: var(--color-ink-mute);
+    opacity: 0.55;
+    cursor: default;
   }
 
   @media (hover: hover) {
@@ -160,9 +204,18 @@ const current = enhanced ? 'true' : 'page';
     box-shadow: inset 0 0 0 1px var(--color-ink);
   }
 
+  /* Raised like a footnote marker — the count annotates the label rather
+     than sitting on the baseline competing with it. */
   .filter-count {
-    font-size: var(--text-xs);
-    font-weight: var(--weight-regular);
+    align-self: flex-start;
+    margin-block-start: 0.15em;
+    font-size: 0.6875rem;
+    font-weight: var(--weight-semibold);
     font-variant-numeric: tabular-nums;
+    color: var(--color-ink-soft);
+  }
+
+  .filter-link[aria-current] .filter-count {
+    color: var(--color-accent);
   }
 </style>

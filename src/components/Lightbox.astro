@@ -1,0 +1,266 @@
+---
+/**
+ * Full-screen presentation viewer for a project's pages.
+ *
+ * The gallery on a project page is the studio's actual deliverable, so
+ * looking at it should feel like being presented to rather than scrolling
+ * a PDF dump. Any page opens full-bleed on black; arrows, keyboard and
+ * swipe move through the deck; the counter says how far in you are.
+ *
+ * Progressive enhancement throughout: the figures are ordinary images in
+ * the document, this only upgrades them. Without JS nothing is lost.
+ */
+---
+
+<dialog class="lightbox" data-lightbox aria-label="Project pages">
+  <div class="lightbox-stage">
+    <img class="lightbox-img" data-lightbox-img alt="" />
+  </div>
+
+  <div class="lightbox-bar">
+    <p class="lightbox-counter" data-lightbox-counter aria-live="polite"></p>
+    <div class="lightbox-controls">
+      <button type="button" class="lightbox-btn" data-lightbox-prev aria-label="Previous page">
+        <span aria-hidden="true">←</span>
+      </button>
+      <button type="button" class="lightbox-btn" data-lightbox-next aria-label="Next page">
+        <span aria-hidden="true">→</span>
+      </button>
+      <button type="button" class="lightbox-btn" data-lightbox-close aria-label="Close viewer">
+        <span aria-hidden="true">✕</span>
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('[data-lightbox]');
+  const figures = [...document.querySelectorAll<HTMLElement>('[data-page]')];
+
+  if (dialog && figures.length > 0) {
+    const img = dialog.querySelector<HTMLImageElement>('[data-lightbox-img]')!;
+    const counter = dialog.querySelector<HTMLElement>('[data-lightbox-counter]')!;
+    const btnPrev = dialog.querySelector<HTMLButtonElement>('[data-lightbox-prev]')!;
+    const btnNext = dialog.querySelector<HTMLButtonElement>('[data-lightbox-next]')!;
+    const btnClose = dialog.querySelector<HTMLButtonElement>('[data-lightbox-close]')!;
+
+    const sources = figures.map((f) => ({
+      src: f.dataset.full ?? f.querySelector('img')?.currentSrc ?? '',
+      alt: f.querySelector('img')?.alt ?? '',
+    }));
+
+    let index = 0;
+    let opener: HTMLElement | null = null;
+    // Set while we are unwinding our own history entry, so the popstate
+    // handler doesn't try to close a dialog that is already closing.
+    let closingViaHistory = false;
+
+    /** Warm the neighbours so arrowing through never shows a blank frame. */
+    const preload = (i: number) => {
+      for (const n of [i - 1, i + 1]) {
+        const s = sources[n]?.src;
+        if (s) new Image().src = s;
+      }
+    };
+
+    const show = (i: number) => {
+      index = (i + sources.length) % sources.length;
+      const page = sources[index];
+      img.src = page.src;
+      img.alt = page.alt;
+      counter.textContent = `${index + 1} / ${sources.length}`;
+      preload(index);
+    };
+
+    const open = (i: number, from: HTMLElement) => {
+      opener = from;
+      show(i);
+      dialog.showModal();
+      // An extra history entry means the phone's Back gesture closes the
+      // viewer instead of leaving the project page entirely.
+      history.pushState({ lightbox: true }, '');
+      btnClose.focus();
+    };
+
+    const close = () => {
+      if (dialog.open) dialog.close();
+    };
+
+    dialog.addEventListener('close', () => {
+      opener?.focus();
+      opener = null;
+      // Drop our history entry unless popstate is what closed us.
+      if (history.state?.lightbox && !closingViaHistory) history.back();
+    });
+
+    window.addEventListener('popstate', () => {
+      if (!dialog.open) return;
+      closingViaHistory = true;
+      close();
+      closingViaHistory = false;
+    });
+
+    for (const [i, figure] of figures.entries()) {
+      const trigger = figure.querySelector<HTMLElement>('[data-page-open]') ?? figure;
+      trigger.addEventListener('click', () => open(i, trigger));
+      trigger.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          open(i, trigger);
+        }
+      });
+    }
+
+    btnPrev.addEventListener('click', () => show(index - 1));
+    btnNext.addEventListener('click', () => show(index + 1));
+    btnClose.addEventListener('click', close);
+
+    dialog.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') show(index - 1);
+      else if (event.key === 'ArrowRight') show(index + 1);
+      else if (event.key === 'Home') show(0);
+      else if (event.key === 'End') show(sources.length - 1);
+    });
+
+    // Click the surrounding darkness to dismiss. Testing the event target
+    // is not enough — clicking the dialog's own padding also reports the
+    // dialog — so compare against its box.
+    dialog.addEventListener('click', (event) => {
+      const box = dialog.getBoundingClientRect();
+      const outside =
+        event.clientX < box.left ||
+        event.clientX > box.right ||
+        event.clientY < box.top ||
+        event.clientY > box.bottom;
+      if (outside || (event.target as HTMLElement).classList.contains('lightbox-stage')) close();
+    });
+
+    // Horizontal swipe on touch, ignoring vertical scroll intent.
+    let startX = 0;
+    let startY = 0;
+    let swiping = false;
+    dialog.addEventListener(
+      'pointerdown',
+      (event) => {
+        if (event.pointerType === 'mouse') return;
+        startX = event.clientX;
+        startY = event.clientY;
+        swiping = true;
+      },
+      { passive: true },
+    );
+    dialog.addEventListener(
+      'pointerup',
+      (event) => {
+        if (!swiping) return;
+        swiping = false;
+        const dx = event.clientX - startX;
+        const dy = event.clientY - startY;
+        if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) show(index + (dx < 0 ? 1 : -1));
+      },
+      { passive: true },
+    );
+  }
+</script>
+
+<style>
+  .lightbox {
+    /* Fill the viewport rather than the default centred box, so the stage
+       can letterbox the artwork itself. */
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    max-height: 100%;
+    padding: 0;
+    border: none;
+    background: #0d0b10;
+    color: var(--color-paper);
+    overflow: hidden;
+  }
+
+  .lightbox::backdrop {
+    background: #0d0b10;
+  }
+
+  .lightbox-stage {
+    display: grid;
+    place-items: center;
+    block-size: 100%;
+    padding: clamp(1rem, 4vw, 3rem);
+    padding-block-end: 5.5rem;
+  }
+
+  .lightbox-img {
+    max-inline-size: 100%;
+    max-block-size: 100%;
+    inline-size: auto;
+    block-size: auto;
+    object-fit: contain;
+    border-radius: var(--radius-xs);
+  }
+
+  /* Controls float over the artwork on a single rail so the page itself
+     keeps the whole frame. */
+  .lightbox-bar {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-sm) clamp(1rem, 4vw, 3rem) var(--space-md);
+  }
+
+  .lightbox-counter {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--tracking-wide);
+    color: var(--color-paper-mute);
+  }
+
+  .lightbox-controls {
+    display: flex;
+    gap: var(--space-2xs);
+  }
+
+  .lightbox-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--control-h);
+    block-size: var(--control-h);
+    border-radius: var(--radius-pill);
+    font-size: var(--text-md);
+    color: var(--color-paper);
+    background: rgb(255 255 255 / 8%);
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .lightbox-btn:hover {
+      background: rgb(255 255 255 / 18%);
+    }
+  }
+
+  .lightbox-btn:active {
+    transform: scale(0.94);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .lightbox[open] .lightbox-img {
+      animation: lightbox-in var(--duration-base) var(--ease-out) both;
+    }
+  }
+
+  @keyframes lightbox-in {
+    from {
+      opacity: 0;
+      transform: scale(0.985);
+    }
+  }
+</style>

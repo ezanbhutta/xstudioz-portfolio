@@ -216,36 +216,63 @@ included"*, *"Most logo projects run 3–5 days"*) and the lines appear on
   WebSite, CreativeWork, Service, OfferCatalog, HowTo, BreadcrumbList,
   CollectionPage), `sitemap-index.xml` and `robots.txt`.
 
-## Deploying — Vercel, straight from GitHub
+## Deploying — Hostinger, straight from GitHub
 
-The site is hosted on **Vercel** at <https://xstudioz.com>, deployed from this
-repository. Vercel watches `main`, runs `npm run build` on push and publishes
-`dist/`. SSL, the CDN and auto-deployment are handled on their side.
+The site is hosted on **Hostinger** at <https://portfolio.xstudioz.com>,
+deployed by Hostinger's own GitHub integration. Nothing else is involved: it
+watches `main`, runs the build on push and publishes the resulting `dist/`.
+SSL, the CDN and auto-deployment are handled on their side.
 
 Because every CMS save is a commit to `main`, editing content in `/admin/` is
 what triggers a deploy. A build takes a few minutes, most of it spent
 rendering PDF pages through sharp and pdfjs.
 
-Vercel project settings:
+Hostinger panel settings for this project:
 
 | Setting | Value |
 | --- | --- |
-| Framework preset | Astro |
+| Framework | Astro |
 | Branch | `main` |
-| Build command | `npm run build` |
-| Output directory | `dist` |
 | Node version | 22.x |
+| Root directory | `./` |
+| Build and output | Default (resolves to `npm run build`) |
 
-That build command matters: it **must** be `npm run build`, not `astro build`.
-`scripts/ingest.mjs` is what renders every PDF into page images and generates
-the covers — skip it and every project fails the "has a cover and images"
-check, producing a site that builds cleanly with an empty portfolio.
+That last row matters: the build **must** run `npm run build`, not
+`astro build`. `scripts/ingest.mjs` is what renders every PDF into page images
+and generates the grid covers — skip it and every project fails the "has a
+cover and images" check, producing a site that builds cleanly with an empty
+portfolio.
 
-`vercel.json` holds the response headers: immutable caching for the
-content-hashed `_astro/` assets, no caching for `/admin/config.yml`, plus
-`nosniff` and a referrer policy. `public/.htaccess` is kept for Apache hosts
-and is ignored by Vercel.
+### Server configuration
 
-Changing the production URL (canonicals, sitemap, `robots.txt`, social cards)
-is a content edit, not a code one — *Site settings → Brand & links →
-Production URL* in the CMS.
+`public/.htaccess` is the only server config, and Astro copies it into `dist/`
+on every build: immutable caching for the content-hashed `_astro/` assets, no
+caching for HTML so CMS edits appear immediately, the custom 404, HTTPS
+enforcement, compression and correct MIME types. There is no platform-specific
+config file — the whole deployment is "build, then upload `dist/`", which
+works on any Apache/LiteSpeed host.
+
+### Build memory
+
+Hostinger's builder has run out of memory on this project before. The cause
+was image transforms multiplying across a 45-page deck; the build now emits
+around 600 variants rather than 1,900, and `dist/` lands near 12 MB. Two rules
+keep it there:
+
+- WebP only, never AVIF as well (`formats={['webp']}`).
+- Three responsive widths per displayed image, not four.
+
+Case studies now render only the hero plus the curated pages at display size,
+so adding projects grows the build roughly linearly rather than by deck length.
+
+### Changing the production URL
+
+`url` in `src/config/site.json` drives canonicals, the sitemap, `robots.txt`
+and social cards. It is a content edit, not a code one — *Site settings →
+Brand & links → Production URL* in the CMS. Whatever it is set to must be the
+hostname the site is actually served from, or search engines will be told to
+index a page that isn't there.
+
+The DNS record for that hostname has to point at Hostinger. If it was
+previously pointed elsewhere, change it in the domain's DNS zone before the
+certificate can be issued.

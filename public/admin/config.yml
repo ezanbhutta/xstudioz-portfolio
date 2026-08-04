@@ -17,7 +17,7 @@ backend:
   repo: ezanbhutta/xstudioz-portfolio
   branch: main
 
-site_url: https://xstudioz.com
+site_url: https://portfolio.xstudioz.com
 media_folder: public/uploads
 public_folder: /uploads
 

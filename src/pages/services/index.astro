@@ -1,0 +1,204 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import BriefSection from '@/components/BriefSection.astro';
+import { SITE } from '@/config/site';
+import { ACTIVE_CATEGORIES } from '@/data/categories';
+import { getSortedProjects, countByCategory, projectsForService } from '@/lib/projects';
+import { siteGraph, ORGANIZATION_ID, WEBSITE_ID } from '@/lib/schema';
+
+/**
+ * The services hub — one destination behind the header's "Services" link, so
+ * the nav needs no dropdown and works identically without JavaScript.
+ *
+ * Each block previews the scope rather than repeating the tagline, because
+ * the question this page answers is "what would I actually be buying?".
+ */
+const projects = await getSortedProjects();
+const counts = countByCategory(projects);
+
+const services = ACTIVE_CATEGORIES.map((c) => {
+  const { direct, viaExtras } = projectsForService(projects, c);
+  return { category: c, count: direct.length + viaExtras.length };
+});
+void counts;
+
+const description = `Logo design, brand guidelines, stationery, social media design and animation from ${SITE.name} — what each service covers and exactly what is delivered.`;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    ...siteGraph(),
+    {
+      '@type': 'CollectionPage',
+      name: `Services | ${SITE.name}`,
+      description,
+      url: new URL('/services/', SITE.url).href,
+      isPartOf: { '@id': WEBSITE_ID },
+    },
+    {
+      '@type': 'OfferCatalog',
+      name: `${SITE.name} services`,
+      itemListElement: ACTIVE_CATEGORIES.map((c, i) => ({
+        '@type': 'Offer',
+        position: i + 1,
+        itemOffered: {
+          '@type': 'Service',
+          name: c.title,
+          description: c.description,
+          url: new URL(`/${c.id}/`, SITE.url).href,
+          provider: { '@id': ORGANIZATION_ID },
+        },
+      })),
+    },
+  ],
+};
+---
+
+<BaseLayout title="Services" description={description} jsonLd={jsonLd}>
+  <section class="container page-hero">
+    <p class="overline">Services</p>
+    <h1 class="page-title">What you can commission<span class="accent-dot">.</span></h1>
+    <p class="page-lede">
+      Five ways in. Take one, or take the system — every page below lists the exact deliverables so
+      there is nothing to negotiate later.
+    </p>
+  </section>
+
+  <div class="container services-list">
+    {
+      services.map(({ category, count }, i) => (
+        <article class="service-block" data-reveal style={`--reveal-delay:${i * 50}ms`}>
+          <div class="service-block-head">
+            <p class="service-index" aria-hidden="true">
+              {String(i + 1).padStart(2, '0')}
+            </p>
+            <h2 class="service-block-title">
+              <a class="service-block-link" href={`/${category.id}/`} data-astro-prefetch>
+                {category.title}
+              </a>
+            </h2>
+            {category.outcome && <p class="service-block-outcome">{category.outcome}</p>}
+            <p class="service-block-desc">{category.description}</p>
+            <p class="service-block-cta">
+              <a class="link-arrow" href={`/${category.id}/`} data-astro-prefetch>
+                {count > 0 ? `See the work and the scope` : `See the scope`}
+              </a>
+            </p>
+          </div>
+
+          {category.deliverables && category.deliverables.length > 0 && (
+            <div class="service-block-scope">
+              <p class="overline overline--bare service-block-label">Deliverables</p>
+              <ul class="spec-list" role="list">
+                {category.deliverables.slice(0, 4).map((d) => (
+                  <li>{d}</li>
+                ))}
+                {category.deliverables.length > 4 && (
+                  <li class="service-block-more">
+                    +{category.deliverables.length - 4} more on the {category.title} page
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+        </article>
+      ))
+    }
+  </div>
+
+  <BriefSection
+    title="Not sure which one you need?"
+    lede="Describe the business and where the brand has to show up. Scoping the right service is part of the first reply — you do not have to arrive knowing the vocabulary."
+  />
+</BaseLayout>
+
+<style>
+  .services-list {
+    padding-block-end: var(--space-section);
+  }
+
+  .service-block {
+    display: grid;
+    gap: var(--space-lg);
+    padding-block: var(--space-2xl);
+    border-block-start: 1px solid var(--color-line);
+  }
+
+  .service-block:last-child {
+    border-block-end: 1px solid var(--color-line);
+  }
+
+  @media (min-width: 1000px) {
+    .service-block {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      gap: var(--space-3xl);
+      align-items: start;
+    }
+  }
+
+  .service-index {
+    font-family: var(--font-display);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--tracking-wide);
+    color: var(--color-accent);
+    margin-block-end: var(--space-2xs);
+  }
+
+  .service-block-title {
+    font-size: var(--text-3xl);
+    letter-spacing: var(--tracking-display);
+  }
+
+  .service-block-link {
+    text-decoration: none;
+    background-image: linear-gradient(var(--color-accent), var(--color-accent));
+    background-repeat: no-repeat;
+    background-size: 0% 2px;
+    background-position: 0 100%;
+    padding-block-end: 2px;
+    transition: background-size var(--duration-slow) var(--ease-out);
+  }
+
+  /* Hovering anywhere in the block previews the title's underline, but the
+     links stay real and separate — no invisible overlay swallowing clicks,
+     and no nested interactive elements for a screen reader to trip over. */
+  @media (hover: hover) {
+    .service-block:hover .service-block-link {
+      background-size: 100% 2px;
+    }
+  }
+
+  .service-block-link:focus-visible {
+    background-size: 100% 2px;
+  }
+
+  .service-block-outcome {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-medium);
+    color: var(--color-ink);
+    margin-block: var(--space-2xs) var(--space-2xs);
+    max-width: var(--measure);
+  }
+
+  .service-block-desc {
+    color: var(--color-ink-soft);
+    max-width: var(--measure);
+  }
+
+  .service-block-cta {
+    margin-block-start: var(--space-2xs);
+  }
+
+  .service-block-label {
+    color: var(--color-ink);
+    margin-block-end: var(--space-2xs);
+  }
+
+  .service-block-more {
+    color: var(--color-ink-mute);
+    font-size: var(--text-sm);
+  }
+</style>

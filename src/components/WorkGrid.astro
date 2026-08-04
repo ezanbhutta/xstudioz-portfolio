@@ -1,68 +1,65 @@
 ---
 import ProjectCard from '@/components/ProjectCard.astro';
-import { SITE } from '@/config/site';
-import type { CategoryId } from '@/data/categories';
 import type { ReadyProject } from '@/lib/projects';
 
 interface Props {
   projects: ReadyProject[];
   /** How many cards start above the fold and should load eagerly. */
   eagerCount?: number;
-  /** Set on the home grid so the filter script can find it. */
-  filterable?: boolean;
   /** Screen-reader heading that keeps the document outline sequential. */
   heading?: string;
   /**
-   * Category pre-selected on first paint (home defaults to Logo Design).
-   * Other cards still render — hidden — so the filter script can reveal
-   * them without a network round trip.
+   * `editorial` — a four-card magazine rhythm on a twelve-column field, each
+   * plate a different width and offset. For fixed sets (home, service pages)
+   * where nothing is hidden and the sequence is known.
+   *
+   * `grid` — an even two-column field with the right column dropped by one
+   * beat. For the All Work page, where filtering hides cards and an
+   * asymmetric rhythm would collapse into holes.
    */
-  initialCategory?: CategoryId | 'all';
+  rhythm?: 'editorial' | 'grid';
+  /** Marks the grid for the All Work filter script. */
+  filterable?: boolean;
+  /** The first card paints instantly rather than scroll-revealing. */
+  leadFirst?: boolean;
 }
 
 const {
   projects,
   eagerCount = 2,
-  filterable = false,
   heading = 'Projects',
-  initialCategory = 'all',
+  rhythm = 'editorial',
+  filterable = false,
+  leadFirst = false,
 } = Astro.props;
-
-let visibleCount = 0;
-const cards = projects.map((project) => {
-  const shown = initialCategory === 'all' || project.data.category === initialCategory;
-  return { project, shown, vi: shown ? visibleCount++ : -1 };
-});
 ---
 
 <div class="work" data-work-grid={filterable ? '' : undefined}>
   <h2 class="visually-hidden">{heading}</h2>
-  <p class="visually-hidden" role="status" data-filter-status></p>
-  <ul class="work-grid" role="list">
+  <ul class:list={['work-grid', `work-grid--${rhythm}`]} role="list">
     {
-      cards.map(({ project, shown, vi }, i) => (
+      projects.map((project, i) => (
         <ProjectCard
           project={project}
-          index={shown ? vi : i}
-          eager={shown && vi < eagerCount}
-          hidden={!shown}
-          lead={vi === 0}
+          index={i}
+          eager={i < eagerCount}
+          lead={leadFirst && i === 0}
+          size={rhythm === 'editorial' && i % 4 === 0 ? 'feature' : 'default'}
+          sizes={
+            rhythm === 'editorial'
+              ? '(min-width: 1100px) 46vw, (min-width: 680px) 45vw, 92vw'
+              : '(min-width: 1360px) 592px, (min-width: 680px) 45vw, 92vw'
+          }
         />
       ))
     }
   </ul>
-  <p class="work-empty" data-work-empty hidden={visibleCount > 0}>
-    No projects in this category yet. Pick another category above, or
-    <a href={SITE.fiverrUrl} target="_blank" rel="noopener noreferrer"
-      >ask about this service on Fiverr <span aria-hidden="true">↗</span></a
-    >.
-  </p>
 </div>
 
 <script>
   // Name the clicked card for the cross-document view transition only at
-  // interaction time — statically naming all 14 cards makes the browser
-  // snapshot every one of them on navigation to pair just one.
+  // interaction time — statically naming every card makes the browser
+  // snapshot all of them on navigation to pair just one.
   document.addEventListener('click', (event) => {
     const media = (event.target as HTMLElement)
       .closest('.card-link')
@@ -100,42 +97,72 @@ const cards = projects.map((project) => {
     margin: 0;
   }
 
+  /* --- Even field: the All Work page ------------------------------------- */
   @media (min-width: 680px) {
-    .work-grid {
+    .work-grid--grid {
       grid-template-columns: 1fr 1fr;
-      column-gap: var(--space-xl);
     }
 
     /* Editorial offset — the right column starts lower, so pairs never sit
        in a rigid row and each cover gets its own moment. Counts only visible
        cards so it survives filtering, and only engages once four are showing:
        with two or three cards the stagger reads as a broken grid rather than
-       a rhythm, which is exactly how a thin category used to look. */
-    .work-grid:global(:has(> li:nth-child(4 of :not([hidden])))) {
+       a rhythm, which is exactly how a thin filter result used to look. */
+    .work-grid--grid:global(:has(> li:nth-child(4 of :not([hidden])))) {
       padding-block-end: var(--space-2xl);
     }
 
-    .work-grid:global(:has(> li:nth-child(4 of :not([hidden]))))
+    .work-grid--grid:global(:has(> li:nth-child(4 of :not([hidden]))))
       > :global(li:nth-child(even of :not([hidden]))) {
       transform: translateY(var(--space-2xl));
     }
   }
 
-  .work-empty {
-    color: var(--color-ink-soft);
-    padding-block: var(--space-2xl);
+  /* --- Magazine rhythm: home and service pages --------------------------- *
+     A four-card cycle on a twelve-column field. No two consecutive plates
+     share a width or a baseline, which is what stops a portfolio grid from
+     reading as a product catalogue. Fixed sets only — see the `rhythm` prop. */
+  @media (min-width: 680px) and (max-width: 1099px) {
+    .work-grid--editorial {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .work-grid--editorial > :global(li:nth-child(even)) {
+      transform: translateY(var(--space-2xl));
+    }
+
+    .work-grid--editorial {
+      padding-block-end: var(--space-2xl);
+    }
   }
 
-  .work-empty a {
-    color: var(--color-ink);
-    font-weight: var(--weight-medium);
-    text-decoration-color: var(--color-accent);
-    transition: color var(--duration-fast) var(--ease-out);
-  }
+  @media (min-width: 1100px) {
+    .work-grid--editorial {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: var(--space-xl);
+      row-gap: var(--space-3xl);
+    }
 
-  @media (hover: hover) {
-    .work-empty a:hover {
-      color: var(--color-accent);
+    .work-grid--editorial > :global(li) {
+      align-self: start;
+    }
+
+    .work-grid--editorial > :global(li:nth-child(4n + 1)) {
+      grid-column: 1 / span 7;
+    }
+
+    .work-grid--editorial > :global(li:nth-child(4n + 2)) {
+      grid-column: 8 / span 5;
+      margin-block-start: var(--space-3xl);
+    }
+
+    .work-grid--editorial > :global(li:nth-child(4n + 3)) {
+      grid-column: 1 / span 5;
+    }
+
+    .work-grid--editorial > :global(li:nth-child(4n + 4)) {
+      grid-column: 7 / span 6;
+      margin-block-start: var(--space-2xl);
     }
   }
 </style>

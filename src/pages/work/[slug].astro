@@ -103,7 +103,10 @@ const jsonLd = {
 };
 
 const sizes = '(min-width: 1360px) 1232px, 92vw';
-const widths = [640, 960, 1280, 1600];
+// Three widths, one format. A guidelines deck runs to 45 pages, and every
+// extra width and format multiplies across all of them — the build was
+// emitting ~1,900 image variants and exhausting the host's builder.
+const widths = [720, 1200, 1600];
 ---
 
 <BaseLayout
@@ -199,7 +202,7 @@ const widths = [640, 960, 1280, 1600];
                   <Picture
                     src={img.src}
                     alt={img.alt}
-                    formats={['avif', 'webp']}
+                    formats={['webp']}
                     fallbackFormat="webp"
                     widths={widths}
                     sizes={sizes}

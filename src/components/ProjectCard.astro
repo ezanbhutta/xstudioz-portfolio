@@ -51,9 +51,9 @@ const placeholder = await lqipStyle(cover);
       <Picture
         src={cover}
         alt=""
-        formats={['avif', 'webp']}
+        formats={['webp']}
         fallbackFormat="webp"
-        widths={[480, 800, 1200, 1600]}
+        widths={[480, 900, 1400]}
         sizes="(min-width: 1360px) 592px, (min-width: 680px) 45vw, 92vw"
         loading={eager ? 'eager' : 'lazy'}
         fetchpriority={eager ? 'high' : 'auto'}

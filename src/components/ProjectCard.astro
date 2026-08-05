@@ -25,27 +25,18 @@ const {
   index = 0,
   hidden = false,
   lead = false,
-  sizes = '(min-width: 1360px) 592px, (min-width: 680px) 45vw, 92vw',
+  sizes = '(min-width: 1400px) 900px, (min-width: 680px) 62vw, 92vw',
 } = Astro.props;
 
-const { title, category, cover, coverAlt, industry, logoType } = project.data;
+const { title, category, cover, coverAlt, industry, logoType, intent } = project.data;
 const serviceLabel = getCategory(category).title;
 const kind = projectType(project.data);
-// Service then industry — the taxonomy a buyer shops by. The type stays a
-// filter facet rather than caption text: it belongs on the case study.
 const meta = [serviceLabel, industry].filter(Boolean).join(' · ');
 const href = `/work/${project.id}/`;
-// Two-column grid: the left card leads its right neighbour by one beat.
 const delay = (index % 2) * 60;
 const placeholder = await lqipStyle(cover);
 ---
 
-{
-  /* Only an explicitly-flagged lead card skips the scroll reveal (it is the
-    mobile LCP and must paint instantly); `eager` still controls fetch
-    priority. Everything else wipes in as it arrives — consistency reads as
-    polish. */
-}
 <li
   class="card"
   data-category={category}
@@ -55,10 +46,16 @@ const placeholder = await lqipStyle(cover);
   data-title={title}
   hidden={hidden}
 >
+  {
+    /* The spotlight is painted from two custom properties the script writes
+      on pointer move. No JS, no spotlight — the card still lifts and the
+      image still moves, so nothing is missing, only quieter. */
+  }
   <a
     class="card-link"
     href={href}
     data-astro-prefetch
+    data-spotlight
     data-reveal={lead ? undefined : ''}
     style={lead ? undefined : `--reveal-delay:${delay}ms`}
   >
@@ -74,12 +71,18 @@ const placeholder = await lqipStyle(cover);
         fetchpriority={eager ? 'high' : 'auto'}
         style={placeholder}
       />
+
+      {/* Sits on the artwork and only resolves on hover or focus */}
+      <div class="card-veil">
+        <p class="card-meta">{meta}</p>
+        {intent && <p class="card-intent">{intent}</p>}
+        <span class="card-cue">
+          View case study <span aria-hidden="true">→</span>
+        </span>
+      </div>
     </div>
-    {/* Museum-label caption: quiet, stacked, secondary to the image. */}
-    <div class="card-caption">
-      <h3 class="card-title">{title}</h3>
-      <p class="card-meta">{meta}</p>
-    </div>
+
+    <h3 class="card-title">{title}</h3>
   </a>
 </li>
 
@@ -87,79 +90,196 @@ const placeholder = await lqipStyle(cover);
   .card-link {
     display: block;
     text-decoration: none;
+    /* The spotlight's origin, written by the script. Centred by default so a
+       keyboard focus still lights the middle of the card. */
+    --spot-x: 50%;
+    --spot-y: 50%;
   }
 
-  /* Hairline frame — these are plates on a wall, and a light cover against
-     warm paper needs an edge or it bleeds into the page. The frame lifts
-     into a soft shadow on hover so the card rises toward the cursor
-     instead of only zooming inside its own box. */
   .card-media {
-    /* The cover is shown whole, at whatever proportion it was made in — a
-       presentation cover cropped to a house ratio loses the composition it
-       was designed with. */
+    position: relative;
+    /* The covers' own ratio, so contain never letterboxes. */
+    aspect-ratio: 16 / 9;
     overflow: hidden;
-    border-radius: var(--radius-xs);
+    border-radius: var(--radius-md);
     background: var(--color-paper-raised);
     box-shadow: inset 0 0 0 1px var(--color-line);
-    transition: box-shadow var(--duration-base) var(--ease-out);
+    /* Breathing room so the artwork never touches the ring */
+    padding: clamp(0.5rem, 0.9vw, 1rem);
+    transition:
+      box-shadow var(--duration-base) var(--ease-out),
+      transform var(--duration-base) var(--ease-out);
   }
 
+  /* The spotlight: a violet wash that follows the pointer, masked down to the
+     1px ring so it lights the card's EDGE rather than tinting the artwork. */
+  .card-media::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+    padding: 1px;
+    background: radial-gradient(
+      18rem 18rem at var(--spot-x) var(--spot-y),
+      var(--color-accent-bright),
+      transparent 60%
+    );
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity var(--duration-base) var(--ease-out);
+    pointer-events: none;
+  }
+
+  /* <Picture> wraps the img in a <picture>, which is the img's containing
+     block. Without a height on the wrapper the img's `block-size: 100%`
+     resolves against `auto` and the artwork letterboxes inside the tile. */
+  .card-media :global(picture) {
+    display: block;
+    block-size: 100%;
+  }
+
+  /* CONTAIN, not cover. These are presentation covers with the client's name
+     set on them; a cover crop to fit the tile sliced "GUILDVEIL" down to
+     "LDVEIL". The tile provides the bento geometry, the artwork keeps its
+     own proportions inside it. */
   .card-media :global(img) {
-    width: 100%;
-    height: auto;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: contain;
     transition: transform var(--duration-slow) var(--ease-out);
   }
 
-  .card-caption {
-    padding-block-start: var(--space-sm);
-  }
-
-  .card-title {
-    font-size: var(--text-lg);
-    font-weight: var(--weight-display);
-    letter-spacing: var(--tracking-tight);
-    display: inline-block;
-    background-image: linear-gradient(var(--color-accent), var(--color-accent));
-    background-repeat: no-repeat;
-    background-size: 0% 2px;
-    background-position: 0 100%;
-    padding-block-end: 2px;
-    /* Same clock as the image zoom — one gesture, one landing. */
-    transition: background-size var(--duration-slow) var(--ease-out);
+  /* Metadata lives on the artwork, revealed rather than always printed, so
+     the grid stays a wall of work until you ask a card a question. */
+  .card-veil {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--space-3xs);
+    padding: var(--space-md);
+    background: linear-gradient(to top, rgb(5 5 7 / 92%) 0%, rgb(5 5 7 / 45%) 45%, transparent 78%);
+    opacity: 0;
+    transition: opacity var(--duration-base) var(--ease-out);
   }
 
   .card-meta {
-    margin-block-start: var(--space-3xs);
-    font-family: var(--font-display);
+    font-family: var(--font-sans);
     font-size: var(--text-xs);
-    font-weight: var(--weight-medium);
-    letter-spacing: 0.06em;
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
-    color: var(--color-ink-mute);
+    color: var(--color-accent-bright);
+  }
+
+  .card-intent {
+    font-size: var(--text-md);
+    color: #fff;
+    max-width: 40ch;
+  }
+
+  .card-cue {
+    margin-block-start: var(--space-2xs);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: rgb(255 255 255 / 78%);
+  }
+
+  .card-title {
+    margin-block-start: var(--space-sm);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-display);
+    letter-spacing: var(--tracking-tight);
+    color: var(--color-ink);
   }
 
   @media (hover: hover) {
     .card-link:hover .card-media {
-      box-shadow: var(--image-frame-hover), var(--shadow-lift);
+      transform: translateY(-4px);
+      box-shadow:
+        inset 0 0 0 1px var(--color-line-strong),
+        var(--shadow-lift),
+        var(--glow-card);
+    }
+
+    .card-link:hover .card-media::before,
+    .card-link:hover .card-veil {
+      opacity: 1;
     }
 
     .card-link:hover .card-media :global(img) {
-      transform: scale(1.02);
-    }
-
-    .card-link:hover .card-title {
-      background-size: 100% 2px;
+      transform: scale(1.04);
     }
   }
 
-  /* Keyboard users get the same affordance as mouse users */
-  .card-link:focus-visible .card-title {
-    background-size: 100% 2px;
+  /* Keyboard users get the whole treatment, spotlight included */
+  .card-link:focus-visible .card-media::before,
+  .card-link:focus-visible .card-veil {
+    opacity: 1;
+  }
+
+  .card-link:focus-visible .card-media :global(img) {
+    transform: scale(1.04);
+  }
+
+  /* Touch has no hover, so the metadata would never appear. Show it, quietly. */
+  @media (hover: none) {
+    .card-veil {
+      opacity: 1;
+      background: linear-gradient(to top, rgb(5 5 7 / 88%) 0%, transparent 62%);
+    }
+
+    .card-cue {
+      display: none;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .card-link:hover .card-media :global(img) {
+    .card-link:hover .card-media,
+    .card-link:hover .card-media :global(img),
+    .card-link:focus-visible .card-media :global(img) {
       transform: none;
     }
   }
 </style>
+
+<script>
+  /**
+   * Point the spotlight. One delegated pointermove for the whole document,
+   * writing two custom properties on the card under the cursor: cheaper than
+   * a listener per card, and it keeps working for cards a filter reveals
+   * later.
+   *
+   * Skipped entirely for reduced motion and for coarse pointers, where there
+   * is no cursor to follow.
+   */
+  const fine = matchMedia('(hover: hover) and (pointer: fine)');
+  const still = matchMedia('(prefers-reduced-motion: reduce)');
+
+  if (fine.matches && !still.matches) {
+    let frame = 0;
+    document.addEventListener(
+      'pointermove',
+      (event) => {
+        const card = (event.target as HTMLElement).closest<HTMLElement>('[data-spotlight]');
+        if (!card || frame) return;
+        // One write per animation frame: pointermove fires far faster than the
+        // screen refreshes, and every write costs a style recalculation.
+        frame = requestAnimationFrame(() => {
+          frame = 0;
+          const box = card.getBoundingClientRect();
+          card.style.setProperty('--spot-x', `${event.clientX - box.left}px`);
+          card.style.setProperty('--spot-y', `${event.clientY - box.top}px`);
+        });
+      },
+      { passive: true },
+    );
+  }
+</script>

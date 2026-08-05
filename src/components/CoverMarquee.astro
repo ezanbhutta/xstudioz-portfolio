@@ -1,0 +1,128 @@
+---
+import { Image } from 'astro:assets';
+import type { ReadyProject } from '@/lib/projects';
+
+/**
+ * A slow, seamless column of real project covers beside the hero headline.
+ *
+ * Every tile is an actual published cover, not an abstract composition: the
+ * fastest way to say "this studio has taste" is to show the work in the first
+ * screen, before anyone has scrolled or clicked.
+ *
+ * Seamless because the list is rendered twice and the track translates by
+ * exactly -50%. At that point tile N+1 sits precisely where tile 1 was, so
+ * the loop has no seam to hide. The duplicate half is aria-hidden, so a
+ * screen reader hears each project once.
+ *
+ * It is decoration, so it is quiet about it: no links, no controls, paused
+ * for anyone who asked for less motion, and the whole thing is skipped by
+ * assistive tech (the same covers are a keyboard tab away, in the grid).
+ */
+interface Props {
+  projects: ReadyProject[];
+}
+
+const { projects } = Astro.props;
+// Two columns drifting in opposite directions reads as depth; one reads as a
+// banner. Needs at least four covers to be worth doing at all.
+const columns =
+  projects.length >= 4
+    ? [projects.filter((_, i) => i % 2 === 0), projects.filter((_, i) => i % 2 === 1)]
+    : [projects];
+---
+
+{
+  projects.length > 0 && (
+    <div class="marquee" aria-hidden="true">
+      {columns.map((column, c) => (
+        <div class:list={['marquee-col', { 'marquee-col--reverse': c === 1 }]}>
+          <div class="marquee-track">
+            {[...column, ...column].map((p) => (
+              <figure class="marquee-tile">
+                <Image
+                  src={p.data.cover}
+                  alt=""
+                  format="webp"
+                  widths={[360, 620]}
+                  sizes="(min-width: 1100px) 320px, 40vw"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+<style>
+  .marquee {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+    /* The column is taller than its box and the overflow is masked, so the
+       covers arrive from nowhere and leave to nowhere. */
+    block-size: clamp(22rem, 46vh, 34rem);
+    overflow: hidden;
+    /* Fade both ends into the page rather than cutting them off */
+    mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+  }
+
+  @media (min-width: 1100px) {
+    .marquee {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .marquee-col {
+    overflow: hidden;
+    min-block-size: 0;
+  }
+
+  .marquee-track {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .marquee-track {
+      /* -50% lands tile N+1 exactly where tile 1 was: no seam. */
+      animation: marquee-drift 46s linear infinite;
+    }
+
+    .marquee-col--reverse .marquee-track {
+      animation-direction: reverse;
+      animation-duration: 58s;
+    }
+
+    /* Slow to a stop while the pointer is over it, so a cover can be looked at */
+    .marquee:hover .marquee-track {
+      animation-play-state: paused;
+    }
+  }
+
+  @keyframes marquee-drift {
+    to {
+      transform: translateY(-50%);
+    }
+  }
+
+  /* Glass tile: the cover sits behind a hairline and a faint lift, so wildly
+     different artwork reads as one set of objects in one room. */
+  .marquee-tile {
+    margin: 0;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background: var(--color-paper-raised);
+    box-shadow:
+      inset 0 0 0 1px var(--color-line),
+      var(--shadow-md);
+  }
+
+  .marquee-tile :global(img) {
+    inline-size: 100%;
+    block-size: auto;
+  }
+</style>

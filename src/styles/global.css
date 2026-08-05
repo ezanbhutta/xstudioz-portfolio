@@ -1,21 +1,29 @@
 @import './tokens.css';
 
 /* ---------------------------------------------------------------------------
-   One typeface, everywhere.
+   Two typefaces, each doing one job.
 
-   Schibsted Grotesk (variable, wght 400–900, latin subset, ~46 KB) sets the
-   headlines, the interface and the body copy. A single family is the whole
-   type system: nothing on the page competes with the work, and the only
-   contrast left is size, weight and space — which is the point.
+   Syne (variable 400–800, ~34 KB) is the headline voice: high-contrast,
+   eccentric widths, the face a studio sets its own name in. Never below
+   --text-xl — at label size its character becomes noise.
 
-   It is a grotesk with a little editorial warmth in it rather than a neutral
-   UI face: slightly open apertures, a touch more character at display size.
-   A portfolio's type should have a point of view; a dashboard's should not.
+   Schibsted Grotesk (variable 400–900, ~46 KB) carries everything a visitor
+   actually reads: body, labels, metadata, controls.
 
    `swap` paints text immediately in the fallback and upgrades in place; the
-   metric overrides below were measured against that fallback in a browser,
-   so the upgrade does not move a single line.
+   metric overrides keep that upgrade from moving a line.
 --------------------------------------------------------------------------- */
+@font-face {
+  font-family: 'Syne';
+  src: url('./fonts/syne.woff2') format('woff2-variations');
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 98%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+}
+
 @font-face {
   font-family: 'Schibsted Grotesk';
   src: url('./fonts/schibsted-grotesk.woff2') format('woff2-variations');
@@ -42,7 +50,7 @@
 }
 
 html {
-  color-scheme: light;
+  color-scheme: dark;
   scroll-behavior: smooth;
   /* Anything scrolled to (or focused) must clear the sticky header. Pages
      that stack a second sticky rail — the All Work filters — raise it. */
@@ -78,7 +86,7 @@ body::before {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.2;
+  opacity: 0.045;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
 }
 
@@ -148,6 +156,17 @@ p {
   outline-color: var(--color-accent-bright);
 }
 
+/* The one word a headline turns on. Kept to a single span per view: a
+   gradient used twice is a decoration, used once it is emphasis. */
+.accent-text {
+  background: var(--gradient-accent);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  /* Descenders get clipped by background-clip on some engines without this */
+  padding-block-end: 0.06em;
+}
+
 /* ---------------------------------------------------------------------------
    Layout primitives
 --------------------------------------------------------------------------- */
@@ -179,9 +198,12 @@ p {
 
 /* The dark band. Used for the closing Fiverr handoff and the footer — two
    in a row read as one deliberate act, not as a repeated trick. */
+/* The page is already obsidian, so the closing band separates by going
+   DARKER and carrying a hairline, not by inverting. */
 .section--ink {
-  background: var(--color-ink);
-  color: var(--color-paper);
+  background: var(--color-paper-sunken);
+  color: var(--color-ink);
+  border-block-start: 1px solid var(--color-line);
 }
 
 /* Shared section opener: overline → heading → lede. The overline hugs its
@@ -216,7 +238,7 @@ p {
   flex-wrap: wrap;
   row-gap: 0.35em;
   gap: 0.75em;
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-wide);
@@ -359,7 +381,7 @@ p {
   min-height: var(--control-h);
   padding: 0.625rem 1.375rem;
   border-radius: var(--radius-pill);
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-size: var(--text-md);
   font-weight: var(--weight-medium);
   letter-spacing: -0.005em;
@@ -383,8 +405,24 @@ p {
 }
 
 .button--primary {
-  background: var(--color-ink);
-  color: var(--color-paper);
+  background: var(--gradient-accent);
+  color: #fff;
+  /* The gradient is the fill, so the sheen on hover has to come from a
+     second layer rather than a background swap. */
+  position: relative;
+  isolation: isolate;
+}
+
+.button--primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--gradient-accent);
+  filter: blur(1rem);
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-out);
 }
 
 .button--outline {
@@ -394,9 +432,11 @@ p {
 }
 
 /* On dark surfaces */
+/* Used on the sunken closing band, where a gradient would fight the
+   headline beside it. Inverts to a solid light pill instead. */
 .button--paper {
-  background: var(--color-paper);
-  color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-paper);
 }
 
 /* On dark surfaces: quiet secondary beside .button--paper */
@@ -408,8 +448,8 @@ p {
 
 /* Hover only where hover exists — touch taps must not leave stuck states */
 @media (hover: hover) {
-  .button--primary:hover {
-    background: var(--color-accent-deep);
+  .button--primary:hover::after {
+    opacity: 0.55;
   }
 
   .button--outline:hover {
@@ -418,7 +458,7 @@ p {
 
   .button--paper:hover {
     background: var(--color-accent-bright);
-    color: var(--color-ink);
+    color: #fff;
   }
 
   .button--ghost:hover {
@@ -433,7 +473,7 @@ p {
   align-items: center;
   gap: 0.5em;
   min-height: var(--control-h);
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-size: var(--text-md);
   font-weight: var(--weight-medium);
   color: var(--color-ink);

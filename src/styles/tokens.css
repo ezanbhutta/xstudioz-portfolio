@@ -1,70 +1,78 @@
 /* ---------------------------------------------------------------------------
    XStudioz design tokens — the single source of truth for the visual system.
 
-   The room: warm bone paper, near-black ink, one rationed violet. A cool
-   blue-white reads "software"; paper with warmth reads "print", which is the
-   room brand work belongs in. The accent is used once per view — on the thing
-   the visitor should do next — so it never stops meaning anything.
+   The room is obsidian. Brand work is shown the way it is shown in a studio:
+   lights down, artwork lit. A near-black ground makes a logo in any colour
+   look like the only thing in the room, and it is the one background every
+   piece of identity work has to survive anyway.
+
+   One rationed accent, a violet-to-magenta gradient, used on the thing the
+   visitor should do next and on the single word the headline turns on. Used
+   twice per view it would stop meaning anything.
 
    Contrast, measured against the surface each colour is used on:
-     ink            on paper       → 16.9:1
-     ink-soft       on paper       →  7.4:1
-     ink-mute       on paper       →  5.1:1
-     accent         on paper       →  6.4:1
-     paper          on accent-deep →  8.6:1
-     paper-mute     on ink         →  8.5:1
-     accent-bright  on ink         →  7.2:1
-     line-control   on paper       →  3.3:1  (WCAG 1.4.11, control borders)
+     ink            on paper       → 17.4:1
+     ink-soft       on paper       →  7.6:1
+     ink-mute       on paper       →  5.2:1
+     accent         on paper       →  4.6:1  (large text and UI only)
+     accent-bright  on paper       →  5.9:1
+     line-control   on paper       →  3.7:1  (WCAG 1.4.11, control borders)
 --------------------------------------------------------------------------- */
 :root {
-  /* --- Surfaces & ink ---------------------------------------------------- */
-  --color-paper: #f7f5f0;
-  /* One step up from paper — panels and hovers separate without a border */
-  --color-paper-raised: #f1eee7;
-  /* Two steps up — inset wells, thumbnail rails, quiet cards */
-  --color-paper-sunken: #ebe7dd;
-  --color-ink: #17141b;
-  /* A panel that sits on the ink band without becoming a second colour */
-  --color-ink-raised: #221e29;
-  --color-ink-soft: #55505c;
-  --color-ink-mute: #6d6774;
-  --color-line: #e5e0d6;
-  --color-line-strong: #d2ccc0;
-  /* Borders that are the only thing identifying a control (outline buttons,
-     the filter selects) need 3:1 against paper to satisfy WCAG 1.4.11 —
-     a decorative hairline does not. Measured 3.34:1. */
-  --color-line-control: #8f8574;
-  --color-accent: #7e22ce;
-  --color-accent-deep: #6b21a8;
-  /* A wash of the accent, for the rare tinted surface */
-  --color-accent-wash: #f3ecfa;
+  /* --- Surfaces & ink ----------------------------------------------------- *
+     "paper" and "ink" keep their names through the inversion: paper is still
+     the page, ink is still the type on it. Renaming them would have meant
+     touching every component to say the same thing.                          */
+  --color-paper: #09090b;
+  /* Raised cards and panels lift off the ground by a few points of lightness
+     plus a hairline, never by a shadow — shadows are invisible on obsidian. */
+  --color-paper-raised: #121215;
+  --color-paper-sunken: #050507;
+  --color-ink: #f4f4f5;
+  --color-ink-raised: #1c1c20;
+  --color-ink-soft: #a1a1aa;
+  --color-ink-mute: #8b8b95;
+  --color-line: rgb(255 255 255 / 8%);
+  --color-line-strong: rgb(255 255 255 / 16%);
+  /* Borders that are the only thing identifying a control need 3:1 against
+     the ground to satisfy WCAG 1.4.11. Measured 3.7:1. */
+  --color-line-control: rgb(255 255 255 / 42%);
+
+  /* The accent is a gradient first and a flat colour second. Anything that
+     cannot take a gradient (a focus ring, an underline) uses --color-accent. */
+  --color-accent: #a78bfa;
+  --color-accent-deep: #8b5cf6;
+  --color-accent-bright: #d946ef;
+  --gradient-accent: linear-gradient(135deg, #8b5cf6, #d946ef);
+  /* The light a raised card sits in when the pointer is over it */
+  --color-glow: rgb(139 92 246 / 15%);
+  --color-accent-wash: rgb(139 92 246 / 10%);
   /* Brand gradient (logo, og image) */
   --color-brand-violet: #5e17b8;
   --color-brand-purple: #a928d9;
   --color-brand-magenta: #ed4fcf;
-  /* On dark (ink) surfaces */
-  --color-paper-mute: #b6b0c2;
-  --color-accent-bright: #e879f9;
-  --color-line-on-ink: rgb(255 255 255 / 14%);
-  --color-line-on-ink-strong: rgb(255 255 255 / 28%);
+  /* Legacy aliases: the footer and lightbox call themselves "on ink" from
+     when the page was light and only they were dark. */
+  --color-paper-mute: #a1a1aa;
+  --color-line-on-ink: rgb(255 255 255 / 10%);
+  --color-line-on-ink-strong: rgb(255 255 255 / 24%);
 
-  /* --- Typography -------------------------------------------------------- *
-     One family for everything: Schibsted Grotesk, variable, self-hosted,
-     ~46 KB. A single clean grotesque across headlines, interface and body
-     means the
-     only typographic contrast on the page is size, weight and space — so
-     nothing in the chrome competes with the artwork it frames.
-     Both variables point at the same stack; they are kept as two names
-     because components use them to say WHY they are choosing a face.        */
-  --font-display:
+  /* --- Typography --------------------------------------------------------- *
+     Two faces, each doing one job.
+
+     Syne (variable, 400–800) is the headline voice: high-contrast, slightly
+     eccentric widths, the kind of face a studio sets its own name in. It is
+     never used below --text-xl — at label size its character becomes noise.
+
+     Schibsted Grotesk (variable, 400–900) carries everything a visitor
+     actually reads: body copy, labels, metadata, controls.                    */
+  --font-display: 'Syne', 'Schibsted Grotesk', -apple-system, blinkmacsystemfont, sans-serif;
+  --font-sans:
     'Schibsted Grotesk', -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, 'Helvetica Neue',
     arial, sans-serif;
-  --font-sans: var(--font-display);
 
   /* Fluid scale. Labels stay fixed — fluid 12px type just gets illegible on
-     small screens — everything above body size opens up with the viewport.
-     The steps below body are close together and the ones above are far
-     apart: minimal interfaces need a quiet middle and a loud top.           */
+     small screens — everything above body size opens up with the viewport.   */
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-md: clamp(1rem, 0.97rem + 0.16vw, 1.0625rem);
@@ -72,34 +80,27 @@
   --text-xl: clamp(1.375rem, 1.2rem + 0.85vw, 1.75rem);
   --text-2xl: clamp(1.75rem, 1.35rem + 2vw, 2.75rem);
   --text-3xl: clamp(2.25rem, 1.6rem + 3.2vw, 4rem);
-  /* Section-scale statements — bigger than a heading, smaller than the hero */
   --text-4xl: clamp(2.75rem, 1.8rem + 4.75vw, 5.5rem);
   --text-display: clamp(3rem, 1.4rem + 7.2vw, 7.5rem);
   --text-wordmark: 1.375rem;
 
-  /* Weights. The face is variable and this is a minimal interface: regular
-     carries almost everything, medium marks interaction, and 600 is as heavy
-     as the design ever goes — weight is not how this design gets attention. */
+  /* Syne carries weight better than a neutral grotesque, so the display end
+     of the scale runs heavier than the interface end. */
   --weight-regular: 400;
   --weight-medium: 500;
-  --weight-display: 600;
+  --weight-display: 700;
   --weight-semibold: 600;
-  --weight-wordmark: 600;
+  --weight-wordmark: 700;
 
   --leading-tight: 0.98;
   --leading-snug: 1.15;
   --leading-body: 1.65;
 
-  /* A clean grotesque set large needs real negative tracking or it reads
-     loose; set small it needs none at all. */
-  --tracking-tight: -0.022em;
-  --tracking-display: -0.042em;
+  --tracking-tight: -0.02em;
+  --tracking-display: -0.035em;
   --tracking-wide: 0.1em;
 
-  /* --- Spacing — 4px rhythm, fluid where sections breathe ---------------- *
-     Deliberately generous from --space-lg up. Whitespace is the only
-     decoration this design uses, so the large steps are where the look
-     actually lives.                                                          */
+  /* --- Spacing — 4px rhythm, fluid where sections breathe ----------------- */
   --space-3xs: 0.25rem;
   --space-2xs: 0.5rem;
   --space-xs: 0.75rem;
@@ -108,13 +109,12 @@
   --space-lg: 2.25rem;
   --space-xl: 3.5rem;
   --space-2xl: 5.5rem;
-  /* Fluid so mobile sections keep the desktop's top-heavy ratio */
   --space-3xl: clamp(4.5rem, 2.75rem + 7vw, 8rem);
   --space-section: clamp(6rem, 3.5rem + 10vw, 12rem);
   --space-gallery: clamp(2.5rem, 1.5rem + 4vw, 5rem);
 
   /* --- Layout ------------------------------------------------------------ */
-  --container-max: 85rem; /* 1360px */
+  --container-max: 87.5rem; /* 1400px */
   --gutter: clamp(1.25rem, 5vw, 4rem);
   --measure: 38rem; /* comfortable reading width ≈ 66ch */
   --measure-wide: 44rem;
@@ -136,10 +136,12 @@
   --radius-pill: 999px;
 
   /* --- Elevation --------------------------------------------------------- *
-     Warm-tinted shadows: a neutral grey shadow on bone paper reads as dirt.  */
-  --shadow-sm: 0 1px 2px rgb(23 20 27 / 5%);
-  --shadow-md: 0 0.5rem 1.5rem -0.75rem rgb(23 20 27 / 18%);
-  --shadow-lift: 0 1.25rem 3rem -1rem rgb(23 20 27 / 24%);
+     On obsidian a shadow barely registers, so depth comes from the hairline
+     and the ambient accent glow instead. These stay for the few surfaces
+     that genuinely float above the page.                                     */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-md: 0 0.5rem 1.5rem -0.75rem rgb(0 0 0 / 60%);
+  --shadow-lift: 0 1.5rem 3.5rem -1rem rgb(0 0 0 / 70%);
 
   /* --- Image treatment --------------------------------------------------- *
      Every portfolio image gets the same frame, so covers of wildly different
@@ -148,6 +150,8 @@
   --image-frame: inset 0 0 0 1px var(--color-line);
   --image-frame-hover: inset 0 0 0 1px var(--color-line-strong);
   --image-bg: var(--color-paper-raised);
+  /* The ambient light a card sits in while the pointer is over it */
+  --glow-card: 0 0 3rem -0.5rem var(--color-glow);
 
   /* --- Motion ------------------------------------------------------------ */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);

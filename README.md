@@ -263,13 +263,20 @@ options in `public/admin/config.yml`.
 - Shared primitives live in `src/styles/global.css`: `.section`,
   `.section-head`, `.overline`, `.button` (+ `--primary/--outline/--paper/
   --ghost/--lg`), `.link-arrow`, `.spec-list`, `.tag`, `.media`.
-- Type: **Schibsted Grotesk**, one self-hosted variable file (latin subset,
-  ~46 KB) used for everything — headlines, interface and body. A grotesk with
-  some editorial warmth rather than a neutral UI face: a portfolio's type
-  should have a point of view. A single family means the only typographic
-  contrast is size, weight and space, so nothing in the chrome competes with
-  the artwork. Metric overrides on the `@font-face` keep the fallback swap
-  from shifting a single line.
+- **The room is obsidian.** `#09090b` ground, `#121215` raised tiles behind a
+  hairline, `#050507` for the closing band. Brand work is shown the way a
+  studio shows it: lights down, artwork lit. Depth comes from hairlines and
+  an ambient violet glow, never from shadows — a shadow is invisible on
+  obsidian.
+- **One rationed accent**, a violet-to-magenta gradient (`#8b5cf6 → #d946ef`).
+  It appears on the primary action, on the single word the headline turns on,
+  and on the spotlight that follows the pointer across a card. Used a fourth
+  time it would stop meaning anything.
+- Type: two self-hosted variable files. **Syne** (~34 KB) is the headline
+  voice and is never used below `--text-xl`; at label size its character
+  becomes noise. **Schibsted Grotesk** (~46 KB) carries everything a visitor
+  actually reads: body, labels, metadata, controls. Metric overrides on both
+  `@font-face` rules keep the fallback swap from shifting a line.
 - Whitespace is the only decoration. The large spacing steps (`--space-lg`
   and up) are where the look actually lives — shrink them and the design
   stops working long before anything breaks.

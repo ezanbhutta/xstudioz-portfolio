@@ -27,9 +27,10 @@ const {
 ---
 
 {
-  /* One even two-column field, everywhere. Every project gets the same frame
-    and the same weight, so covers can be compared against each other rather
-    than ranked by how much room the layout gave them. */
+  /* A bento field: a wide tile beside a narrow one, alternating which side is
+    wide. Every tile keeps the covers' own 16:9, so the artwork is never
+    letterboxed or cropped and the bento comes from WIDTH alone — a narrow
+    tile is simply half as wide and half as tall as its neighbour. */
 }
 <div class="work" data-work-grid={filterable ? '' : undefined}>
   {!labelled && <h2 class="visually-hidden">{heading}</h2>}
@@ -82,9 +83,7 @@ const {
   .work-grid {
     display: grid;
     grid-template-columns: 1fr;
-    /* Rows breathe more than columns: a plate needs distance from the one
-       below it (a different project) far more than from the one beside it. */
-    gap: var(--space-3xl) var(--space-gallery);
+    gap: var(--space-gallery);
     list-style: none;
     padding: 0;
     margin: 0;
@@ -92,14 +91,29 @@ const {
 
   @media (min-width: 680px) {
     .work-grid {
-      grid-template-columns: 1fr 1fr;
+      /* Six columns is the smallest field that divides into a 4 + 2 bento
+         without fractional tracks. */
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      align-items: start;
     }
 
-    /* Cards start at the top of their row rather than stretching to match
-       the tallest neighbour — covers keep their own proportions, so a row
-       of two is rarely a matched pair. */
+    /* Wide, narrow, narrow, wide: each row reads 4 + 2 then 2 + 4, so the
+       eye changes direction every row instead of scanning a column.
+       Counted among VISIBLE cards (`of :not([hidden])`) so a filtered grid
+       re-flows into the same rhythm rather than collapsing into holes. */
     .work-grid > :global(li) {
-      align-self: start;
+      grid-column: span 2;
+    }
+
+    .work-grid > :global(li:nth-child(4n + 1 of :not([hidden]))),
+    .work-grid > :global(li:nth-child(4n + 4 of :not([hidden]))) {
+      grid-column: span 4;
+    }
+
+    /* A trailing narrow tile with nothing beside it looks like a mistake;
+       let the last visible card finish its row. */
+    .work-grid > :global(li:last-child:nth-child(odd of :not([hidden]))) {
+      grid-column: span 6;
     }
   }
 </style>

@@ -98,8 +98,11 @@ const year = new Date().getFullYear();
 
 <style>
   .footer {
-    background: var(--color-ink);
-    color: var(--color-paper);
+    /* The page is already obsidian, so the footer separates by sinking
+       darker behind a hairline rather than inverting to light. */
+    background: var(--color-paper-sunken);
+    color: var(--color-ink);
+    border-block-start: 1px solid var(--color-line);
     padding-block: var(--space-section) var(--space-lg);
   }
 
@@ -148,7 +151,7 @@ const year = new Date().getFullYear();
   }
 
   .footer-heading {
-    color: var(--color-paper);
+    color: var(--color-ink);
   }
 
   .footer-grid ul {
@@ -170,7 +173,7 @@ const year = new Date().getFullYear();
 
   @media (hover: hover) {
     .footer-grid ul a:hover {
-      color: var(--color-paper);
+      color: var(--color-ink);
     }
   }
 

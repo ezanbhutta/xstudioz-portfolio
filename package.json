@@ -13,7 +13,8 @@
     "og": "node scripts/generate-og.mjs",
     "format": "prettier --write \"src/**/*.{astro,ts,css}\" \"scripts/*.mjs\" \"*.mjs\"",
     "ingest": "node scripts/ingest.mjs",
-    "industries": "node scripts/sync-industries.mjs"
+    "industries": "node scripts/sync-industries.mjs",
+    "export-sql": "node scripts/export-sql.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.4.1",

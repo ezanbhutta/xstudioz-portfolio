@@ -2,7 +2,6 @@
 import { Picture, getImage } from 'astro:assets';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Lightbox from '@/components/Lightbox.astro';
-import BriefSection from '@/components/BriefSection.astro';
 import { SITE } from '@/config/site';
 import { getCategory } from '@/data/categories';
 import {
@@ -216,8 +215,8 @@ const heroWidths = [720, 1200, 1600];
   <article class="project">
     <header class="container project-header">
       <p class="project-back">
-        <a class="back-link" href="/work/" data-back>
-          <span class="back-link-arrow" aria-hidden="true">←</span> Back to work
+        <a class="back-link" href={`/${category}/`} data-back data-astro-prefetch>
+          <span class="back-link-arrow" aria-hidden="true">←</span> Back to {categoryInfo.title}
         </a>
       </p>
 
@@ -440,12 +439,6 @@ const heroWidths = [720, 1200, 1600];
         </section>
       )
     }
-
-    <BriefSection
-      title={`Start a ${categoryInfo.navLabel ?? categoryInfo.title} project like this.`}
-      lede={`This one began as six lines in a Fiverr message. Send the same six about your business${industry ? ` — even if you are nowhere near ${industry.toLowerCase()}` : ''} — and the reply comes back with a real answer.`}
-      headingId="project-brief-heading"
-    />
 
     {
       (prev || next) && (

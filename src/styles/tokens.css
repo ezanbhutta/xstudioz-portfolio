@@ -49,63 +49,68 @@
   --color-line-on-ink-strong: rgb(255 255 255 / 28%);
 
   /* --- Typography -------------------------------------------------------- *
-     A split stack, chosen deliberately.
-     Display: Bricolage Grotesque (variable, self-hosted, ~77 KB) carries the
-     headlines, wordmark and labels. A brand-identity studio that sets its own
-     site in the OS default font is arguing against itself; this is the one
-     download the design earns.
-     Body: still the native stack — zero download, zero layout shift on the
-     bulk of the text.                                                        */
+     One family for everything: Instrument Sans, variable, self-hosted, ~30 KB.
+     A single clean grotesque across headlines, interface and body means the
+     only typographic contrast on the page is size, weight and space — so
+     nothing in the chrome competes with the artwork it frames.
+     Both variables point at the same stack; they are kept as two names
+     because components use them to say WHY they are choosing a face.        */
   --font-display:
-    'Bricolage Grotesque', -apple-system, blinkmacsystemfont, 'SF Pro Display', 'Segoe UI', roboto,
-    'Helvetica Neue', arial, sans-serif;
-  --font-sans:
-    -apple-system, blinkmacsystemfont, 'SF Pro Text', 'Segoe UI', roboto, 'Helvetica Neue', arial,
-    sans-serif;
+    'Instrument Sans', -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, 'Helvetica Neue',
+    arial, sans-serif;
+  --font-sans: var(--font-display);
 
   /* Fluid scale. Labels stay fixed — fluid 12px type just gets illegible on
-     small screens — everything above body size opens up with the viewport. */
+     small screens — everything above body size opens up with the viewport.
+     The steps below body are close together and the ones above are far
+     apart: minimal interfaces need a quiet middle and a loud top.           */
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-md: clamp(1rem, 0.97rem + 0.16vw, 1.0625rem);
   --text-lg: clamp(1.125rem, 1.06rem + 0.32vw, 1.3125rem);
-  --text-xl: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
-  --text-2xl: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
-  --text-3xl: clamp(1.9rem, 1.4rem + 2.5vw, 3.25rem);
+  --text-xl: clamp(1.375rem, 1.2rem + 0.85vw, 1.75rem);
+  --text-2xl: clamp(1.75rem, 1.35rem + 2vw, 2.75rem);
+  --text-3xl: clamp(2.25rem, 1.6rem + 3.2vw, 4rem);
   /* Section-scale statements — bigger than a heading, smaller than the hero */
-  --text-4xl: clamp(2.25rem, 1.5rem + 3.75vw, 4.5rem);
-  --text-display: clamp(2.75rem, 1.35rem + 6.4vw, 6.5rem);
-  --text-wordmark: 1.5rem;
+  --text-4xl: clamp(2.75rem, 1.8rem + 4.75vw, 5.5rem);
+  --text-display: clamp(3rem, 1.4rem + 7.2vw, 7.5rem);
+  --text-wordmark: 1.375rem;
 
-  /* Weights — the display face is variable; retune the voice from here */
+  /* Weights. The face is variable and this is a minimal interface: regular
+     carries almost everything, medium marks interaction, and 600 is as heavy
+     as the design ever goes — weight is not how this design gets attention. */
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-display: 600;
   --weight-semibold: 600;
-  --weight-wordmark: 700;
+  --weight-wordmark: 600;
 
-  --leading-tight: 1.04;
-  --leading-snug: 1.2;
-  --leading-body: 1.6;
+  --leading-tight: 0.98;
+  --leading-snug: 1.15;
+  --leading-body: 1.65;
 
-  --tracking-tight: -0.02em;
-  /* Display sizes need more negative tracking than headings to look even */
-  --tracking-display: -0.035em;
-  --tracking-wide: 0.14em;
+  /* A clean grotesque set large needs real negative tracking or it reads
+     loose; set small it needs none at all. */
+  --tracking-tight: -0.022em;
+  --tracking-display: -0.042em;
+  --tracking-wide: 0.1em;
 
-  /* --- Spacing — 4px rhythm, fluid where sections breathe ---------------- */
+  /* --- Spacing — 4px rhythm, fluid where sections breathe ---------------- *
+     Deliberately generous from --space-lg up. Whitespace is the only
+     decoration this design uses, so the large steps are where the look
+     actually lives.                                                          */
   --space-3xs: 0.25rem;
   --space-2xs: 0.5rem;
   --space-xs: 0.75rem;
   --space-sm: 1rem;
   --space-md: 1.5rem;
-  --space-lg: 2rem;
-  --space-xl: 3rem;
-  --space-2xl: 4rem;
+  --space-lg: 2.25rem;
+  --space-xl: 3.5rem;
+  --space-2xl: 5.5rem;
   /* Fluid so mobile sections keep the desktop's top-heavy ratio */
-  --space-3xl: clamp(3.5rem, 2.25rem + 5vw, 6rem);
-  --space-section: clamp(4.5rem, 3rem + 7vw, 9rem);
-  --space-gallery: clamp(2rem, 1.25rem + 3vw, 4rem);
+  --space-3xl: clamp(4.5rem, 2.75rem + 7vw, 8rem);
+  --space-section: clamp(6rem, 3.5rem + 10vw, 12rem);
+  --space-gallery: clamp(2.5rem, 1.5rem + 4vw, 5rem);
 
   /* --- Layout ------------------------------------------------------------ */
   --container-max: 85rem; /* 1360px */

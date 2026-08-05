@@ -2,8 +2,6 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import WorkGrid from '@/components/WorkGrid.astro';
 import SectionFilters from '@/components/SectionFilters.astro';
-import ProcessSection from '@/components/ProcessSection.astro';
-import BriefSection from '@/components/BriefSection.astro';
 import { SITE } from '@/config/site';
 import { ACTIVE_CATEGORIES, CATEGORIES, type Category } from '@/data/categories';
 import { getSortedProjects, projectsForService, metaDescription } from '@/lib/projects';
@@ -65,7 +63,7 @@ const jsonLd = {
     {
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Services', item: `${SITE.url}/services/` },
+        { '@type': 'ListItem', position: 1, name: SITE.name, item: `${SITE.url}/` },
         { '@type': 'ListItem', position: 2, name: category.title },
       ],
     },
@@ -83,9 +81,6 @@ const jsonLd = {
 <BaseLayout title={`${category.title}`} description={description} jsonLd={jsonLd}>
   <article>
     <header class="container page-hero service-hero">
-      <p class="overline">
-        <a class="overline-link" href="/services/" data-astro-prefetch>Services</a>
-      </p>
       <h1 class="page-title service-title">{category.title}</h1>
       {category.outcome && <p class="service-outcome">{category.outcome}</p>}
       {category.intro && <p class="page-lede service-intro">{category.intro}</p>}
@@ -192,12 +187,6 @@ const jsonLd = {
                 />
               </div>
             )}
-
-            <p class="service-all">
-              <a class="link-arrow" href="/work/" data-astro-prefetch>
-                Browse every project
-              </a>
-            </p>
           </div>
         </section>
       ) : (
@@ -214,31 +203,10 @@ const jsonLd = {
                 and the same hands do this.
               </p>
             </div>
-            <p class="service-all">
-              <a class="link-arrow" href="/work/" data-astro-prefetch>
-                See the identity work
-              </a>
-            </p>
           </div>
         </section>
       )
     }
-
-    <section class="section section--ruled" aria-labelledby="service-process-heading">
-      <div class="container">
-        <ProcessSection headingId="service-process-heading" />
-        <p class="service-all">
-          <a class="link-arrow" href="/process/" data-astro-prefetch>
-            See the full process, stage by stage
-          </a>
-        </p>
-      </div>
-    </section>
-
-    <BriefSection
-      title={`Start a ${category.navLabel ?? category.title} project.`}
-      headingId="service-brief-heading"
-    />
 
     <nav class="section section--tight container other-services" aria-labelledby="other-heading">
       <h2 id="other-heading" class="overline other-heading">Other services</h2>
@@ -273,7 +241,10 @@ const jsonLd = {
     font-weight: var(--weight-display);
     letter-spacing: var(--tracking-tight);
     line-height: var(--leading-snug);
-    color: var(--color-accent);
+    /* Ink, not accent. A promise set in purple reads as a highlighter pen;
+       set in the same ink as the headline it reads as the studio saying it.
+       Colour on this site belongs to the artwork. */
+    color: var(--color-ink);
     max-width: var(--measure-statement);
     margin-block-end: var(--space-md);
   }

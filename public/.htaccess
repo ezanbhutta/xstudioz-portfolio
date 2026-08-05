@@ -30,6 +30,16 @@ ErrorDocument 404 /404.html
   # www → apex
   RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
   RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
+
+  # Retired routes. The site was trimmed to the portfolio itself: the All Work
+  # index, the services hub and the process page are gone, and the navigation
+  # is the five services. These are permanent redirects rather than 404s so
+  # anything already linked or indexed lands somewhere useful instead of
+  # dead. Individual case studies at /work/<slug>/ are untouched — the
+  # condition below only matches /work/ exactly.
+  RewriteRule ^work/?$ / [R=301,L]
+  RewriteRule ^services/?$ / [R=301,L]
+  RewriteRule ^process/?$ / [R=301,L]
 </IfModule>
 
 # Astro builds directory-style output (/work/slug/index.html) and the site

@@ -100,6 +100,9 @@ const industries = [
   ...new Set((await getSortedProjects()).map((p) => p.data.industry).filter(Boolean)),
 ].sort() as string[];
 
+const uploaded = Astro.url.searchParams.get('uploaded');
+const uploadError = Astro.url.searchParams.get('uploadError');
+
 const currentIndustry = val('industry', existing?.industry);
 const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
 ---
@@ -113,6 +116,9 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
         : `${images.length} page${images.length === 1 ? '' : 's'}. Saving publishes immediately.`
     }
   </p>
+
+  {uploaded && <p class="flash ok">{uploaded}</p>}
+  {uploadError && <p class="flash bad">{uploadError}</p>}
 
   {
     Object.keys(errors).length > 0 && (
@@ -394,6 +400,33 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
       <a class="btn ghost" href="/admin/">Cancel</a>
     </div>
   </form>
+
+  {
+    !isNew && (
+      <form
+        method="POST"
+        action={`/admin/project/${routeSlug}/upload/`}
+        enctype="multipart/form-data"
+        style="margin-top:2.5rem"
+      >
+        <fieldset>
+          <legend>Upload the deck</legend>
+          <p class="legend-note">
+            Choose the presentation PDF. Every page is rendered and the grid cover is made from page
+            one — it replaces whatever is there now, and it is live the moment it finishes. A long
+            deck can take a minute; do not close the tab.
+          </p>
+          <label>
+            <span class="lab">Portfolio PDF</span>
+            <input type="file" name="pdf" accept="application/pdf,.pdf" required />
+          </label>
+          <button class="btn" type="submit">
+            Upload and publish
+          </button>
+        </fieldset>
+      </form>
+    )
+  }
 
   {
     !isNew && (

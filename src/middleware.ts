@@ -8,6 +8,7 @@
  */
 import { defineMiddleware } from 'astro:middleware';
 import { isSignedIn, COOKIE_NAME } from '@/lib/auth';
+import { readUpload } from '@/lib/uploads';
 
 /** The only /admin/ paths reachable without a session. */
 const PUBLIC_ADMIN_PATHS = new Set(['/admin/login', '/admin/login/']);
@@ -40,8 +41,52 @@ function isCrossSite(request: Request, url: URL): boolean {
   }
 }
 
+/** Content types for the files the admin can write. */
+const TYPES: Record<string, string> = {
+  webp: 'image/webp',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  avif: 'image/avif',
+};
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const path = context.url.pathname;
+
+  /**
+   * Uploaded images, served before routing.
+   *
+   * The site sets `trailingSlash: 'always'`, so a request for
+   * `/uploads/slug/page-01.webp` is redirected to the same path with a slash
+   * appended — and an <img src> never has one, so every uploaded image 404s.
+   * That stayed hidden while the files also happened to exist in `dist/`
+   * from the build; once uploads live only on disk, it would have broken
+   * every image on the site.
+   *
+   * Handling it here runs before that redirect. In production Apache serves
+   * these files first and this never executes, but it is what makes the site
+   * correct when it doesn't.
+   */
+  if (path.startsWith('/uploads/')) {
+    const [, , slug, file] = path.split('/');
+    if (slug && file) {
+      const body = await readUpload(slug, file);
+      if (body) {
+        return new Response(new Uint8Array(body), {
+          headers: {
+            'Content-Type':
+              TYPES[file.split('.').pop()?.toLowerCase() ?? ''] ?? 'application/octet-stream',
+            // Immutable: a re-upload writes new bytes under the same
+            // deterministic name only when the deck itself is replaced, and
+            // that is a deliberate act with a visible result.
+            'Cache-Control': 'public, max-age=31536000, immutable',
+            'Content-Length': String(body.length),
+          },
+        });
+      }
+      return new Response('Not found', { status: 404 });
+    }
+  }
 
   if (!path.startsWith('/admin')) return next();
 

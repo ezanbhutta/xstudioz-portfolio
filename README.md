@@ -7,8 +7,8 @@ client-side framework.
 
 The site has one job: a founder lands, believes the taste is real, sees what
 they can buy, and messages the studio on Fiverr. It is deliberately only that
-— there is no blog, no about page, no process essay. Five services, the work
-under each, and a way to get in touch.
+— no blog, no about page, no process essay. Two services, the work under
+each, and a way to get in touch.
 
 ## Quick start
 
@@ -31,18 +31,20 @@ npm run format     # prettier over src/ and scripts/
 | `/work/<slug>/` | Case study — hero, story, deliverables, curated pages, full deck, CTA |
 | `/404` | Not-found, with real routes out |
 
-That is the whole site. `/work/`, `/services/` and `/process/` used to exist
-and were removed; `public/.htaccess` 301s all three to `/` so anything already
-linked or indexed still lands somewhere. Individual case studies at
-`/work/<slug>/` are untouched — the redirect matches `/work/` exactly.
+That is the whole site. Six routes were removed and `public/.htaccess` 301s
+every one of them to `/`, so nothing already linked or indexed dead-ends:
+`/work/`, `/services/` and `/process/` (the site was trimmed to the
+portfolio), and `/animation/`, `/social-media/` and `/stationery/` (services
+no longer offered). Individual case studies at `/work/<slug>/` are untouched
+— the redirect matches `/work/` exactly.
 
 Two rules the code enforces, so they survive future edits:
 
 1. **No control that does nothing.** Every dropdown and Clear button ships
    `hidden` and is revealed by its own script, so a no-JS visitor never meets
    a dead control. A facet is only offered where it can actually divide the
-   set in front of it — two or more
-   values present — so no choice can return an empty grid. The same rule
+   set in front of it — two or more values present — so no choice can return
+   an empty grid. The same rule
    applies to the CMS: a field that renders nowhere gets deleted, not left in
    the editor doing nothing.
 2. **No empty destination.** A service page sells the service whether or not
@@ -53,8 +55,8 @@ Two rules the code enforces, so they survive future edits:
 
 ### Navigation
 
-The five services are the navigation, and they sit **in the page, directly
-under the hero** — not in the sticky bar:
+The services are the navigation, and they sit **in the page, directly under
+the hero** — not in the sticky bar:
 
 ```
 XStudioz.                                    [ Hire on Fiverr ↗ ]
@@ -63,8 +65,7 @@ XStudioz.                                    [ Hire on Fiverr ↗ ]
    you're becoming.
    [ Start on Fiverr ]  [ View the work ↓ ]
 ────────────────────────────────────────────────────────────────
-   Logo Design   Brand Guidelines   Logo Animation
-   Social Media Kit   Stationery Design
+   Logo Design      Brand Guidelines
 ────────────────────────────────────────────────────────────────
 ```
 
@@ -72,11 +73,14 @@ A visitor reads what the studio does before being asked to choose between its
 services. The sticky bar keeps only the wordmark and the Fiverr button.
 
 That placement deleted a whole mechanism. Because the links are in the
-document flow they simply wrap — one row at 1024px and above, two at 768px,
-three at 390px, four at 320px — so there is **no mobile menu, no dialog, no
-focus trap, no hamburger and no breakpoint to maintain**. All five names are
-visible at every width, with or without JavaScript. `ServiceNav.astro` ships
-zero lines of script.
+document flow they simply wrap — so there is **no mobile menu, no dialog, no
+focus trap, no hamburger and no breakpoint to maintain**. Every service name
+is visible at every width, with or without JavaScript, and `ServiceNav.astro`
+ships zero lines of script. The row carries the `.container` class for its
+width and gutter, so it aligns with the rest of the page; note that it uses
+`margin-block: 0` rather than `margin: 0`, because the shorthand would
+silently kill `.container`'s `margin-inline: auto` and shove the row against
+the left gutter.
 
 The row is built from `categories.json`, so adding, renaming, reordering or
 deactivating a service updates the nav, the footer and the homepage together.
@@ -110,19 +114,11 @@ preview already shows everything there is, rather than promising more.
 being listed first — no code involved. That order also drives the service nav
 and the footer, so all three agree.
 
-Services with nothing published get no preview. They are named together in one
-line under the last one — *"Also offered — no case study published yet"* —
-each linking to its own service page. Three empty headings in a row cost more
-attention than they return, and a visitor met them at exactly the moment they
-were deciding whether to message.
-
-Tag a project to one of those services and it grows a preview on the next
-build and drops out of the line automatically. Nothing else needs editing.
-
-Note that a service page can show work when it has no homepage preview:
-`/stationery/` and `/social-media/` pull in guideline projects that included
-them as extras (see `relatedExtras` below). A preview counts only projects
-filed under the service itself.
+A service with nothing published gets no preview. Those are named together in
+one quiet line under the last one — *"Also offered — no case study published
+yet"* — each linking to its own service page. Both current services have work,
+so that line renders nothing today; add a third service and it appears by
+itself until that service has a project.
 
 ## Editing content — the CMS
 
@@ -216,8 +212,9 @@ Ordered by how much difference they make:
    slides. Never guess: these are statements about a real client's business.
 4. **`outcome` / `testimonial`** — leave empty unless real. Both sections are
    absent without data, by design.
-5. **`extras`** — tick these accurately. They are what makes a project appear
-   on the Stationery and Social Media service pages (see below).
+5. **`extras`** — what was included beyond the core sections. Listed on the
+   case study, and the hook `relatedExtras` uses if a future service needs to
+   show real work before it has a case study of its own.
 6. **`category`** — which homepage section the project lands in, and which
    service page counts it as its own work. The single most structural field.
 7. **`industry`** — also the Industry filter's options. Two projects sharing a
@@ -237,10 +234,11 @@ Services**). One entry drives three things: the project tag, the page at
 `/<id>/`, and the row in the service nav and the footer.
 
 - `relatedExtras` is how a service with no standalone case study still shows
-  real work. Stationery lists `"Stationery Design Kit"` and `"Business Card"`,
-  so guideline projects that included one appear on the Stationery page under
-  *"Also delivered as part of these identity projects"*. Spelling must match
-  the extra exactly.
+  real work: list the extra-element names that count as evidence for it, and
+  guideline projects carrying one appear under *"Also delivered as part of
+  these identity projects"*. Spelling must match the extra exactly. Both
+  current services list none, so the mechanism is idle — it exists so a new
+  service can launch with real work instead of an empty grid.
 - `active: false` removes a service from the nav, the footer and the
   homepage — but keeps its URL alive, so old links never 404.
 

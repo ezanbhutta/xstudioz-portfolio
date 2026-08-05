@@ -50,14 +50,11 @@ collections:
         options:
           - logo-design
           - brand-guidelines
-          - animation
-          - social-media
-          - stationery
       - name: logoType
         label: Logo type
         widget: select
         required: false
-        hint: Logo Design projects only. Powers the Type filter on the All Work page.
+        hint: Logo Design projects only. Also filters Brand Guidelines by the mark at the centre of the work.
         # Keep in sync with src/data/filters.ts
         options:
           - Wordmark
@@ -71,7 +68,7 @@ collections:
         label: Guidelines type
         widget: select
         required: false
-        hint: Brand Guidelines projects only. Powers the Type filter on the All Work page.
+        hint: Brand Guidelines projects only.
         # Keep in sync with src/data/filters.ts
         options:
           - Short Brand Guidelines
@@ -83,9 +80,8 @@ collections:
         multiple: true
         required: false
         hint: >-
-          Anything included beyond the core sections. These are listed on the case study AND
-          they are what surfaces this project on the Stationery / Social Media service pages,
-          so tick them accurately.
+          Anything included beyond the core sections. Listed on the case study, so tick them
+          accurately.
         # Keep in sync with src/data/filters.ts
         options:
           - Social Media Kit
@@ -103,7 +99,7 @@ collections:
         label: Industry
         widget: select
         required: false
-        hint: 'Pick an existing industry when one fits — the goal is 4–5 projects per industry. Powers the Industry filter on the All Work page.'
+        hint: 'Pick an existing industry when one fits — the goal is 4–5 projects per industry. Powers the Industry filter on each service page.'
         # Rebuilt from every project on each deploy by scripts/sync-industries.mjs — do not edit by hand.
         # industries:begin
         options:
@@ -151,7 +147,7 @@ collections:
         widget: number
         value_type: int
         default: 99
-        hint: Lower numbers appear earlier everywhere — its homepage section, All Work, and prev/next.
+        hint: Lower numbers appear earlier everywhere — the homepage preview, its service page, and prev/next.
       - name: summary
         label: Details
         widget: text
@@ -160,7 +156,7 @@ collections:
         label: One-line intent
         widget: string
         required: false
-        hint: 'The strategic idea in about 70 characters, e.g. "Geometric precision for a product studio that ships software." Appears under the project name on every card.'
+        hint: 'The strategic idea in about 70 characters, e.g. "Geometric precision for a product studio that ships software." The standfirst on the case study and its meta description.'
 
       # ---- Case study story. Every field is optional; an empty field simply
       # ---- hides its section. Never fill these in with guesses — they are

@@ -13,11 +13,10 @@ import Logo from '@/components/Logo.astro';
  * would have made that a two-click journey behind a word nobody is shopping
  * for.
  *
- * `Work` and `Process` follow, set apart, because they answer a different
- * question: not "what can I buy" but "show me everything" and "how does this
- * go". Five service names plus two is a wide row, so the breakpoint at which
- * this collapses into the menu is set by measurement, not by device class —
- * see the media query below.
+ * There is nothing else in the row. This is a portfolio, so the navigation
+ * is the portfolio: five names, five destinations, and the work. The
+ * breakpoint at which the row collapses into the menu is set by measurement
+ * rather than by device class — see the media query below.
  *
  * The mobile menu is a native <dialog>, which buys the focus trap, the
  * Escape key, inert background content and the top layer for free. Its
@@ -25,8 +24,7 @@ import Logo from '@/components/Logo.astro';
  * paint in BaseLayout) — below that breakpoint a no-JS visitor gets the
  * links inline instead. A button that does nothing is worse than no button.
  */
-const path = Astro.url.pathname;
-const segment = path.split('/')[1] ?? '';
+const segment = Astro.url.pathname.split('/')[1] ?? '';
 
 /** One entry per service, in the order they are listed in categories.json. */
 const SERVICES = ACTIVE_CATEGORIES.map((c) => ({
@@ -34,11 +32,6 @@ const SERVICES = ACTIVE_CATEGORIES.map((c) => ({
   label: c.navLabel ?? c.title,
   current: segment === c.id,
 }));
-
-const SITE_NAV = [
-  { href: '/work/', label: 'All work', current: path.startsWith('/work') },
-  { href: '/process/', label: 'Process', current: path.startsWith('/process') },
-];
 ---
 
 {/* Sentinel: while it is on screen the header is at rest and stays flush */}
@@ -61,20 +54,6 @@ const SITE_NAV = [
         {
           SERVICES.map((item) => (
             <li>
-              <a
-                class="nav-link"
-                href={item.href}
-                aria-current={item.current ? 'page' : undefined}
-                data-astro-prefetch
-              >
-                {item.label}
-              </a>
-            </li>
-          ))
-        }
-        {
-          SITE_NAV.map((item, i) => (
-            <li class:list={['nav-aside', { 'nav-aside--first': i === 0 }]}>
               <a
                 class="nav-link"
                 href={item.href}
@@ -149,22 +128,6 @@ const SITE_NAV = [
           ))
         }
       </ul>
-
-      <ul class="menu-secondary" role="list">
-        {
-          SITE_NAV.map((item) => (
-            <li>
-              <a
-                class="menu-service"
-                href={item.href}
-                aria-current={item.current ? 'page' : undefined}
-              >
-                {item.label}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
     </nav>
 
     <div class="menu-foot">
@@ -217,7 +180,7 @@ const SITE_NAV = [
       if (event.target === menu) close();
     });
     // A menu open at phone width makes no sense once the desktop nav returns.
-    matchMedia('(min-width: 1180px)').addEventListener('change', (event) => {
+    matchMedia('(min-width: 960px)').addEventListener('change', (event) => {
       if (event.matches) close();
     });
   }
@@ -314,20 +277,12 @@ const SITE_NAV = [
   .nav-list {
     display: flex;
     align-items: center;
-    /* Seven items in one row: the gap is the tightest that still reads as
-       separate destinations rather than a sentence. */
-    gap: 1.15rem;
+    /* Five destinations, generously spaced — the row should read as calm
+       rather than as a packed toolbar. */
+    gap: var(--space-md);
     list-style: none;
     padding: 0;
     margin: 0;
-  }
-
-  /* Work and Process answer a different question from the five services, so
-     a hairline divides them rather than a wider gap that would just read as
-     inconsistent spacing. */
-  .nav-aside--first {
-    padding-inline-start: 1.15rem;
-    border-inline-start: 1px solid var(--color-line);
   }
 
   .nav-link {
@@ -406,7 +361,7 @@ const SITE_NAV = [
      Below 900px the inline nav is replaced by the menu — but only once the
      menu can actually open. `html.has-menu` is set by this component's own
      script, so the swap and the trigger arrive together.                     */
-  @media (max-width: 1179px) {
+  @media (max-width: 959px) {
     :global(html.has-menu) .nav {
       display: none;
     }
@@ -426,7 +381,7 @@ const SITE_NAV = [
     }
   }
 
-  @media (min-width: 1180px) {
+  @media (min-width: 960px) {
     .menu-toggle {
       display: none !important;
     }
@@ -546,16 +501,6 @@ const SITE_NAV = [
 
   .menu-link[aria-current='page'] {
     color: var(--color-accent-bright);
-  }
-
-  .menu-secondary {
-    list-style: none;
-    padding: 0;
-    margin-block-start: var(--space-xl);
-    padding-block-start: var(--space-md);
-    border-block-start: 1px solid rgb(255 255 255 / 14%);
-    display: grid;
-    gap: var(--space-3xs);
   }
 
   .menu-service {

@@ -72,7 +72,7 @@ const remaining = projects.length - preview.length;
 
 <style>
   .preview {
-    padding-block: var(--space-2xl);
+    padding-block: var(--space-3xl);
     border-block-start: 1px solid var(--color-line);
   }
 
@@ -80,10 +80,14 @@ const remaining = projects.length - preview.length;
     max-width: var(--measure);
   }
 
+  /* Set at section scale, not heading scale. With the page stripped to the
+     work, these five names are the structure of the whole site — they should
+     land with the same confidence as the hero, one step down. */
   .preview-title {
-    font-size: var(--text-2xl);
+    font-size: var(--text-3xl);
     font-weight: var(--weight-display);
-    letter-spacing: var(--tracking-tight);
+    letter-spacing: var(--tracking-display);
+    line-height: var(--leading-snug);
   }
 
   /* Raised like a footnote marker: the count annotates the heading rather

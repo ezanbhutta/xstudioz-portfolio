@@ -82,7 +82,9 @@ const {
   .work-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-2xl) var(--space-xl);
+    /* Rows breathe more than columns: a plate needs distance from the one
+       below it (a different project) far more than from the one beside it. */
+    gap: var(--space-3xl) var(--space-gallery);
     list-style: none;
     padding: 0;
     margin: 0;

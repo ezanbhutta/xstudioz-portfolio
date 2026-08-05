@@ -5,8 +5,10 @@ through Fiverr. Static, fast, and built so the work is the interface:
 [Astro 5](https://astro.build), hand-crafted CSS design tokens, zero
 client-side framework.
 
-The site has one job: a founder lands, believes the taste is real, understands
-what they can buy, trusts the process, and messages the studio on Fiverr.
+The site has one job: a founder lands, believes the taste is real, sees what
+they can buy, and messages the studio on Fiverr. It is deliberately only that
+— there is no blog, no about page, no process essay. Five services, the work
+under each, and a way to get in touch.
 
 ## Quick start
 
@@ -24,22 +26,25 @@ npm run format     # prettier over src/ and scripts/
 
 | Route | What it is |
 | --- | --- |
-| `/` | Hero, a two-project preview per service, process, Fiverr brief |
-| `/work/` | Every project, with working filters (service · industry · type) |
+| `/` | Hero, then a two-project preview per service |
+| `/<service-id>/` | One service page each: promise, scope, deliverables, all its work with filters, CTA |
 | `/work/<slug>/` | Case study — hero, story, deliverables, curated pages, full deck, CTA |
-| `/services/` | Services hub |
-| `/<service-id>/` | One service page each: promise, scope, deliverables, **all its work with filters**, CTA |
-| `/process/` | The engagement, stage by stage, on both sides of the table |
 | `/404` | Not-found, with real routes out |
+
+That is the whole site. `/work/`, `/services/` and `/process/` used to exist
+and were removed; `public/.htaccess` 301s all three to `/` so anything already
+linked or indexed still lands somewhere. Individual case studies at
+`/work/<slug>/` are untouched — the redirect matches `/work/` exactly.
 
 Two rules the code enforces, so they survive future edits:
 
-1. **No control that does nothing.** The service filter chips on `/work/` are
-   real links (they work without JavaScript); every dropdown and Clear button
-   ships `hidden` and is revealed by its own script, so a no-JS visitor never
-   meets a dead control. Same pattern for the mobile menu trigger. A facet is
-   only offered where it can actually divide the set in front of it — two or
-   more values present — so no choice can return an empty grid.
+1. **No control that does nothing.** Every dropdown and Clear button ships
+   `hidden` and is revealed by its own script, so a no-JS visitor never meets
+   a dead control. Same pattern for the mobile menu trigger. A facet is only
+   offered where it can actually divide the set in front of it — two or more
+   values present — so no choice can return an empty grid. The same rule
+   applies to the CMS: a field that renders nowhere gets deleted, not left in
+   the editor doing nothing.
 2. **No empty destination.** A service page sells the service whether or not
    any work is published under it — scope, deliverables, who it suits, CTA.
    The only thing that depends on having work is the work section itself.
@@ -52,23 +57,23 @@ The header names **every service**, so the thing a visitor came to buy is one
 click from anywhere on the site:
 
 ```
-XStudioz.   Brand Guidelines  Logo Design  Logo Animation  Social Media Kit
-            Stationery Design │ All work  Process          [ Hire on Fiverr ]
+XStudioz.  Brand Guidelines  Logo Design  Logo Animation
+           Social Media Kit  Stationery Design    [ Hire on Fiverr ]
 ```
 
-`All work` and `Process` sit behind a hairline because they answer a
-different question — "show me everything" and "how does this go" — rather
-than "what can I buy".
+Nothing else is in the row. This is a portfolio, so the navigation is the
+portfolio: five names, five destinations, and the work under each.
 
 The row is built from `categories.json`, so adding, renaming, reordering or
-deactivating a service updates the header, the mobile menu, the footer, the
-services hub and the homepage together.
+deactivating a service updates the header, the mobile menu, the footer and
+the homepage together.
 
-Seven items is a wide row. It collapses into the full-screen menu below
-**1180px**, a number taken from measuring the row rather than from a device
-class: all seven fit with room to spare at 1180px and the header would
-overflow below it. Add a sixth service and that number needs re-measuring —
-`nav.mjs`-style width sweeps are the way to do it.
+It collapses into the full-screen menu below **960px** — a number taken from
+measuring the row, not from a device class. The five names plus the wordmark
+and the CTA need ~903px; they still fit at 940px and stop fitting at 900px,
+so 960px leaves a margin. **Add or rename a service and that number needs
+re-measuring**: force `.nav { display: block }`, sum the item widths plus the
+gaps, and compare against `.header-inner`'s client width.
 
 ### How work is split across pages
 
@@ -92,8 +97,8 @@ preview already shows everything there is, rather than promising more.
 
 **The running order is a content edit.** Whichever service is listed first in
 `categories.json` opens the portfolio, so the strongest body of work leads by
-being listed first — no code involved. That order also drives navigation, the
-footer and the services hub, so all four agree.
+being listed first — no code involved. That order also drives the header, the
+mobile menu and the footer, so all four agree.
 
 Services with nothing published get no preview. They are named together in one
 line under the last one — *"Also offered — no case study published yet"* —
@@ -139,31 +144,25 @@ the host rebuilds automatically. No database, no extra service.
 | Which homepage section a project lands in | Projects → *the project* → Service | same |
 | Grid order | Projects → *the project* → Grid position | same |
 | A service's scope or deliverables | Site settings → Services | `src/data/categories.json` |
-| Testimonials, client names, stats | Site settings → Studio content → Proof | `src/data/studio.json` |
-| The process copy | Site settings → Studio content → Process | `src/data/studio.json` |
-| The "what to send first" checklist | Site settings → Studio content → Start a project | `src/data/studio.json` |
+| A service's promise line | Site settings → Services → *the service* → Outcome | `src/data/categories.json` |
+| Header / footer / homepage order | Site settings → Services — reorder the list | `src/data/categories.json` |
 
 ### The Fiverr URL
 
 One value, used by every call to action on the site — header, hero, service
-pages, case studies, the brief section and the footer. Set it in
+pages, case studies and the footer. Set it in
 **Site settings → Brand & links → Fiverr profile URL**
 (`fiverrUrl` in `src/config/site.json`).
 
-### Proof, and the rule about it
+### Numbers on the homepage
 
-`src/data/studio.json` ships with `proof.testimonials`, `proof.clients` and
-`proof.stats` **empty**, and the site is built to be complete in that state:
-the homepage renders a "What to expect" section instead of social proof.
+The two counts in the hero — projects published, industries served — are
+counted from the content at build time. They cannot drift out of date and
+they are not claims that need defending.
 
-Add a testimonial only when you have the client's own words and their
-permission; add a stat only when you can back the number up. The moment
-`testimonials` has one entry, the homepage section changes shape on the next
-build — nothing else needs editing.
-
-The two numbers on the homepage (projects published, industries served) are
-counted from the content at build time, so they can never drift out of date
-and are not claims that need defending.
+There are no testimonials, client logos or performance stats anywhere on the
+site, and no field to put them in. Add one only by building it deliberately,
+with the client's own words and their permission.
 
 ## Everyday maintenance
 
@@ -225,7 +224,7 @@ yourself and skip ingest. Aim for ≥1600px wide sources.
 
 Services live in `src/data/categories.json` (CMS: **Site settings →
 Services**). One entry drives three things: the project tag, the page at
-`/<id>/`, and the row in navigation, the services hub and the footer.
+`/<id>/`, and the row in the header, the mobile menu and the footer.
 
 - `deliverables` is a promise a client can hold you to. Only list what you
   actually ship.
@@ -234,18 +233,11 @@ Services**). One entry drives three things: the project tag, the page at
   so guideline projects that included one appear on the Stationery page under
   *"Also delivered as part of these identity projects"*. Spelling must match
   the extra exactly.
-- `active: false` removes a service from navigation, the hub, the footer and
-  the filters — but keeps its URL alive, so old links never 404.
+- `active: false` removes a service from the header, the mobile menu, the
+  footer and the homepage — but keeps its URL alive, so old links never 404.
 
 Adding a **new** service id also means adding it to the Projects → Service
 options in `public/admin/config.yml`.
-
-### Commercial terms
-
-`studio.json` → `process.revisionsNote` and `process.timelineNote` are empty
-on purpose. Fill them in with your own terms (e.g. *"Two revision rounds are
-included"*, *"Most logo projects run 3–5 days"*) and the lines appear on
-`/process/`. They are deliberately not guessed for you.
 
 ## Design system
 
@@ -255,9 +247,14 @@ included"*, *"Most logo projects run 3–5 days"*) and the lines appear on
 - Shared primitives live in `src/styles/global.css`: `.section`,
   `.section-head`, `.overline`, `.button` (+ `--primary/--outline/--paper/
   --ghost/--lg`), `.link-arrow`, `.spec-list`, `.tag`, `.media`.
-- Type: **Bricolage Grotesque**, a self-hosted variable subset (~77 KB) with
-  metric-matched fallbacks for zero layout shift. Body text uses the native
-  system stack — no download.
+- Type: **Instrument Sans**, one self-hosted variable file (latin subset,
+  ~30 KB) used for everything — headlines, interface and body. A single clean
+  grotesque means the only typographic contrast is size, weight and space, so
+  nothing in the chrome competes with the artwork. Metric overrides on the
+  `@font-face` keep the fallback swap from shifting a single line.
+- Whitespace is the only decoration. The large spacing steps (`--space-lg`
+  and up) are where the look actually lives — shrink them and the design
+  stops working long before anything breaks.
 - Motion is opt-in: `data-reveal` (or `data-reveal="wipe"` for artwork) for
   scroll reveals, `data-enter` + `--enter-step` for the one choreographed
   entrance on first paint. Everything respects `prefers-reduced-motion`.

@@ -314,16 +314,6 @@ collections:
                 widget: text
                 required: false
                 hint: Why this service exists and what it fixes.
-              - name: deliverables
-                label: What they get
-                widget: list
-                required: false
-                hint: 'One deliverable per row. IMPORTANT: this is a promise a client can hold you to — only list what you actually ship.'
-              - name: goodFor
-                label: Right for
-                widget: list
-                required: false
-                hint: One kind of client per row.
               - name: relatedExtras
                 label: Counts as this service
                 widget: list
@@ -336,4 +326,4 @@ collections:
                 label: Currently offered
                 widget: boolean
                 default: true
-                hint: Turn off to remove the service from navigation, the services page, the footer and the work filters without deleting its copy.
+                hint: Turn off to remove the service from the nav, the footer and the homepage without deleting its copy. Its page stays reachable, so old links never 404.

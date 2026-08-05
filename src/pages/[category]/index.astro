@@ -12,9 +12,9 @@ import { siteGraph, ORGANIZATION_ID, WEBSITE_ID } from '@/lib/schema';
  * A service page, not a filtered gallery.
  *
  * This is the answer to "Stationery leads to a 0-projects page": the page
- * sells the service — the promise, the scope, exactly what is delivered, who
- * it suits — and then shows work only if work exists. A service with nothing
- * published yet is still a complete, useful, conversion-oriented page.
+ * states the promise, makes the argument, and then shows the work — only if
+ * work exists. A service with nothing published yet is still a complete,
+ * useful page rather than an empty grid.
  *
  * Related work comes from two honest places: projects tagged with this
  * service, and projects that *included* it as an extra element (a guidelines
@@ -48,18 +48,6 @@ const jsonLd = {
       url: new URL(`/${category.id}/`, SITE.url).href,
       provider: { '@id': ORGANIZATION_ID },
       serviceType: category.title,
-      ...(category.deliverables?.length
-        ? {
-            hasOfferCatalog: {
-              '@type': 'OfferCatalog',
-              name: `${category.title} deliverables`,
-              itemListElement: category.deliverables.map((d) => ({
-                '@type': 'Offer',
-                itemOffered: { '@type': 'Service', name: d },
-              })),
-            },
-          }
-        : {}),
     },
     {
       '@type': 'BreadcrumbList',
@@ -105,43 +93,6 @@ const jsonLd = {
     </header>
 
     <ServiceNav current={category.id} />
-
-    {
-      (category.deliverables?.length || category.goodFor?.length) && (
-        <section class="section section--tight section--ruled" aria-labelledby="scope-heading">
-          <div class="container scope">
-            <div class="scope-head">
-              <p class="overline">Scope</p>
-              <h2 id="scope-heading" class="section-title">
-                What you get<span class="accent-dot">.</span>
-              </h2>
-            </div>
-            <div class="scope-cols">
-              {category.deliverables?.length && (
-                <div>
-                  <p class="overline overline--bare scope-label">Deliverables</p>
-                  <ul class="spec-list" role="list">
-                    {category.deliverables.map((d) => (
-                      <li>{d}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {category.goodFor?.length && (
-                <div>
-                  <p class="overline overline--bare scope-label">Right for</p>
-                  <ul class="spec-list" role="list">
-                    {category.goodFor.map((g) => (
-                      <li>{g}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-      )
-    }
 
     {
       direct.length + viaExtras.length > 0 ? (
@@ -284,30 +235,6 @@ const jsonLd = {
       color: var(--color-accent);
       text-decoration-color: currentColor;
     }
-  }
-
-  .scope {
-    display: grid;
-    gap: var(--space-xl);
-  }
-
-  @media (min-width: 1000px) {
-    .scope {
-      grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
-      gap: var(--space-3xl);
-      align-items: start;
-    }
-  }
-
-  .scope-cols {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
-    gap: var(--space-xl);
-  }
-
-  .scope-label {
-    color: var(--color-ink);
-    margin-block-end: var(--space-2xs);
   }
 
   .service-grid {

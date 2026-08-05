@@ -27,7 +27,7 @@ npm run format     # prettier over src/ and scripts/
 | Route | What it is |
 | --- | --- |
 | `/` | Hero, then a two-project preview per service |
-| `/<service-id>/` | One service page each: promise, scope, deliverables, all its work with filters, CTA |
+| `/<service-id>/` | One service page each: promise, the argument, all its work with filters, CTA |
 | `/work/<slug>/` | Case study — hero, story, deliverables, curated pages, full deck, CTA |
 | `/404` | Not-found, with real routes out |
 
@@ -40,14 +40,14 @@ Two rules the code enforces, so they survive future edits:
 
 1. **No control that does nothing.** Every dropdown and Clear button ships
    `hidden` and is revealed by its own script, so a no-JS visitor never meets
-   a dead control. A facet is only
-   offered where it can actually divide the set in front of it — two or more
+   a dead control. A facet is only offered where it can actually divide the
+   set in front of it — two or more
    values present — so no choice can return an empty grid. The same rule
    applies to the CMS: a field that renders nowhere gets deleted, not left in
    the editor doing nothing.
 2. **No empty destination.** A service page sells the service whether or not
-   any work is published under it — scope, deliverables, who it suits, CTA.
-   The only thing that depends on having work is the work section itself.
+   any work is published under it — the promise, the argument, the CTA. The
+   only thing that depends on having work is the work section itself.
    Every hand-off link on the homepage lands on one of these, so none of them
    is a dead end even before a case study exists.
 
@@ -153,7 +153,7 @@ the host rebuilds automatically. No database, no extra service.
 | A project | Projects → *the project* | `src/content/projects/<slug>/index.json` |
 | Which homepage section a project lands in | Projects → *the project* → Service | same |
 | Grid order | Projects → *the project* → Grid position | same |
-| A service's scope or deliverables | Site settings → Services | `src/data/categories.json` |
+| A service's opening argument | Site settings → Services → *the service* → Opening paragraph | `src/data/categories.json` |
 | A service's promise line | Site settings → Services → *the service* → Outcome | `src/data/categories.json` |
 | Header / footer / homepage order | Site settings → Services — reorder the list | `src/data/categories.json` |
 
@@ -236,8 +236,6 @@ Services live in `src/data/categories.json` (CMS: **Site settings →
 Services**). One entry drives three things: the project tag, the page at
 `/<id>/`, and the row in the service nav and the footer.
 
-- `deliverables` is a promise a client can hold you to. Only list what you
-  actually ship.
 - `relatedExtras` is how a service with no standalone case study still shows
   real work. Stationery lists `"Stationery Design Kit"` and `"Business Card"`,
   so guideline projects that included one appear on the Stationery page under

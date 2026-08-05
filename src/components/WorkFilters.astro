@@ -203,7 +203,8 @@ const chips = ACTIVE_CATEGORIES.filter((c) => (counts[c.id] ?? 0) > 0);
 
     const run = (s: State, push: boolean) => {
       const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (document.startViewTransition && !reduceMotion) document.startViewTransition(() => apply(s));
+      if (document.startViewTransition && !reduceMotion)
+        document.startViewTransition(() => apply(s));
       else apply(s);
       if (push) history.pushState(null, '', toUrl(s));
     };

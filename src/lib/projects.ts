@@ -35,16 +35,6 @@ export async function getSortedProjects(): Promise<ReadyProject[]> {
 }
 
 /**
- * The homepage's opening triptych. Explicitly `featured` projects win; if
- * nobody is flagged the first few by `order` stand in, so the hero is never
- * empty just because the flag was forgotten.
- */
-export function featuredProjects(projects: ReadyProject[], count = 3): ReadyProject[] {
-  const flagged = projects.filter((p) => p.data.featured);
-  return (flagged.length > 0 ? flagged : projects).slice(0, count);
-}
-
-/**
  * A meta description that fits.
  *
  * Search results cut around 155–160 characters, and a description that is
@@ -97,7 +87,8 @@ export function projectsForService(
     extras.size === 0
       ? []
       : projects.filter(
-          (p) => p.data.category !== category.id && projectExtras(p.data).some((e) => extras.has(e)),
+          (p) =>
+            p.data.category !== category.id && projectExtras(p.data).some((e) => extras.has(e)),
         );
   return { direct, viaExtras };
 }

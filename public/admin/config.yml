@@ -50,9 +50,9 @@ collections:
         options:
           - logo-design
           - brand-guidelines
-          - stationery
-          - social-media
           - animation
+          - social-media
+          - stationery
       - name: logoType
         label: Logo type
         widget: select
@@ -151,13 +151,7 @@ collections:
         widget: number
         value_type: int
         default: 99
-        hint: Lower numbers appear earlier everywhere — homepage, All Work, and prev/next.
-      - name: featured
-        label: Feature on the homepage
-        widget: boolean
-        required: false
-        default: false
-        hint: 'The three lowest-numbered featured projects fill the homepage opening. Pick three that show range, not three of the same industry.'
+        hint: Lower numbers appear earlier everywhere — its homepage section, All Work, and prev/next.
       - name: summary
         label: Details
         widget: text

@@ -292,6 +292,18 @@ p {
   }
 }
 
+/* `hidden` must actually hide.
+   The browser's own `[hidden] { display: none }` comes from the user-agent
+   sheet, and ANY author `display` beats it regardless of specificity. So a
+   component that lays its empty-state out with `display: grid` silently
+   cancels the attribute, and the message meant for "no results" sits on the
+   page while every result is showing — which is exactly how the All Work
+   page shipped. Filtering, empty states and progressively-revealed controls
+   all toggle this attribute, so it is settled here once for all of them. */
+[hidden] {
+  display: none !important;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

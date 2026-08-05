@@ -15,8 +15,6 @@ interface Props {
   hidden?: boolean;
   /** The first visible card paints instantly instead of scroll-revealing. */
   lead?: boolean;
-  /** `feature` spans wider and sets its caption larger. */
-  size?: 'default' | 'feature';
   /** Overrides the responsive sizes hint when the card sits in a narrow rail. */
   sizes?: string;
 }
@@ -27,23 +25,19 @@ const {
   index = 0,
   hidden = false,
   lead = false,
-  size = 'default',
-  sizes = size === 'feature'
-    ? '(min-width: 1360px) 1232px, (min-width: 900px) 62vw, 92vw'
-    : '(min-width: 1360px) 592px, (min-width: 680px) 45vw, 92vw',
+  sizes = '(min-width: 1360px) 592px, (min-width: 680px) 45vw, 92vw',
 } = Astro.props;
 
-const { title, category, cover, coverAlt, industry, intent } = project.data;
+const { title, category, cover, coverAlt, industry, logoType } = project.data;
 const serviceLabel = getCategory(category).title;
 const kind = projectType(project.data);
-// Service first, then the specifics — the taxonomy a buyer shops by, then
-// the detail that proves the work is not generic.
-const meta = [serviceLabel, industry, kind].filter(Boolean);
+// Service then industry — the taxonomy a buyer shops by. The type stays a
+// filter facet rather than caption text: it belongs on the case study.
+const meta = [serviceLabel, industry].filter(Boolean).join(' · ');
 const href = `/work/${project.id}/`;
 // Two-column grid: the left card leads its right neighbour by one beat.
-const delay = (index % 2) * 70;
+const delay = (index % 2) * 60;
 const placeholder = await lqipStyle(cover);
-const widths = size === 'feature' ? [720, 1200, 1600] : [480, 900, 1400];
 ---
 
 {
@@ -53,10 +47,11 @@ const widths = size === 'feature' ? [720, 1200, 1600] : [480, 900, 1400];
     polish. */
 }
 <li
-  class:list={['card', `card--${size}`]}
+  class="card"
   data-category={category}
   data-industry={industry}
   data-type={kind}
+  data-logo-type={logoType}
   data-title={title}
   hidden={hidden}
 >
@@ -67,39 +62,23 @@ const widths = size === 'feature' ? [720, 1200, 1600] : [480, 900, 1400];
     data-reveal={lead ? undefined : ''}
     style={lead ? undefined : `--reveal-delay:${delay}ms`}
   >
-    <div class="card-media media" data-vt={`work-${project.id}`}>
+    <div class="card-media" data-vt={`work-${project.id}`}>
       <Picture
         src={cover}
         alt={coverAlt || `${title} — presentation cover`}
         formats={['webp']}
         fallbackFormat="webp"
-        widths={widths}
+        widths={[480, 900, 1400]}
         sizes={sizes}
         loading={eager ? 'eager' : 'lazy'}
         fetchpriority={eager ? 'high' : 'auto'}
         style={placeholder}
       />
-      {/* The click affordance: named, not implied by a cursor change alone */}
-      <span class="card-cue" aria-hidden="true">View case study →</span>
     </div>
-
+    {/* Museum-label caption: quiet, stacked, secondary to the image. */}
     <div class="card-caption">
       <h3 class="card-title">{title}</h3>
-      {intent && <p class="card-intent">{intent}</p>}
-      <p class="card-meta">
-        {
-          meta.map((m, i) => (
-            <>
-              {i > 0 && (
-                <span class="card-meta-sep" aria-hidden="true">
-                  ·
-                </span>
-              )}
-              <span>{m}</span>
-            </>
-          ))
-        }
-      </p>
+      <p class="card-meta">{meta}</p>
     </div>
   </a>
 </li>
@@ -115,56 +94,31 @@ const widths = size === 'feature' ? [720, 1200, 1600] : [480, 900, 1400];
      into a soft shadow on hover so the card rises toward the cursor
      instead of only zooming inside its own box. */
   .card-media {
-    position: relative;
-    /* One ratio for the whole set: covers arrive as 16:9 and 3:2, and a grid
-       of mixed proportions reads as an accident rather than a rhythm. */
-    aspect-ratio: 16 / 9;
+    /* The cover is shown whole, at whatever proportion it was made in — a
+       presentation cover cropped to a house ratio loses the composition it
+       was designed with. */
+    overflow: hidden;
+    border-radius: var(--radius-xs);
+    background: var(--color-paper-raised);
+    box-shadow: inset 0 0 0 1px var(--color-line);
     transition: box-shadow var(--duration-base) var(--ease-out);
   }
 
   .card-media :global(img) {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform var(--duration-slower) var(--ease-out);
-  }
-
-  /* Sits on the artwork, dark enough to survive any cover under it */
-  .card-cue {
-    position: absolute;
-    inset-block-end: var(--space-sm);
-    inset-inline-start: var(--space-sm);
-    display: inline-flex;
-    align-items: center;
-    min-height: 2rem;
-    padding-inline: 0.875rem;
-    border-radius: var(--radius-pill);
-    font-family: var(--font-display);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-semibold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-paper);
-    background: rgb(13 11 16 / 66%);
-    backdrop-filter: blur(6px);
-    opacity: 0;
-    transform: translateY(0.4rem);
-    transition:
-      opacity var(--duration-base) var(--ease-out),
-      transform var(--duration-base) var(--ease-out);
+    height: auto;
+    transition: transform var(--duration-slow) var(--ease-out);
   }
 
   .card-caption {
     padding-block-start: var(--space-sm);
-    display: grid;
-    gap: var(--space-3xs);
   }
 
   .card-title {
-    font-size: var(--text-xl);
+    font-size: var(--text-lg);
     font-weight: var(--weight-display);
     letter-spacing: var(--tracking-tight);
-    justify-self: start;
+    display: inline-block;
     background-image: linear-gradient(var(--color-accent), var(--color-accent));
     background-repeat: no-repeat;
     background-size: 0% 2px;
@@ -174,22 +128,8 @@ const widths = size === 'feature' ? [720, 1200, 1600] : [480, 900, 1400];
     transition: background-size var(--duration-slow) var(--ease-out);
   }
 
-  .card--feature .card-title {
-    font-size: var(--text-2xl);
-  }
-
-  /* The one line that says why this project is interesting */
-  .card-intent {
-    color: var(--color-ink-soft);
-    max-width: 42ch;
-  }
-
-  .card--feature .card-intent {
-    font-size: var(--text-lg);
-    max-width: 48ch;
-  }
-
   .card-meta {
+    margin-block-start: var(--space-3xs);
     font-family: var(--font-display);
     font-size: var(--text-xs);
     font-weight: var(--weight-medium);
@@ -198,22 +138,13 @@ const widths = size === 'feature' ? [720, 1200, 1600] : [480, 900, 1400];
     color: var(--color-ink-mute);
   }
 
-  .card-meta-sep {
-    margin-inline: 0.4em;
-  }
-
   @media (hover: hover) {
     .card-link:hover .card-media {
       box-shadow: var(--image-frame-hover), var(--shadow-lift);
     }
 
     .card-link:hover .card-media :global(img) {
-      transform: scale(1.035);
-    }
-
-    .card-link:hover .card-cue {
-      opacity: 1;
-      transform: none;
+      transform: scale(1.02);
     }
 
     .card-link:hover .card-title {
@@ -221,22 +152,9 @@ const widths = size === 'feature' ? [720, 1200, 1600] : [480, 900, 1400];
     }
   }
 
-  /* Keyboard users get the same affordances as mouse users */
+  /* Keyboard users get the same affordance as mouse users */
   .card-link:focus-visible .card-title {
     background-size: 100% 2px;
-  }
-
-  .card-link:focus-visible .card-cue {
-    opacity: 1;
-    transform: none;
-  }
-
-  /* Touch has no hover, so the cue would never appear — show it always */
-  @media (hover: none) {
-    .card-cue {
-      opacity: 1;
-      transform: none;
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {

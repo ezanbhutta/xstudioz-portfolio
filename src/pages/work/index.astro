@@ -39,25 +39,23 @@ const jsonLd = {
     <p class="overline">All work</p>
     <h1 class="page-title">The full portfolio<span class="accent-dot">.</span></h1>
     <p class="page-lede">
-      Every project published so far, newest thinking first. Narrow it by service, industry or
-      type — the count updates as you go.
+      Every project published so far, newest thinking first. Narrow it by service, industry or type
+      — the count updates as you go.
     </p>
   </section>
 
-  <WorkFilters counts={counts} total={projects.length} industries={industries} typeGroups={typeGroups} />
+  <WorkFilters
+    counts={counts}
+    total={projects.length}
+    industries={industries}
+    typeGroups={typeGroups}
+  />
 
   <section class="container work-section" aria-label="Projects">
     {/* The filter script's announcement channel for screen readers */}
     <p class="visually-hidden" role="status" data-filter-status></p>
 
-    <WorkGrid
-      projects={projects}
-      heading="All projects"
-      eagerCount={2}
-      rhythm="grid"
-      filterable
-      leadFirst
-    />
+    <WorkGrid projects={projects} heading="All projects" eagerCount={2} filterable leadFirst />
 
     <p class="work-empty" data-work-empty hidden>
       <span class="work-empty-title">Nothing matches that combination.</span>

@@ -80,11 +80,6 @@ const projects = defineCollection({
         year: z.number().int().optional(),
         /** Lower numbers appear first within the grid. */
         order: z.number().default(99),
-        /**
-         * Pulls the project into the homepage's opening triptych. Up to three
-         * are used, in `order`; without any, the first three by order stand in.
-         */
-        featured: z.preprocess(emptyToUndef, z.boolean().optional()),
         /** One-sentence description shown on the project page + meta description. */
         summary: z.string(),
         /**

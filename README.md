@@ -24,7 +24,7 @@ npm run format     # prettier over src/ and scripts/
 
 | Route | What it is |
 | --- | --- |
-| `/` | Hero, three featured plates, selected work, services, trust, process, Fiverr brief |
+| `/` | Hero, then one section per service — each with its own filters and grid — process, Fiverr brief |
 | `/work/` | Every project, with working filters (service · industry · type) |
 | `/work/<slug>/` | Case study — hero, story, deliverables, curated pages, full deck, CTA |
 | `/services/` | Services hub |
@@ -34,13 +34,32 @@ npm run format     # prettier over src/ and scripts/
 
 Two rules the code enforces, so they survive future edits:
 
-1. **No control that does nothing.** The service filter chips are real links
-   (they work without JavaScript); the dropdowns and the Clear button ship
-   `hidden` and are revealed by their own script, so a no-JS visitor never
-   meets a dead control. Same pattern for the mobile menu trigger.
+1. **No control that does nothing.** The service filter chips on `/work/` are
+   real links (they work without JavaScript); every dropdown and Clear button
+   ships `hidden` and is revealed by its own script, so a no-JS visitor never
+   meets a dead control. Same pattern for the mobile menu trigger. A facet is
+   only offered where it can actually divide the set in front of it — two or
+   more values present — so no choice can return an empty grid.
 2. **No empty destination.** A service page sells the service whether or not
    any work is published under it — scope, deliverables, who it suits, CTA.
    The only thing that depends on having work is the work section itself.
+
+### The homepage sections
+
+The homepage is one section per service, in the order they appear in
+`src/data/categories.json`. Each section carries its own heading, its own
+filters and its own grid, and filters independently of its neighbours.
+
+A service with no published projects renders as a quiet, unclickable heading
+with *Coming soon* beside it and nothing under it. It is not a link and it
+does not advertise a zero. The moment a project is tagged to that service, the
+section fills in on the next build — heading, filters and grid — with no other
+edit needed.
+
+Note that a service page at `/<id>/` can still show work when the homepage
+section is empty: `/stationery/` and `/social-media/` pull in guideline
+projects that included them as extras (see `relatedExtras` below). The
+homepage section counts only projects filed under the service itself.
 
 ## Editing content — the CMS
 
@@ -69,7 +88,7 @@ the host rebuilds automatically. No database, no extra service.
 | The homepage headline | Site settings → Brand & links → Homepage headline | `src/config/site.json` |
 | LinkedIn / Behance / Instagram | Site settings → Brand & links | `src/config/site.json` |
 | A project | Projects → *the project* | `src/content/projects/<slug>/index.json` |
-| Which projects lead the homepage | Projects → *the project* → Feature on the homepage | same |
+| Which homepage section a project lands in | Projects → *the project* → Service | same |
 | Grid order | Projects → *the project* → Grid position | same |
 | A service's scope or deliverables | Site settings → Services | `src/data/categories.json` |
 | Testimonials, client names, stats | Site settings → Studio content → Proof | `src/data/studio.json` |
@@ -123,9 +142,10 @@ data) updates on the next build. Delete the folder to remove a project.
 
 Ordered by how much difference they make:
 
-1. **`intent`** — the strategic idea in about 70 characters. It is the line
-   under the project name on every card and the standfirst on the case study.
-   A grid of projects with intent lines sells; a grid of bare titles does not.
+1. **`intent`** — the strategic idea in about 70 characters. It is the
+   standfirst on the case study, the line under each prev/next link, and the
+   meta description search engines show. Cards stay a title and a service ·
+   industry label, so this is what carries the thinking.
    Example: *"Geometric precision for a product studio that ships software."*
 2. **`highlights`** — the page numbers of the strongest 5–8 pages of the deck,
    in the order you want them shown. **These are the only pages a visitor sees
@@ -141,11 +161,14 @@ Ordered by how much difference they make:
    absent without data, by design.
 5. **`extras`** — tick these accurately. They are what makes a project appear
    on the Stationery and Social Media service pages (see below).
-6. **`featured`** — the three lowest-numbered featured projects fill the
-   homepage opening. Pick three that show range, not three from one industry.
+6. **`category`** — which homepage section the project lands in, and which
+   service page counts it as its own work. The single most structural field.
+7. **`industry`** — also the Industry filter's options. Two projects sharing a
+   spelling group together; a typo makes a category of one.
 
-Covers are displayed at a **16:9 crop**; ingest already targets that ratio, so
-a hand-made cover should be 16:9 too or it will be cropped top and bottom.
+Covers are shown **whole, at whatever proportion they were made in** — nothing
+is cropped to a house ratio, so a cover keeps the composition it was designed
+with. Aim for ≥1600px wide.
 
 Hand-assembled sets still work — list images in `index.json`'s `images` array
 yourself and skip ingest. Aim for ≥1600px wide sources.

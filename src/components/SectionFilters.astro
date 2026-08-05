@@ -1,6 +1,6 @@
 ---
-import { TYPE_FILTERS } from '@/data/filters';
-import { industriesOf, projectType } from '@/lib/projects';
+import { LOGO_TYPES, TYPE_FILTERS } from '@/data/filters';
+import { industriesOf } from '@/lib/projects';
 import type { Category } from '@/data/categories';
 import type { ReadyProject } from '@/lib/projects';
 
@@ -15,8 +15,19 @@ import type { ReadyProject } from '@/lib/projects';
  * `data-facet-scope` — the script pairs them by that ancestor, so several
  * scopes can coexist on a page without touching each other's cards.
  *
- * Every facet is built from the projects in this scope, and offered only when
- * at least two values are present, so no choice can return an empty grid.
+ * The two taxonomy facets — the service's own Type, and Logo type — offer the
+ * WHOLE taxonomy, not just the values that happen to occur here. On Logo
+ * Design both published projects are Combination marks, so a
+ * values-that-occur list would have held one option and been hidden entirely;
+ * a visitor looking for the logo-type filter would find no filter at all.
+ * Showing all seven says what the studio designs, and a type with nothing
+ * behind it lands on the empty state below the grid, which names the problem
+ * and offers a way out.
+ *
+ * Industry is different and stays derived from the projects: there is no
+ * fixed list of industries to advertise, so an industry nobody has worked in
+ * would be a claim rather than a capability.
+ *
  * The controls ship `hidden` and are revealed by this component's own script:
  * on a static host they cannot filter anything until it runs, and a control
  * that does nothing is worse than no control.
@@ -31,35 +42,38 @@ interface Props {
 
 const { category, projects, scopeId } = Astro.props;
 
-const distinct = (values: (string | undefined)[]) =>
-  [...new Set(values.filter((v): v is string => Boolean(v)))].sort((a, b) => a.localeCompare(b));
+const ownType = TYPE_FILTERS[category.id];
 
 const facets = [
   {
     facet: 'type',
     label: 'type',
-    all: 'All types',
-    // Only where the category has a taxonomy of its own (see TYPE_FILTERS).
-    options: TYPE_FILTERS[category.id] ? distinct(projects.map((p) => projectType(p.data))) : [],
+    all: ownType?.key === 'logoType' ? 'All logo types' : 'All types',
+    // The service's own taxonomy, in full — Logo Design gets all seven mark
+    // types, Brand Guidelines all three depths of document.
+    options: [...(ownType?.options ?? [])],
+    // A taxonomy is a statement about what the studio designs, so one entry
+    // is still worth offering.
+    min: 1,
   },
   {
     facet: 'logoType',
     label: 'logo type',
     all: 'All logo types',
-    // The mark at the centre of the work. Skipped where it IS the category's
-    // own type, which the first facet already covers.
-    options:
-      TYPE_FILTERS[category.id]?.key === 'logoType'
-        ? []
-        : distinct(projects.map((p) => p.data.logoType)),
+    // The mark behind the work. Skipped where it IS the category's own type,
+    // which the facet above already covers.
+    options: ownType?.key === 'logoType' ? [] : [...LOGO_TYPES],
+    min: 1,
   },
   {
     facet: 'industry',
     label: 'industry',
     all: 'All industries',
     options: industriesOf(projects),
+    // One industry is not a choice — it would show the grid it already shows.
+    min: 2,
   },
-].filter((f) => f.options.length > 1);
+].filter((f) => f.options.length >= f.min);
 ---
 
 {

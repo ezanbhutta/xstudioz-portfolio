@@ -51,7 +51,11 @@ const { current } = Astro.props;
        a sentence; the row wraps rather than scrolls, so nothing hides. */
     gap: var(--space-xs) var(--space-xl);
     list-style: none;
-    margin: 0;
+    /* margin-BLOCK, not margin. `.container` centres itself with
+       `margin-inline: auto`, and a blanket `margin: 0` silently killed it —
+       the row sat hard against the left gutter while every other block on
+       the page stayed centred on the 1360px measure. */
+    margin-block: 0;
     padding-block: var(--space-md);
   }
 

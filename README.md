@@ -40,7 +40,7 @@ Two rules the code enforces, so they survive future edits:
 
 1. **No control that does nothing.** Every dropdown and Clear button ships
    `hidden` and is revealed by its own script, so a no-JS visitor never meets
-   a dead control. Same pattern for the mobile menu trigger. A facet is only
+   a dead control. A facet is only
    offered where it can actually divide the set in front of it — two or more
    values present — so no choice can return an empty grid. The same rule
    applies to the CMS: a field that renders nowhere gets deleted, not left in
@@ -53,27 +53,37 @@ Two rules the code enforces, so they survive future edits:
 
 ### Navigation
 
-The header names **every service**, so the thing a visitor came to buy is one
-click from anywhere on the site:
+The five services are the navigation, and they sit **in the page, directly
+under the hero** — not in the sticky bar:
 
 ```
-XStudioz.  Brand Guidelines  Logo Design  Logo Animation
-           Social Media Kit  Stationery Design    [ Hire on Fiverr ]
+XStudioz.                                    [ Hire on Fiverr ↗ ]
+────────────────────────────────────────────────────────────────
+   Look like the brand
+   you're becoming.
+   [ Start on Fiverr ]  [ View the work ↓ ]
+────────────────────────────────────────────────────────────────
+   Logo Design   Brand Guidelines   Logo Animation
+   Social Media Kit   Stationery Design
+────────────────────────────────────────────────────────────────
 ```
 
-Nothing else is in the row. This is a portfolio, so the navigation is the
-portfolio: five names, five destinations, and the work under each.
+A visitor reads what the studio does before being asked to choose between its
+services. The sticky bar keeps only the wordmark and the Fiverr button.
+
+That placement deleted a whole mechanism. Because the links are in the
+document flow they simply wrap — one row at 1024px and above, two at 768px,
+three at 390px, four at 320px — so there is **no mobile menu, no dialog, no
+focus trap, no hamburger and no breakpoint to maintain**. All five names are
+visible at every width, with or without JavaScript. `ServiceNav.astro` ships
+zero lines of script.
 
 The row is built from `categories.json`, so adding, renaming, reordering or
-deactivating a service updates the header, the mobile menu, the footer and
-the homepage together.
+deactivating a service updates the nav, the footer and the homepage together.
+Whichever service is listed first is the one the site leads with.
 
-It collapses into the full-screen menu below **960px** — a number taken from
-measuring the row, not from a device class. The five names plus the wordmark
-and the CTA need ~903px; they still fit at 940px and stop fitting at 900px,
-so 960px leaves a margin. **Add or rename a service and that number needs
-re-measuring**: force `.nav { display: block }`, sum the item widths plus the
-gaps, and compare against `.header-inner`'s client width.
+Case studies do not carry the row: they have a "Back to <service>" link and
+the footer, and the point of that page is the work.
 
 ### How work is split across pages
 
@@ -97,8 +107,8 @@ preview already shows everything there is, rather than promising more.
 
 **The running order is a content edit.** Whichever service is listed first in
 `categories.json` opens the portfolio, so the strongest body of work leads by
-being listed first — no code involved. That order also drives the header, the
-mobile menu and the footer, so all four agree.
+being listed first — no code involved. That order also drives the service nav
+and the footer, so all three agree.
 
 Services with nothing published get no preview. They are named together in one
 line under the last one — *"Also offered — no case study published yet"* —
@@ -224,7 +234,7 @@ yourself and skip ingest. Aim for ≥1600px wide sources.
 
 Services live in `src/data/categories.json` (CMS: **Site settings →
 Services**). One entry drives three things: the project tag, the page at
-`/<id>/`, and the row in the header, the mobile menu and the footer.
+`/<id>/`, and the row in the service nav and the footer.
 
 - `deliverables` is a promise a client can hold you to. Only list what you
   actually ship.
@@ -233,8 +243,8 @@ Services**). One entry drives three things: the project tag, the page at
   so guideline projects that included one appear on the Stationery page under
   *"Also delivered as part of these identity projects"*. Spelling must match
   the extra exactly.
-- `active: false` removes a service from the header, the mobile menu, the
-  footer and the homepage — but keeps its URL alive, so old links never 404.
+- `active: false` removes a service from the nav, the footer and the
+  homepage — but keeps its URL alive, so old links never 404.
 
 Adding a **new** service id also means adding it to the Projects → Service
 options in `public/admin/config.yml`.

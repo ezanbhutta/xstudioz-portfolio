@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import CategorySection from '@/components/CategorySection.astro';
+import ServicePreview from '@/components/ServicePreview.astro';
 import ProcessSection from '@/components/ProcessSection.astro';
 import BriefSection from '@/components/BriefSection.astro';
 import { SITE } from '@/config/site';
@@ -12,17 +12,22 @@ const projects = await getSortedProjects();
 const industries = industriesOf(projects);
 
 /**
- * One section per service that has published work, in the order services are
+ * One preview per service that has published work, in the order services are
  * listed in src/data/categories.json — so the running order is a content
  * edit, and the strongest body of work leads simply by being listed first.
  *
+ * Each preview shows PREVIEW_COUNT projects and hands off to that service's
+ * own page for the rest, where the filters live too. The homepage establishes
+ * taste and points; it is not the whole portfolio.
+ *
  * Services with nothing published are named in one line further down instead
- * of getting a section each. Three empty headings in a row cost more
- * attention than they return, and the visitor met them at exactly the moment
- * they were deciding whether to message. The line still says plainly that
- * there is no case study yet, and each name links to a page that sells the
- * service properly.
+ * of getting a block each. Three empty headings in a row cost more attention
+ * than they return, and the visitor met them at exactly the moment they were
+ * deciding whether to message. The line still says plainly that there is no
+ * case study yet, and each name links to a page that sells the service.
  */
+const PREVIEW_COUNT = 2;
+
 const sections = ACTIVE_CATEGORIES.map((category) => ({
   category,
   projects: projects.filter((p) => p.data.category === category.id),
@@ -93,18 +98,13 @@ const jsonLd = {
   </section>
 
   {
-    /* The portfolio, split by what a buyer came to buy. Each service owns a
-      section, filters its own work, and links to its own page. */
+    /* The portfolio, split by what a buyer came to buy — two examples each,
+      then out to the service page for the rest. */
   }
   <div id="work">
     {
       withWork.map(({ category, projects: items }, i) => (
-        <CategorySection
-          category={category}
-          projects={items}
-          eagerCount={i === 0 ? 2 : 0}
-          leadFirst={i === 0}
-        />
+        <ServicePreview category={category} projects={items} count={PREVIEW_COUNT} lead={i === 0} />
       ))
     }
 

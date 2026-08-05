@@ -1,0 +1,117 @@
+---
+import WorkGrid from '@/components/WorkGrid.astro';
+import type { Category } from '@/data/categories';
+import type { ReadyProject } from '@/lib/projects';
+
+/**
+ * One service on the homepage: what it is, what it gets you, and the two
+ * strongest examples — then out to that service's own page for the rest.
+ *
+ * The homepage's job is to establish taste quickly and hand off, not to be
+ * the whole portfolio. Every project stacked here made a page long enough
+ * that the call to action arrived after the visitor had stopped reading.
+ *
+ * The heading is the service name and the line under it is its `outcome` —
+ * the promise, not the description. "Everything anyone needs to use your
+ * brand without asking you first" is a reason to click; "the rulebook for
+ * your brand" is a label.
+ *
+ * There is nothing to filter in a set of two, so the facets live on the
+ * service page (see SectionFilters), where the full set is.
+ */
+interface Props {
+  category: Category;
+  /** Every project in this service — the preview and the count both derive from it. */
+  projects: ReadyProject[];
+  /** How many to show before handing off. */
+  count?: number;
+  /** The very first card on the page paints instantly (it is the LCP). */
+  lead?: boolean;
+}
+
+const { category, projects, count = 2, lead = false } = Astro.props;
+
+const headingId = `section-${category.id}`;
+// The first by `order`, so which two appear is a content decision.
+const preview = projects.slice(0, count);
+const remaining = projects.length - preview.length;
+---
+
+{
+  preview.length > 0 && (
+    <section class="preview" aria-labelledby={headingId}>
+      <div class="container">
+        <div class="preview-head">
+          <h2 id={headingId} class="preview-title">
+            {category.title}
+            <span class="preview-count" aria-hidden="true">
+              {projects.length}
+            </span>
+          </h2>
+          {category.outcome && <p class="preview-promise">{category.outcome}</p>}
+        </div>
+
+        <div class="preview-body">
+          <WorkGrid projects={preview} eagerCount={lead ? 2 : 0} leadFirst={lead} labelled />
+        </div>
+
+        <p class="preview-more">
+          <a class="link-arrow" href={`/${category.id}/`} data-astro-prefetch>
+            {/* Says what is behind the link, and how much of it. A bare
+                "See all" makes the visitor click to find out whether it is
+                worth clicking. */}
+            {remaining > 0
+              ? `See all ${projects.length} ${category.title} projects`
+              : `About ${category.title}`}
+          </a>
+        </p>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .preview {
+    padding-block: var(--space-2xl);
+    border-block-start: 1px solid var(--color-line);
+  }
+
+  .preview-head {
+    max-width: var(--measure);
+  }
+
+  .preview-title {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-display);
+    letter-spacing: var(--tracking-tight);
+  }
+
+  /* Raised like a footnote marker: the count annotates the heading rather
+     than sitting on the baseline competing with it. */
+  .preview-count {
+    display: inline-block;
+    margin-inline-start: 0.5em;
+    vertical-align: super;
+    font-size: 0.6875rem;
+    font-weight: var(--weight-semibold);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-accent);
+    letter-spacing: 0;
+  }
+
+  /* The promise, set at reading size rather than as small print — it is the
+     reason to keep going, so it gets the weight of one. */
+  .preview-promise {
+    margin-block-start: var(--space-2xs);
+    font-size: var(--text-lg);
+    color: var(--color-ink-soft);
+  }
+
+  .preview-body {
+    margin-block-start: var(--space-xl);
+  }
+
+  .preview-more {
+    margin-block-start: var(--space-lg);
+  }
+</style>

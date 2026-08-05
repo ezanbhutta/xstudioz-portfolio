@@ -1,38 +1,16 @@
-import { getCollection, type CollectionEntry } from 'astro:content';
 import type { Category } from '@/data/categories';
 import { TYPE_FILTERS } from '@/data/filters';
 
-export type Project = CollectionEntry<'projects'>;
-
-/** A project whose visuals exist (ingest has run, or images were provided). */
-export type ReadyProject = Project & {
-  data: Project['data'] & {
-    cover: NonNullable<Project['data']['cover']>;
-    images: NonNullable<Project['data']['images']>;
-  };
-};
-
 /**
- * All displayable projects in order (curated `order`, then A–Z). Entries
- * without visuals yet (e.g. a CMS entry saved without a PDF or images) are
- * skipped with a build warning instead of breaking the site.
+ * Projects now come from MySQL rather than a content collection, so that an
+ * edit is live on the next request instead of the next build. The shape is
+ * unchanged, which is why everything below this line — and every component
+ * that consumes it — did not have to move.
  */
-export async function getSortedProjects(): Promise<ReadyProject[]> {
-  const all = await getCollection('projects');
-  const ready = all.filter((p): p is ReadyProject =>
-    Boolean(p.data.cover && p.data.images?.length),
-  );
-  for (const p of all) {
-    if (!ready.includes(p as ReadyProject)) {
-      console.warn(
-        `[projects] "${p.id}" skipped: no visuals yet. Upload a PDF (the build renders it) or add images in the CMS.`,
-      );
-    }
-  }
-  return ready.sort(
-    (a, b) => a.data.order - b.data.order || a.data.title.localeCompare(b.data.title),
-  );
-}
+export { getSortedProjects } from './content';
+export type { Project, ReadyProject, ProjectData, ProjectImage } from './content';
+
+import type { Project, ReadyProject } from './content';
 
 /**
  * A meta description that fits.

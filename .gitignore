@@ -14,3 +14,4 @@ npm-debug.log*
 !.env.example
 # macOS-specific files
 .DS_Store
+.env

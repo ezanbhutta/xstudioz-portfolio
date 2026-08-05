@@ -21,16 +21,13 @@ import { siteGraph, ORGANIZATION_ID, WEBSITE_ID } from '@/lib/schema';
  * project with a Stationery Design Kit is real stationery work). See
  * `relatedExtras` in src/data/categories.json.
  */
-export async function getStaticPaths() {
-  // Every category keeps its URL — turning a service off removes it from
-  // navigation, not from the web, so existing links never 404.
-  return CATEGORIES.map((category) => ({
-    params: { category: category.id },
-    props: { category },
-  }));
-}
+// Every category keeps its URL — turning a service off removes it from
+// navigation, not from the web, so existing links never 404.
+const category = CATEGORIES.find((c) => c.id === Astro.params.category) as Category | undefined;
 
-const { category } = Astro.props as { category: Category };
+if (!category) {
+  return new Response(null, { status: 404, statusText: 'Not found' });
+}
 const allProjects = await getSortedProjects();
 const { direct, viaExtras } = projectsForService(allProjects, category);
 const others = ACTIVE_CATEGORIES.filter((c) => c.id !== category.id);

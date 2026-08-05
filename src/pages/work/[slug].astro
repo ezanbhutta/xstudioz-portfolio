@@ -27,15 +27,15 @@ import { lqipStyle } from '@/lib/lqip';
  * complete page rather than a scaffold with holes in it. Nothing here is
  * generated from guesses about a real client's business.
  */
-export async function getStaticPaths() {
-  const projects = await getSortedProjects();
-  return projects.map((project) => ({
-    params: { slug: project.id },
-    props: { project, projects },
-  }));
-}
+// Server-rendered per request: the slug comes from the URL and the project is
+// looked up live, so a case study edited in the admin is correct on refresh.
+// An unknown slug is a real 404 rather than a page that renders empty.
+const projects = await getSortedProjects();
+const project = projects.find((p) => p.id === Astro.params.slug);
 
-const { project, projects } = Astro.props;
+if (!project) {
+  return new Response(null, { status: 404, statusText: 'Not found' });
+}
 const {
   title,
   category,

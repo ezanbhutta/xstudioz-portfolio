@@ -342,13 +342,13 @@ INSERT INTO site_settings (setting_key, setting_value)
 VALUES ('fiverrUrl', 'https://www.fiverr.com/x_studioz')
 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value);
 INSERT INTO site_settings (setting_key, setting_value)
-VALUES ('linkedinUrl', NULL)
+VALUES ('linkedinUrl', '')
 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value);
 INSERT INTO site_settings (setting_key, setting_value)
-VALUES ('behanceUrl', NULL)
+VALUES ('behanceUrl', '')
 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value);
 INSERT INTO site_settings (setting_key, setting_value)
-VALUES ('instagramUrl', NULL)
+VALUES ('instagramUrl', '')
 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value);
 INSERT INTO site_settings (setting_key, setting_value)
 VALUES ('locale', 'en')

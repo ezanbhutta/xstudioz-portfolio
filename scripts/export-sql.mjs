@@ -41,10 +41,27 @@ const ESCAPES = {
   '\\': '\\\\',
 };
 
+const escape = (value) =>
+  `'${String(value).replace(/[\0\b\t\n\r\u001a"'\\]/g, (c) => ESCAPES[c])}'`;
+
+/**
+ * A nullable column. Empty collapses to NULL, which is what the narrative
+ * fields want: an unwritten `challenge` is a section the case study skips,
+ * not an empty heading.
+ */
 const q = (value) => {
   if (value === undefined || value === null || value === '') return 'NULL';
-  return `'${String(value).replace(/[\0\b\t\n\r\u001a"'\\]/g, (c) => ESCAPES[c])}'`;
+  return escape(value);
 };
+
+/**
+ * A NOT NULL text column. Empty stays an empty string.
+ *
+ * Settings are the case: a social link the studio does not have yet is set
+ * and blank, not missing, and `site_settings.setting_value` is NOT NULL to
+ * say so. Passing those through `q` writes NULL and the insert is rejected.
+ */
+const qStr = (value) => escape(value ?? '');
 
 /** A JSON column. Empty and missing both become '[]' — never NULL. */
 const jsonArray = (value) => q(JSON.stringify(Array.isArray(value) ? value.filter(Boolean) : []));
@@ -208,7 +225,7 @@ for (const [key, value] of Object.entries(site)) {
     upsert(
       'site_settings',
       ['setting_key', 'setting_value'],
-      [q(key), q(typeof value === 'string' ? value : JSON.stringify(value))],
+      [qStr(key), qStr(typeof value === 'string' ? value : JSON.stringify(value))],
     ),
   );
 }

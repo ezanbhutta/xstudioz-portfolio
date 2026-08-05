@@ -40,11 +40,19 @@ Two rules the code enforces, so they survive future edits:
 
 1. **No control that does nothing.** Every dropdown and Clear button ships
    `hidden` and is revealed by its own script, so a no-JS visitor never meets
-   a dead control. A facet is only offered where it can actually divide the
-   set in front of it — two or more values present — so no choice can return
-   an empty grid. The same rule
-   applies to the CMS: a field that renders nowhere gets deleted, not left in
-   the editor doing nothing.
+   a dead control. The same rule applies to the CMS: a field that renders
+   nowhere gets deleted, not left in the editor doing nothing.
+
+   The Type and Logo type filters are the deliberate exception. They offer
+   the **whole taxonomy**, not just the values that occur, because the list
+   is a statement about what the studio designs — both Logo Design projects
+   are Combination marks, so a values-that-occur list would have held one
+   option and been hidden, and a visitor looking for the logo-type filter
+   would have found no filter at all. Choosing a type with nothing behind it
+   lands on the empty state under the grid, which says so and offers a way
+   back. Industry stays derived from the projects: there is no fixed list to
+   advertise, so an industry nobody has worked in would be a claim rather
+   than a capability.
 2. **No empty destination.** A service page sells the service whether or not
    any work is published under it — the promise, the argument, the CTA. The
    only thing that depends on having work is the work section itself.

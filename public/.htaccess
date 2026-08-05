@@ -40,11 +40,6 @@ ErrorDocument 404 /404.html
   RewriteRule ^services/?$ / [R=301,L]
   RewriteRule ^process/?$ / [R=301,L]
 
-  # Services no longer offered. Their pages are gone rather than left selling
-  # something the studio does not do; the redirect keeps old links alive.
-  RewriteRule ^animation/?$ / [R=301,L]
-  RewriteRule ^social-media/?$ / [R=301,L]
-  RewriteRule ^stationery/?$ / [R=301,L]
 </IfModule>
 
 # Astro builds directory-style output (/work/slug/index.html) and the site

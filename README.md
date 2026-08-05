@@ -7,7 +7,7 @@ client-side framework.
 
 The site has one job: a founder lands, believes the taste is real, sees what
 they can buy, and messages the studio on Fiverr. It is deliberately only that
-— no blog, no about page, no process essay. Two services, the work under
+— no blog, no about page, no process essay. Five services, the work under
 each, and a way to get in touch.
 
 ## Quick start
@@ -31,12 +31,10 @@ npm run format     # prettier over src/ and scripts/
 | `/work/<slug>/` | Case study — hero, story, deliverables, curated pages, full deck, CTA |
 | `/404` | Not-found, with real routes out |
 
-That is the whole site. Six routes were removed and `public/.htaccess` 301s
-every one of them to `/`, so nothing already linked or indexed dead-ends:
-`/work/`, `/services/` and `/process/` (the site was trimmed to the
-portfolio), and `/animation/`, `/social-media/` and `/stationery/` (services
-no longer offered). Individual case studies at `/work/<slug>/` are untouched
-— the redirect matches `/work/` exactly.
+That is the whole site. `/work/`, `/services/` and `/process/` used to exist
+and were removed; `public/.htaccess` 301s all three to `/` so anything already
+linked or indexed still lands somewhere. Individual case studies at
+`/work/<slug>/` are untouched — the redirect matches `/work/` exactly.
 
 Two rules the code enforces, so they survive future edits:
 
@@ -65,7 +63,8 @@ XStudioz.                                    [ Hire on Fiverr ↗ ]
    you're becoming.
    [ Start on Fiverr ]  [ View the work ↓ ]
 ────────────────────────────────────────────────────────────────
-   Logo Design      Brand Guidelines
+   Logo Design   Brand Guidelines   Logo Animation
+   Social Media Kit   Stationery Design
 ────────────────────────────────────────────────────────────────
 ```
 
@@ -91,16 +90,24 @@ the footer, and the point of that page is the work.
 
 ### How work is split across pages
 
-The homepage does not hold the portfolio. It shows **two projects per
-service** — the service name, its `outcome` line as the promise beneath it,
-two covers — and then hands off:
+The homepage does not hold the portfolio. **Every service gets a section** —
+just its name, up to two covers, and a link out:
 
-> **Brand Guidelines** ⁶
-> Everything anyone needs to use your brand without asking you first.
+> **Brand Guidelines**
 > ▢ ▢
 > *See all 6 Brand Guidelines projects →*
 
-The rest of that service's work, and the filters for it, live on
+The heading is the service name and nothing else: no count, no strapline. The
+work is the argument, and a row of covers under a name says more than a
+sentence explaining the name would.
+
+A service with nothing published still gets its section — the name and the
+link, no empty grid. That is not a failure state on a portfolio: it says the
+studio offers the thing and has not shown it yet, which is true and is what a
+visitor scanning the range needs to know. Publish a project under it and the
+covers appear on the next build with no other edit.
+
+The rest of a service's work, and the filters for it, live on
 `/<service-id>/`. A set of two has nothing worth filtering; a set of six does.
 Change `PREVIEW_COUNT` in `src/pages/index.astro` to show more or fewer.
 
@@ -114,11 +121,7 @@ preview already shows everything there is, rather than promising more.
 being listed first — no code involved. That order also drives the service nav
 and the footer, so all three agree.
 
-A service with nothing published gets no preview. Those are named together in
-one quiet line under the last one — *"Also offered — no case study published
-yet"* — each linking to its own service page. Both current services have work,
-so that line renders nothing today; add a third service and it appears by
-itself until that service has a project.
+
 
 ## Editing content — the CMS
 
@@ -212,9 +215,9 @@ Ordered by how much difference they make:
    slides. Never guess: these are statements about a real client's business.
 4. **`outcome` / `testimonial`** — leave empty unless real. Both sections are
    absent without data, by design.
-5. **`extras`** — what was included beyond the core sections. Listed on the
-   case study, and the hook `relatedExtras` uses if a future service needs to
-   show real work before it has a case study of its own.
+5. **`extras`** — tick these accurately. They are listed on the case study,
+   and they are what surfaces a project on the Stationery and Social Media
+   service pages via `relatedExtras`.
 6. **`category`** — which homepage section the project lands in, and which
    service page counts it as its own work. The single most structural field.
 7. **`industry`** — also the Industry filter's options. Two projects sharing a
@@ -234,11 +237,10 @@ Services**). One entry drives three things: the project tag, the page at
 `/<id>/`, and the row in the service nav and the footer.
 
 - `relatedExtras` is how a service with no standalone case study still shows
-  real work: list the extra-element names that count as evidence for it, and
-  guideline projects carrying one appear under *"Also delivered as part of
-  these identity projects"*. Spelling must match the extra exactly. Both
-  current services list none, so the mechanism is idle — it exists so a new
-  service can launch with real work instead of an empty grid.
+  real work on its own page. Stationery lists `"Stationery Design Kit"` and
+  `"Business Card"`, so guideline projects that included one appear under
+  *"Also delivered as part of these identity projects"*. Spelling must match
+  the extra exactly.
 - `active: false` removes a service from the nav, the footer and the
   homepage — but keeps its URL alive, so old links never 404.
 
@@ -253,11 +255,13 @@ options in `public/admin/config.yml`.
 - Shared primitives live in `src/styles/global.css`: `.section`,
   `.section-head`, `.overline`, `.button` (+ `--primary/--outline/--paper/
   --ghost/--lg`), `.link-arrow`, `.spec-list`, `.tag`, `.media`.
-- Type: **Instrument Sans**, one self-hosted variable file (latin subset,
-  ~30 KB) used for everything — headlines, interface and body. A single clean
-  grotesque means the only typographic contrast is size, weight and space, so
-  nothing in the chrome competes with the artwork. Metric overrides on the
-  `@font-face` keep the fallback swap from shifting a single line.
+- Type: **Schibsted Grotesk**, one self-hosted variable file (latin subset,
+  ~46 KB) used for everything — headlines, interface and body. A grotesk with
+  some editorial warmth rather than a neutral UI face: a portfolio's type
+  should have a point of view. A single family means the only typographic
+  contrast is size, weight and space, so nothing in the chrome competes with
+  the artwork. Metric overrides on the `@font-face` keep the fallback swap
+  from shifting a single line.
 - Whitespace is the only decoration. The large spacing steps (`--space-lg`
   and up) are where the look actually lives — shrink them and the design
   stops working long before anything breaks.

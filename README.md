@@ -24,11 +24,11 @@ npm run format     # prettier over src/ and scripts/
 
 | Route | What it is |
 | --- | --- |
-| `/` | Hero, then one section per service — each with its own filters and grid — process, Fiverr brief |
+| `/` | Hero, a two-project preview per service, process, Fiverr brief |
 | `/work/` | Every project, with working filters (service · industry · type) |
 | `/work/<slug>/` | Case study — hero, story, deliverables, curated pages, full deck, CTA |
 | `/services/` | Services hub |
-| `/<service-id>/` | One service page each: promise, scope, deliverables, related work, CTA |
+| `/<service-id>/` | One service page each: promise, scope, deliverables, **all its work with filters**, CTA |
 | `/process/` | The engagement, stage by stage, on both sides of the table |
 | `/404` | Not-found, with real routes out |
 
@@ -43,33 +43,47 @@ Two rules the code enforces, so they survive future edits:
 2. **No empty destination.** A service page sells the service whether or not
    any work is published under it — scope, deliverables, who it suits, CTA.
    The only thing that depends on having work is the work section itself.
+   Every hand-off link on the homepage lands on one of these, so none of them
+   is a dead end even before a case study exists.
 
-### The homepage sections
+### How work is split across pages
 
-The homepage is one section per service **that has published work**, in the
-order those services appear in `src/data/categories.json`. Each section
-carries its own heading, its own filters and its own grid, and filters
-independently of its neighbours.
+The homepage does not hold the portfolio. It shows **two projects per
+service** — the service name, its `outcome` line as the promise beneath it,
+two covers — and then hands off:
+
+> **Brand Guidelines** ⁶
+> Everything anyone needs to use your brand without asking you first.
+> ▢ ▢
+> *See all 6 Brand Guidelines projects →*
+
+The rest of that service's work, and the filters for it, live on
+`/<service-id>/`. A set of two has nothing worth filtering; a set of six does.
+Change `PREVIEW_COUNT` in `src/pages/index.astro` to show more or fewer.
+
+Which two appear is `order` — the lowest-numbered projects in that service
+come first, so it is a content decision. The hand-off link names what is
+behind it (*"See all 6…"*), and falls back to *"About Logo Design"* when the
+preview already shows everything there is, rather than promising more.
 
 **The running order is a content edit.** Whichever service is listed first in
 `categories.json` opens the portfolio, so the strongest body of work leads by
 being listed first — no code involved. That order also drives navigation, the
 footer and the services hub, so all four agree.
 
-Services with nothing published do **not** get a section. They are named
-together in one line under the last grid — *"Also offered — no case study
-published yet"* — each linking to its own service page. Three empty headings
-in a row cost more attention than they return, and a visitor met them at
-exactly the moment they were deciding whether to message.
+Services with nothing published get no preview. They are named together in one
+line under the last one — *"Also offered — no case study published yet"* —
+each linking to its own service page. Three empty headings in a row cost more
+attention than they return, and a visitor met them at exactly the moment they
+were deciding whether to message.
 
-Tag a project to one of those services and it grows a full section on the
-next build — heading, filters, grid — and drops out of the line automatically.
-Nothing else needs editing.
+Tag a project to one of those services and it grows a preview on the next
+build and drops out of the line automatically. Nothing else needs editing.
 
-Note that a service page at `/<id>/` can still show work when it has no
-homepage section: `/stationery/` and `/social-media/` pull in guideline
-projects that included them as extras (see `relatedExtras` below). The
-homepage section counts only projects filed under the service itself.
+Note that a service page can show work when it has no homepage preview:
+`/stationery/` and `/social-media/` pull in guideline projects that included
+them as extras (see `relatedExtras` below). A preview counts only projects
+filed under the service itself.
 
 ## Editing content — the CMS
 

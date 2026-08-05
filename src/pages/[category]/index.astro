@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import WorkGrid from '@/components/WorkGrid.astro';
+import SectionFilters from '@/components/SectionFilters.astro';
 import ProcessSection from '@/components/ProcessSection.astro';
 import BriefSection from '@/components/BriefSection.astro';
 import { SITE } from '@/config/site';
@@ -156,8 +157,25 @@ const jsonLd = {
             </div>
 
             {direct.length > 0 && (
-              <div class="service-grid">
+              /* Filters and the grid they act on share one scope element, so
+                the script pairs them without a global selector — and the
+                secondary "delivered as part of" grid below stays untouched
+                by them. */
+              <div class="service-grid" data-facet-scope>
+                <SectionFilters
+                  category={category}
+                  projects={direct}
+                  scopeId={`service-${category.id}`}
+                />
                 <WorkGrid projects={direct} heading={`${category.title} projects`} eagerCount={1} />
+                <p class="service-none" data-empty hidden>
+                  No {category.title} projects match that combination.{' '}
+                  <button type="button" class="service-none-reset" data-reset>
+                    Clear the filters
+                  </button>
+                  .
+                </p>
+                <p class="visually-hidden" role="status" data-status />
               </div>
             )}
 
@@ -318,6 +336,26 @@ const jsonLd = {
 
   .service-grid {
     margin-block-start: var(--space-2xl);
+  }
+
+  /* The filter row sits above the grid it acts on, separated from it rather
+     than from the heading it belongs to. */
+  .service-grid :global(.facets) {
+    padding-block-end: var(--space-lg);
+  }
+
+  .service-none {
+    padding-block: var(--space-2xl);
+    color: var(--color-ink-soft);
+  }
+
+  .service-none-reset {
+    font: inherit;
+    color: var(--color-ink);
+    font-weight: var(--weight-medium);
+    text-decoration: underline;
+    text-decoration-color: var(--color-accent);
+    text-underline-offset: 0.2em;
   }
 
   .service-grid--secondary {

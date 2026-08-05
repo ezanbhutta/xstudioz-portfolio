@@ -72,13 +72,21 @@ const placeholder = await lqipStyle(cover);
         style={placeholder}
       />
 
-      {/* Sits on the artwork and only resolves on hover or focus */}
+      {
+        /* Sits on the artwork and only resolves on hover or focus. The copy
+          gets its own panel rather than a gradient over the whole tile: the
+          covers have their own typography set on them, and a gradient tuned
+          to one cover is unreadable over the next. A panel is exactly as
+          tall as its text, whatever the artwork behind it. */
+      }
       <div class="card-veil">
-        <p class="card-meta">{meta}</p>
-        {intent && <p class="card-intent">{intent}</p>}
-        <span class="card-cue">
-          View case study <span aria-hidden="true">→</span>
-        </span>
+        <div class="card-copy">
+          <p class="card-meta">{meta}</p>
+          {intent && <p class="card-intent">{intent}</p>}
+          <span class="card-cue">
+            View case study <span aria-hidden="true">→</span>
+          </span>
+        </div>
       </div>
     </div>
 
@@ -162,11 +170,36 @@ const placeholder = await lqipStyle(cover);
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    gap: var(--space-3xs);
-    padding: var(--space-md);
-    background: linear-gradient(to top, rgb(5 5 7 / 92%) 0%, rgb(5 5 7 / 45%) 45%, transparent 78%);
+    padding: clamp(0.75rem, 1.4vw, 1.25rem);
+    /* A light dim over the whole tile so the card reads as "answering", not
+       as two layers of artwork. The copy's legibility comes from its own
+       panel below, never from this. */
+    background: rgb(5 5 7 / 30%);
     opacity: 0;
     transition: opacity var(--duration-base) var(--ease-out);
+  }
+
+  /* The readable surface. Opaque enough on its own that a cover's own
+     lettering cannot read through it; blurred as well where the browser
+     supports it, which lets the wash come down and the artwork stay felt. */
+  .card-copy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    background: rgb(9 9 11 / 94%);
+    box-shadow: inset 0 0 0 1px var(--color-line-strong);
+    transform: translateY(0.5rem);
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .card-copy {
+      background: rgb(9 9 11 / 74%);
+      -webkit-backdrop-filter: blur(14px) saturate(120%);
+      backdrop-filter: blur(14px) saturate(120%);
+    }
   }
 
   .card-meta {
@@ -175,7 +208,7 @@ const placeholder = await lqipStyle(cover);
     font-weight: var(--weight-semibold);
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
-    color: var(--color-accent-bright);
+    color: #fff;
   }
 
   .card-intent {
@@ -214,6 +247,10 @@ const placeholder = await lqipStyle(cover);
       opacity: 1;
     }
 
+    .card-link:hover .card-copy {
+      transform: translateY(0);
+    }
+
     .card-link:hover .card-media :global(img) {
       transform: scale(1.04);
     }
@@ -225,15 +262,25 @@ const placeholder = await lqipStyle(cover);
     opacity: 1;
   }
 
+  .card-link:focus-visible .card-copy {
+    transform: translateY(0);
+  }
+
   .card-link:focus-visible .card-media :global(img) {
     transform: scale(1.04);
   }
 
-  /* Touch has no hover, so the metadata would never appear. Show it, quietly. */
+  /* Touch has no hover, so the metadata would never appear. Show the panel
+     always — and drop the tile-wide dim, which on touch would be permanent
+     and would dull every cover in the grid. */
   @media (hover: none) {
     .card-veil {
       opacity: 1;
-      background: linear-gradient(to top, rgb(5 5 7 / 88%) 0%, transparent 62%);
+      background: none;
+    }
+
+    .card-copy {
+      transform: none;
     }
 
     .card-cue {
@@ -242,6 +289,10 @@ const placeholder = await lqipStyle(cover);
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .card-copy {
+      transform: none;
+    }
+
     .card-link:hover .card-media,
     .card-link:hover .card-media :global(img),
     .card-link:focus-visible .card-media :global(img) {

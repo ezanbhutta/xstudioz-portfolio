@@ -139,25 +139,3 @@ export function industriesOf(projects: Project[]): string[] {
   for (const p of projects) if (p.data.industry) set.add(p.data.industry);
   return [...set].sort((a, b) => a.localeCompare(b));
 }
-
-/**
- * The curated slice of a long presentation deck.
- *
- * Explicit `highlights` (1-based page numbers) always win — hand-picking the
- * strongest spreads is the highest-value edit per project. Without them, an
- * even spread across the deck stands in: page 1 is the hero, so the sample
- * starts after it and reaches the last page, which is always worth showing.
- */
-export function curatedPages<T>(images: T[], highlights: number[] | undefined, count = 6): T[] {
-  const rest = images.slice(1);
-  if (rest.length === 0) return [];
-  if (highlights?.length) {
-    return highlights
-      .map((n) => images[n - 1])
-      .filter((img): img is T => Boolean(img))
-      .slice(0, Math.max(count, highlights.length));
-  }
-  if (rest.length <= count) return rest;
-  const step = (rest.length - 1) / (count - 1);
-  return Array.from({ length: count }, (_, i) => rest[Math.round(i * step)]);
-}

@@ -12,7 +12,6 @@ import {
   projectType,
   secondaryType,
   metaDescription,
-  curatedPages,
 } from '@/lib/projects';
 import { siteGraph, ORGANIZATION_ID } from '@/lib/schema';
 import { lqipStyle } from '@/lib/lqip';
@@ -20,12 +19,8 @@ import { lqipStyle } from '@/lib/lqip';
 /**
  * The case study.
  *
- * The shape this replaces was "one paragraph, then thirty-six slides" — a
- * deck dump that made every project the same length and buried the call to
- * action past the fold line of a very long page. Now:
- *
  *   hero → the story (only the parts that have been written) → what was
- *   delivered → six curated pages → the full deck on request → the action
+ *   delivered → every page of the deck, one size, in order → the action
  *
  * Every narrative field is optional and its section is simply absent when
  * empty, so a project with nothing but a summary still produces a clean,
@@ -55,7 +50,6 @@ const {
   direction,
   outcome,
   testimonial,
-  highlights,
 } = project.data;
 
 const categoryInfo = getCategory(category);
@@ -63,41 +57,35 @@ const kind = projectType(project.data);
 const extras = projectExtras(project.data);
 const deliverables = projectDeliverables(project.data);
 
-// Page 1 is the hero; the curated set is what a visitor sees before the
-// call to action. `highlights` in the CMS overrides the automatic spread.
+/**
+ * Every page, at one size, in order.
+ *
+ * This used to show a curated handful inline and hide the rest behind a
+ * drawer. For a brand guidelines deck that is the wrong trade: the document
+ * IS the deliverable, and a buyer deciding whether to hire a studio wants to
+ * read it, not a summary of it. Page 1 leads as the hero (it is also the
+ * view-transition target the grid morphs into); pages 2 onward follow at a
+ * single width, in sequence, nothing skipped.
+ *
+ * Two widths rather than three keeps the build honest: 228 pages across the
+ * portfolio at three widths each is where the host's builder ran out of
+ * memory before.
+ */
 const hero = images[0];
 const heroPlaceholder = await lqipStyle(hero.src);
-const curatedIndex = new Map(images.map((img, i) => [img, i]));
-const curated = await Promise.all(
-  curatedPages(images, highlights, 6).map(async (img) => ({
+const pages = await Promise.all(
+  images.slice(1).map(async (img, i) => ({
     img,
-    at: curatedIndex.get(img) ?? 0,
+    // +1 because page 1 is the hero, so this list starts at index 1.
+    at: i + 1,
     placeholder: await lqipStyle(img.src),
   })),
 );
 
-// One full-resolution source per page for the viewer, and one thumbnail per
-// page for the full-deck drawer. Only the hero and the curated pages are
-// rendered at display size inline — that is the whole weight saving, and why
-// a 45-page deck now costs about as much to load as a 7-page one.
 const viewerPages = await Promise.all(
   images.map(async (img) => {
     const full = await getImage({ src: img.src, width: 1600, format: 'webp' });
     return { src: full.src, alt: img.alt };
-  }),
-);
-const THUMB_W = 400;
-const thumbs = await Promise.all(
-  images.map(async (img) => {
-    const thumb = await getImage({ src: img.src, width: THUMB_W, format: 'webp' });
-    return {
-      src: thumb.src,
-      alt: img.alt,
-      width: THUMB_W,
-      // Explicit dimensions: a 45-cell thumbnail grid without them is 45
-      // layout shifts as the drawer fills in.
-      height: Math.round((THUMB_W * img.src.height) / img.src.width),
-    };
   }),
 );
 
@@ -202,6 +190,9 @@ const jsonLd = {
 
 const heroSizes = '(min-width: 1360px) 1232px, 92vw';
 const heroWidths = [720, 1200, 1600];
+// Deck pages are read, not featured — two widths is plenty and keeps the
+// build's transform count in budget.
+const pageWidths = [900, 1400];
 ---
 
 <BaseLayout
@@ -359,17 +350,20 @@ const heroWidths = [720, 1200, 1600];
     </div>
 
     {
-      curated.length > 0 && (
+      pages.length > 0 && (
         <section class="container project-gallery" aria-labelledby="gallery-heading">
           <div class="gallery-head">
             <p class="overline">The system</p>
             <h2 id="gallery-heading" class="gallery-title">
-              Selected pages<span class="accent-dot">.</span>
+              Every page<span class="accent-dot">.</span>
             </h2>
+            <p class="gallery-count">
+              {images.length} pages, in order. Click any one to open it full screen.
+            </p>
           </div>
 
-          <div class="gallery-grid">
-            {curated.map(({ img, at, placeholder }) => (
+          <div class="gallery-stack">
+            {pages.map(({ img, at, placeholder }) => (
               <figure class="gallery-figure" data-reveal="wipe">
                 <button
                   type="button"
@@ -382,7 +376,7 @@ const heroWidths = [720, 1200, 1600];
                     alt={img.alt}
                     formats={['webp']}
                     fallbackFormat="webp"
-                    widths={heroWidths}
+                    widths={pageWidths}
                     sizes={heroSizes}
                     loading="lazy"
                     style={placeholder}
@@ -397,45 +391,6 @@ const heroWidths = [720, 1200, 1600];
               </figure>
             ))}
           </div>
-        </section>
-      )
-    }
-
-    {
-      images.length > curated.length + 1 && (
-        <section class="container project-deck">
-          <details class="deck">
-            <summary class="deck-summary">
-              <span class="deck-summary-label">Explore the full deck</span>
-              <span class="deck-summary-count">
-                {images.length} pages <span aria-hidden="true">↓</span>
-              </span>
-            </summary>
-            <ul class="deck-grid" role="list">
-              {thumbs.map((thumb, i) => (
-                <li>
-                  <button
-                    type="button"
-                    class="deck-thumb media"
-                    data-open-page={i}
-                    aria-label={`Open page ${i + 1} of ${images.length} full screen`}
-                  >
-                    <img
-                      src={thumb.src}
-                      alt={thumb.alt}
-                      width={thumb.width}
-                      height={thumb.height}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                    <span class="deck-thumb-num" aria-hidden="true">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </details>
         </section>
       )
     }
@@ -623,8 +578,8 @@ const heroWidths = [720, 1200, 1600];
     font-weight: var(--weight-semibold);
     letter-spacing: var(--tracking-wide);
     font-variant-numeric: tabular-nums;
-    color: var(--color-paper);
-    background: rgb(13 11 16 / 62%);
+    color: #fff;
+    background: rgb(5 5 7 / 78%);
     backdrop-filter: blur(6px);
   }
 
@@ -775,7 +730,7 @@ const heroWidths = [720, 1200, 1600];
     margin-block-start: var(--space-lg);
   }
 
-  /* --- Curated gallery ---------------------------------------------------- */
+  /* --- The deck ----------------------------------------------------------- */
   .project-gallery {
     padding-block-end: var(--space-3xl);
   }
@@ -785,136 +740,22 @@ const heroWidths = [720, 1200, 1600];
     margin-block-start: var(--space-2xs);
   }
 
-  .gallery-grid {
-    display: grid;
-    gap: var(--space-gallery);
-    margin-block-start: var(--space-xl);
+  .gallery-count {
+    margin-block-start: var(--space-2xs);
+    color: var(--color-ink-soft);
   }
 
-  /* Pairs from the second page on: the first curated page gets the full
-     measure, then the rest sit two-up, which keeps a six-page selection
-     from reading as another endless scroll. */
-  @media (min-width: 900px) {
-    .gallery-grid {
-      grid-template-columns: 1fr 1fr;
-    }
-
-    .gallery-figure:first-child {
-      grid-column: 1 / -1;
-    }
+  /* One column, one width. The deck is a document: it reads in the order it
+     was designed in, and no page is sized to imply it matters more than the
+     one after it. */
+  .gallery-stack {
+    display: grid;
+    gap: var(--space-xl);
+    margin-block-start: var(--space-xl);
   }
 
   .gallery-figure {
     margin: 0;
-  }
-
-  /* --- The full deck ------------------------------------------------------ */
-  .project-deck {
-    padding-block-end: var(--space-3xl);
-  }
-
-  .deck {
-    border-block: 1px solid var(--color-line);
-  }
-
-  .deck-summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-md);
-    min-height: var(--control-h-lg);
-    padding-block: var(--space-sm);
-    cursor: pointer;
-    list-style: none;
-  }
-
-  .deck-summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .deck-summary-label {
-    font-family: var(--font-display);
-    font-size: var(--text-lg);
-    font-weight: var(--weight-display);
-    letter-spacing: var(--tracking-tight);
-  }
-
-  .deck-summary-count {
-    font-family: var(--font-sans);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-semibold);
-    letter-spacing: var(--tracking-wide);
-    text-transform: uppercase;
-    color: var(--color-ink-mute);
-    font-variant-numeric: tabular-nums;
-  }
-
-  @media (hover: hover) {
-    .deck-summary:hover .deck-summary-label {
-      color: var(--color-accent);
-    }
-  }
-
-  .deck[open] .deck-summary-count span {
-    display: inline-block;
-    rotate: 180deg;
-  }
-
-  .deck-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
-    gap: var(--space-sm);
-    list-style: none;
-    padding: 0;
-    margin: 0 0 var(--space-lg);
-  }
-
-  .deck-thumb {
-    position: relative;
-    display: block;
-    width: 100%;
-    padding: 0;
-    border: none;
-    cursor: zoom-in;
-    transition:
-      box-shadow var(--duration-fast) var(--ease-out),
-      transform var(--duration-fast) var(--ease-out);
-  }
-
-  .deck-thumb img {
-    width: 100%;
-    height: auto;
-  }
-
-  .deck-thumb-num {
-    position: absolute;
-    inset-block-end: 0.25rem;
-    inset-inline-start: 0.25rem;
-    padding-inline: 0.4rem;
-    border-radius: var(--radius-pill);
-    font-family: var(--font-sans);
-    font-size: 0.625rem;
-    font-weight: var(--weight-semibold);
-    font-variant-numeric: tabular-nums;
-    color: var(--color-paper);
-    background: rgb(13 11 16 / 62%);
-    opacity: 0;
-    transition: opacity var(--duration-fast) var(--ease-out);
-  }
-
-  @media (hover: hover) {
-    .deck-thumb:hover {
-      box-shadow: var(--image-frame-hover), var(--shadow-md);
-      transform: translateY(-2px);
-    }
-
-    .deck-thumb:hover .deck-thumb-num {
-      opacity: 1;
-    }
-  }
-
-  .deck-thumb:focus-visible .deck-thumb-num {
-    opacity: 1;
   }
 
   /* --- More projects ------------------------------------------------------ */

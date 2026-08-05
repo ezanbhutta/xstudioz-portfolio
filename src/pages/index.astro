@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import ServicePreview from '@/components/ServicePreview.astro';
+import ServiceNav from '@/components/ServiceNav.astro';
 import { SITE } from '@/config/site';
 import { ACTIVE_CATEGORIES } from '@/data/categories';
 import { getSortedProjects, industriesOf } from '@/lib/projects';
@@ -95,6 +96,8 @@ const jsonLd = {
     </div>
   </section>
 
+  <ServiceNav />
+
   {
     /* The portfolio, split by what a buyer came to buy — two examples each,
       then out to the service page for the rest. */
@@ -133,7 +136,7 @@ const jsonLd = {
   /* Tighter than a marketing hero on purpose: this is a portfolio, so the
      first real work should be reachable in one short scroll, not two. */
   .hero {
-    padding-block: var(--space-3xl) var(--space-2xl);
+    padding-block: var(--space-3xl) var(--space-xl);
   }
 
   .hero-title {

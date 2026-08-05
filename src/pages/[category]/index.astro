@@ -2,6 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import WorkGrid from '@/components/WorkGrid.astro';
 import SectionFilters from '@/components/SectionFilters.astro';
+import ServiceNav from '@/components/ServiceNav.astro';
 import { SITE } from '@/config/site';
 import { ACTIVE_CATEGORIES, CATEGORIES, type Category } from '@/data/categories';
 import { getSortedProjects, projectsForService, metaDescription } from '@/lib/projects';
@@ -102,6 +103,8 @@ const jsonLd = {
         }
       </div>
     </header>
+
+    <ServiceNav current={category.id} />
 
     {
       (category.deliverables?.length || category.goodFor?.length) && (
@@ -227,7 +230,9 @@ const jsonLd = {
 
 <style>
   .service-hero {
-    padding-block-end: var(--space-2xl);
+    /* ServiceNav sits immediately below and carries its own rule, so the
+       hero does not need to reserve space of its own. */
+    padding-block-end: var(--space-xl);
   }
 
   .service-title {

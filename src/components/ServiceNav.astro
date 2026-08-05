@@ -1,0 +1,88 @@
+---
+import { ACTIVE_CATEGORIES } from '@/data/categories';
+
+/**
+ * The five services, as a row in the page rather than a bar above it.
+ *
+ * It sits directly under the hero on every page: the visitor reads the
+ * statement first and only then meets the choice. A sticky bar asks them to
+ * pick before they know what they are picking between.
+ *
+ * Being in the document flow rather than in a fixed bar is also why there is
+ * no mobile menu any more, and no JavaScript here at all: five links that
+ * wrap need no dialog, no focus trap and no trigger to reveal.
+ */
+interface Props {
+  /** Category id of the page this renders on, so it can mark itself. */
+  current?: string;
+}
+
+const { current } = Astro.props;
+---
+
+<nav class="servicenav" aria-label="Services">
+  <ul class="servicenav-list container" role="list">
+    {
+      ACTIVE_CATEGORIES.map((c) => (
+        <li>
+          <a
+            class="servicenav-link"
+            href={`/${c.id}/`}
+            aria-current={current === c.id ? 'page' : undefined}
+            data-astro-prefetch
+          >
+            {c.navLabel ?? c.title}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<style>
+  .servicenav {
+    border-block: 1px solid var(--color-line);
+  }
+
+  .servicenav-list {
+    display: flex;
+    flex-wrap: wrap;
+    /* Wide enough that the names read as five separate destinations, not as
+       a sentence; the row wraps rather than scrolls, so nothing hides. */
+    gap: var(--space-xs) var(--space-xl);
+    list-style: none;
+    margin: 0;
+    padding-block: var(--space-md);
+  }
+
+  .servicenav-link {
+    display: inline-block;
+    font-size: var(--text-md);
+    font-weight: var(--weight-medium);
+    color: var(--color-ink-mute);
+    text-decoration: none;
+    /* The underline is drawn rather than inherited, so it can grow from the
+       left on hover instead of blinking on. */
+    background-image: linear-gradient(var(--color-ink), var(--color-ink));
+    background-repeat: no-repeat;
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    padding-block-end: 3px;
+    transition:
+      color var(--duration-fast) var(--ease-out),
+      background-size var(--duration-base) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .servicenav-link:hover {
+      color: var(--color-ink);
+      background-size: 100% 1px;
+    }
+  }
+
+  .servicenav-link[aria-current='page'] {
+    color: var(--color-ink);
+    background-image: linear-gradient(var(--color-accent), var(--color-accent));
+    background-size: 100% 1px;
+  }
+</style>

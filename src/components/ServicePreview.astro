@@ -76,6 +76,12 @@ const remaining = projects.length - preview.length;
     border-block-start: 1px solid var(--color-line);
   }
 
+  /* ServiceNav already draws a rule under itself, so the first preview must
+     not draw a second one 1px below it. */
+  :global(.servicenav) + .preview {
+    border-block-start: none;
+  }
+
   .preview-head {
     max-width: var(--measure);
   }

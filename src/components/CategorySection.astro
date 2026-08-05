@@ -7,11 +7,13 @@ import type { ReadyProject } from '@/lib/projects';
 
 /**
  * One service, one section of the homepage: its own heading, its own filters,
- * its own grid. Five of these stacked is the whole portfolio, sorted the way
- * a buyer shops — by the thing they came to buy.
+ * its own grid. Stacked, they are the whole portfolio, sorted the way a buyer
+ * shops — by the thing they came to buy.
  *
- * A service with nothing published renders as a quiet label and stops there.
- * It says the studio offers the service without promising work behind it.
+ * Only services with published work get a section. The rest are named in one
+ * line further down the page (see src/pages/index.astro): three empty
+ * headings in a row cost more attention than they return, and the visitor
+ * meets them just as they are deciding whether to message.
  *
  * Both dropdowns are built from the projects in THIS section, and only offer
  * values that actually occur here, so no choice can return an empty grid.
@@ -75,16 +77,7 @@ const hasFilters = facets.length > 0;
 ---
 
 {
-  projects.length === 0 ? (
-    <section class="cat cat--empty" aria-labelledby={headingId}>
-      <div class="container cat-head">
-        <h2 id={headingId} class="cat-title cat-title--empty">
-          {category.title}
-        </h2>
-        <p class="cat-soon">Coming soon</p>
-      </div>
-    </section>
-  ) : (
+  projects.length > 0 && (
     <section class="cat" aria-labelledby={headingId} data-cat-section={category.id}>
       <div class="container">
         <div class="cat-head">
@@ -219,12 +212,6 @@ const hasFilters = facets.length > 0;
     border-block-start: 1px solid var(--color-line);
   }
 
-  /* Nothing to show and nothing to click: the row states the service exists
-     and takes up as little of the page as saying so requires. */
-  .cat--empty {
-    padding-block: var(--space-lg);
-  }
-
   .cat-head {
     display: flex;
     flex-wrap: wrap;
@@ -239,11 +226,6 @@ const hasFilters = facets.length > 0;
     letter-spacing: var(--tracking-tight);
   }
 
-  .cat-title--empty {
-    color: var(--color-ink-mute);
-    font-weight: var(--weight-medium);
-  }
-
   /* Raised like a footnote marker: the count annotates the heading rather
      than sitting on the baseline competing with it. */
   .cat-count {
@@ -255,15 +237,6 @@ const hasFilters = facets.length > 0;
     font-variant-numeric: tabular-nums;
     color: var(--color-accent);
     letter-spacing: 0;
-  }
-
-  .cat-soon {
-    font-family: var(--font-display);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-semibold);
-    letter-spacing: var(--tracking-wide);
-    text-transform: uppercase;
-    color: var(--color-ink-mute);
   }
 
   .cat-lede {

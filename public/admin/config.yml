@@ -50,6 +50,9 @@ collections:
         options:
           - logo-design
           - brand-guidelines
+          - animation
+          - social-media
+          - stationery
       - name: logoType
         label: Logo type
         widget: select

@@ -3,19 +3,23 @@
 /* ---------------------------------------------------------------------------
    One typeface, everywhere.
 
-   Instrument Sans (variable, wght 400–700, latin subset, ~30 KB) sets the
+   Schibsted Grotesk (variable, wght 400–900, latin subset, ~46 KB) sets the
    headlines, the interface and the body copy. A single family is the whole
    type system: nothing on the page competes with the work, and the only
    contrast left is size, weight and space — which is the point.
+
+   It is a grotesk with a little editorial warmth in it rather than a neutral
+   UI face: slightly open apertures, a touch more character at display size.
+   A portfolio's type should have a point of view; a dashboard's should not.
 
    `swap` paints text immediately in the fallback and upgrades in place; the
    metric overrides below were measured against that fallback in a browser,
    so the upgrade does not move a single line.
 --------------------------------------------------------------------------- */
 @font-face {
-  font-family: 'Instrument Sans';
-  src: url('./fonts/instrument-sans.woff2') format('woff2-variations');
-  font-weight: 400 700;
+  font-family: 'Schibsted Grotesk';
+  src: url('./fonts/schibsted-grotesk.woff2') format('woff2-variations');
+  font-weight: 400 900;
   font-style: normal;
   font-display: swap;
   size-adjust: 100%;

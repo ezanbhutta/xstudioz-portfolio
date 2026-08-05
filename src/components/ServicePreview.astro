@@ -11,10 +11,14 @@ import type { ReadyProject } from '@/lib/projects';
  * the whole portfolio. Every project stacked here made a page long enough
  * that the call to action arrived after the visitor had stopped reading.
  *
- * The heading is the service name and the line under it is its `outcome` —
- * the promise, not the description. "Everything anyone needs to use your
- * brand without asking you first" is a reason to click; "the rulebook for
- * your brand" is a label.
+ * The heading is the service name and nothing else — no count, no strapline.
+ * This is a portfolio: the work is the argument, and a row of covers under a
+ * name says more than a sentence explaining the name would.
+ *
+ * EVERY service renders, including one with nothing published. An empty
+ * section is not a failure state here; it says the studio offers the thing
+ * and has not shown it yet, which is true and is what a visitor scanning
+ * the range needs to know.
  *
  * There is nothing to filter in a set of two, so the facets live on the
  * service page (see SectionFilters), where the full set is.
@@ -37,38 +41,37 @@ const preview = projects.slice(0, count);
 const remaining = projects.length - preview.length;
 ---
 
-{
-  preview.length > 0 && (
-    <section class="preview" aria-labelledby={headingId}>
-      <div class="container">
-        <div class="preview-head">
-          <h2 id={headingId} class="preview-title">
-            {category.title}
-            <span class="preview-count" aria-hidden="true">
-              {projects.length}
-            </span>
-          </h2>
-          {category.outcome && <p class="preview-promise">{category.outcome}</p>}
-        </div>
+<section class="preview" aria-labelledby={headingId}>
+  <div class="container">
+    <h2 id={headingId} class="preview-title">{category.title}</h2>
 
+    {
+      preview.length > 0 && (
         <div class="preview-body">
           <WorkGrid projects={preview} eagerCount={lead ? 2 : 0} leadFirst={lead} labelled />
         </div>
+      )
+    }
 
-        <p class="preview-more">
-          <a class="link-arrow" href={`/${category.id}/`} data-astro-prefetch>
-            {/* Says what is behind the link, and how much of it. A bare
-                "See all" makes the visitor click to find out whether it is
-                worth clicking. */}
-            {remaining > 0
+    <p class="preview-more">
+      <a class="link-arrow" href={`/${category.id}/`} data-astro-prefetch>
+        {
+          /* Names what is behind the link. A bare "See all" makes the visitor
+            click to find out whether it is worth clicking — and on a service
+            with nothing published yet it would be a promise the page cannot
+            keep. */
+        }
+        {
+          preview.length === 0
+            ? `About ${category.title}`
+            : remaining > 0
               ? `See all ${projects.length} ${category.title} projects`
-              : `About ${category.title}`}
-          </a>
-        </p>
-      </div>
-    </section>
-  )
-}
+              : `About ${category.title}`
+        }
+      </a>
+    </p>
+  </div>
+</section>
 
 <style>
   .preview {
@@ -82,10 +85,6 @@ const remaining = projects.length - preview.length;
     border-block-start: none;
   }
 
-  .preview-head {
-    max-width: var(--measure);
-  }
-
   /* Set at section scale, not heading scale. With the page stripped to the
      work, these five names are the structure of the whole site — they should
      land with the same confidence as the hero, one step down. */
@@ -94,27 +93,6 @@ const remaining = projects.length - preview.length;
     font-weight: var(--weight-display);
     letter-spacing: var(--tracking-display);
     line-height: var(--leading-snug);
-  }
-
-  /* Raised like a footnote marker: the count annotates the heading rather
-     than sitting on the baseline competing with it. */
-  .preview-count {
-    display: inline-block;
-    margin-inline-start: 0.5em;
-    vertical-align: super;
-    font-size: 0.6875rem;
-    font-weight: var(--weight-semibold);
-    font-variant-numeric: tabular-nums;
-    color: var(--color-accent);
-    letter-spacing: 0;
-  }
-
-  /* The promise, set at reading size rather than as small print — it is the
-     reason to keep going, so it gets the weight of one. */
-  .preview-promise {
-    margin-block-start: var(--space-2xs);
-    font-size: var(--text-lg);
-    color: var(--color-ink-soft);
   }
 
   .preview-body {

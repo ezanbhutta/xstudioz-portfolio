@@ -49,14 +49,15 @@
   --color-line-on-ink-strong: rgb(255 255 255 / 28%);
 
   /* --- Typography -------------------------------------------------------- *
-     One family for everything: Instrument Sans, variable, self-hosted, ~30 KB.
-     A single clean grotesque across headlines, interface and body means the
+     One family for everything: Schibsted Grotesk, variable, self-hosted,
+     ~46 KB. A single clean grotesque across headlines, interface and body
+     means the
      only typographic contrast on the page is size, weight and space — so
      nothing in the chrome competes with the artwork it frames.
      Both variables point at the same stack; they are kept as two names
      because components use them to say WHY they are choosing a face.        */
   --font-display:
-    'Instrument Sans', -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, 'Helvetica Neue',
+    'Schibsted Grotesk', -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, 'Helvetica Neue',
     arial, sans-serif;
   --font-sans: var(--font-display);
 

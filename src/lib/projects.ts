@@ -1,5 +1,5 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
-import { ACTIVE_CATEGORIES, getCategory, type Category, type CategoryId } from '@/data/categories';
+import type { Category } from '@/data/categories';
 import { TYPE_FILTERS } from '@/data/filters';
 
 export type Project = CollectionEntry<'projects'>;
@@ -72,10 +72,10 @@ export function projectDeliverables(data: Project['data']): string[] {
  * Work to show on a service page.
  *
  * A project belongs to a service when it is tagged with that category, and
- * *also* when it carried the service as an add-on — a guidelines project with
- * a "Stationery Design Kit" in its extras is genuine stationery work. That
- * second path is what keeps the Stationery and Social Media pages honest
- * instead of empty.
+ * *also* when it carried the service as an add-on, via `relatedExtras`. Both
+ * live services list no extras today, so the second path returns nothing —
+ * it stays because it is the mechanism that lets a future service show real
+ * work from day one instead of an empty grid.
  */
 export function projectsForService(
   projects: ReadyProject[],
@@ -93,16 +93,6 @@ export function projectsForService(
   return { direct, viaExtras };
 }
 
-/** Every service that has something real to show, direct or via extras. */
-export function servicesWithWork(projects: ReadyProject[]): Set<CategoryId> {
-  const out = new Set<CategoryId>();
-  for (const c of ACTIVE_CATEGORIES) {
-    const { direct, viaExtras } = projectsForService(projects, c);
-    if (direct.length + viaExtras.length > 0) out.add(c.id);
-  }
-  return out;
-}
-
 /** Previous/next neighbours in the overall sequence, wrapping at the ends. */
 export function adjacentProjects(
   projects: ReadyProject[],
@@ -118,14 +108,6 @@ export function adjacentProjects(
   };
 }
 
-export function countByCategory(projects: Project[]): Partial<Record<CategoryId, number>> {
-  const counts: Partial<Record<CategoryId, number>> = {};
-  for (const p of projects) {
-    counts[p.data.category] = (counts[p.data.category] ?? 0) + 1;
-  }
-  return counts;
-}
-
 /**
  * The project's type within its OWN service's taxonomy.
  *
@@ -133,7 +115,7 @@ export function countByCategory(projects: Project[]): Partial<Record<CategoryId,
  * built around a Lettermark — so this cannot just take the first non-empty
  * one. A guidelines project filed under "Lettermark" is unfindable by the
  * control a buyer would actually reach for, which is what the Type dropdown
- * on the All Work page is filtering by.
+ * on the service page is filtering by.
  */
 export function projectType(data: Project['data']): string | undefined {
   const key = TYPE_FILTERS[data.category]?.key;
@@ -156,30 +138,6 @@ export function industriesOf(projects: Project[]): string[] {
   const set = new Set<string>();
   for (const p of projects) if (p.data.industry) set.add(p.data.industry);
   return [...set].sort((a, b) => a.localeCompare(b));
-}
-
-/**
- * Options for the All Work page's Type dropdown, grouped by the service each
- * taxonomy belongs to — the two lists are disjoint, so one control can serve
- * both without ambiguity. Only values that actually occur are offered: a
- * dropdown that can return nothing is a broken control.
- */
-export function typeGroups(projects: Project[]): { label: string; options: string[] }[] {
-  const byCategory = new Map<CategoryId, Set<string>>();
-  for (const p of projects) {
-    const t = projectType(p.data);
-    if (!t) continue;
-    const set = byCategory.get(p.data.category) ?? new Set<string>();
-    set.add(t);
-    byCategory.set(p.data.category, set);
-  }
-  return [...byCategory.entries()]
-    .map(([id, set]) => ({
-      label: getCategory(id).title,
-      options: [...set].sort((a, b) => a.localeCompare(b)),
-    }))
-    .filter((g) => g.options.length > 0)
-    .sort((a, b) => a.label.localeCompare(b.label));
 }
 
 /**

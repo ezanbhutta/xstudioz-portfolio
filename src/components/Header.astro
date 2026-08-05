@@ -72,9 +72,12 @@ import Logo from '@/components/Logo.astro';
       border-color var(--duration-base) var(--ease-out);
   }
 
+  /* Solid, not blurred. `backdrop-filter` is recomputed every frame the page
+     scrolls under it, which is the most expensive thing a sticky bar can do —
+     and on an obsidian ground a 96%-opaque panel is indistinguishable from a
+     blurred one. The scroll gets the frames instead. */
   .header.is-stuck {
-    background: color-mix(in srgb, var(--color-paper) 96%, transparent);
-    backdrop-filter: blur(18px);
+    background: color-mix(in srgb, var(--color-paper) 97%, transparent);
     border-block-end-color: var(--color-line);
   }
 

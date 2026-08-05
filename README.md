@@ -28,7 +28,7 @@ npm run format     # prettier over src/ and scripts/
 | --- | --- |
 | `/` | Hero, then a two-project preview per service |
 | `/<service-id>/` | One service page each: promise, the argument, all its work with filters, CTA |
-| `/work/<slug>/` | Case study — hero, story, deliverables, curated pages, full deck, CTA |
+| `/work/<slug>/` | Case study — hero, story, deliverables, every deck page in order, CTA |
 | `/404` | Not-found, with real routes out |
 
 That is the whole site. `/work/`, `/services/` and `/process/` used to exist
@@ -211,24 +211,18 @@ Ordered by how much difference they make:
    meta description search engines show. Cards stay a title and a service ·
    industry label, so this is what carries the thinking.
    Example: *"Geometric precision for a product studio that ships software."*
-2. **`highlights`** — the page numbers of the strongest 5–8 pages of the deck,
-   in the order you want them shown. **These are the only pages a visitor sees
-   before the call to action**; the rest sit behind "Explore the full deck".
-   Leave it empty and an even spread is picked automatically — which is fine,
-   but it will sometimes land on a text page where you would have chosen the
-   logo lock-up. This is the single highest-value edit per project.
-3. **`context` / `challenge` / `direction`** — the story. Each renders only
+2. **`context` / `challenge` / `direction`** — the story. Each renders only
    when filled, so a project with none of them still produces a clean page.
    Fill these and a case study starts communicating thinking rather than
    slides. Never guess: these are statements about a real client's business.
-4. **`outcome` / `testimonial`** — leave empty unless real. Both sections are
+3. **`outcome` / `testimonial`** — leave empty unless real. Both sections are
    absent without data, by design.
-5. **`extras`** — tick these accurately. They are listed on the case study,
+4. **`extras`** — tick these accurately. They are listed on the case study,
    and they are what surfaces a project on the Stationery and Social Media
    service pages via `relatedExtras`.
-6. **`category`** — which homepage section the project lands in, and which
+5. **`category`** — which homepage section the project lands in, and which
    service page counts it as its own work. The single most structural field.
-7. **`industry`** — also the Industry filter's options. Two projects sharing a
+6. **`industry`** — also the Industry filter's options. Two projects sharing a
    spelling group together; a typo makes a category of one.
 
 Covers are shown **whole, at whatever proportion they were made in** — nothing

@@ -199,16 +199,6 @@ collections:
           - { name: quote, label: Quote, widget: text, required: false }
           - { name: name, label: Name, widget: string, required: false }
           - { name: role, label: Role / company, widget: string, required: false }
-      - name: highlights
-        label: Featured pages
-        widget: list
-        required: false
-        field: { name: page, label: Page number, widget: number, value_type: int }
-        hint: >-
-          The strongest pages of the deck, by page number, in the order you want them shown.
-          These are the only pages a visitor sees before the call to action — the rest stay
-          behind "Explore the full deck". Leave empty and an even spread is picked for you.
-          Curating this is the single highest-value edit you can make to a project.
 
       - name: pdf
         label: Portfolio PDF

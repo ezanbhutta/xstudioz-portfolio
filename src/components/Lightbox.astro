@@ -2,14 +2,13 @@
 /**
  * Full-screen presentation viewer for a project's deck.
  *
- * The case study shows a curated handful of pages inline; the rest of the
- * deck lives here, so a visitor never has to scroll past thirty-six slides
- * to reach the next action — but nothing is hidden from anyone who wants it.
+ * The case study prints every page in sequence; this is the same deck read
+ * one page at a time, at full size, with the rest of the site out of the way.
  *
  * The page list is passed in explicitly rather than scraped from the DOM,
- * because the same deck is entered from three places at three different
- * indices: the hero, a curated highlight, or a thumbnail in the full-deck
- * drawer. Any element with `data-open-page="<0-based index>"` opens it there.
+ * because the deck is entered at whatever index was clicked — the hero, or
+ * any page in the stack. Any element with `data-open-page="<0-based index>"`
+ * opens the viewer there.
  *
  * Progressive enhancement throughout: every page is a real image in the
  * document already. This only upgrades the way they are looked at.
@@ -149,8 +148,8 @@ const { pages, title } = Astro.props;
         closingViaHistory = false;
       });
 
-      // Delegated, so thumbnails inside a <details> that has never been opened
-      // still work the first time it is.
+      // Delegated: one listener covers every page in the stack, however long
+      // the deck is, and keeps working for anything added later.
       document.addEventListener('click', (event) => {
         const trigger = (event.target as HTMLElement).closest<HTMLElement>('[data-open-page]');
         if (!trigger) return;
@@ -222,6 +221,10 @@ const { pages, title } = Astro.props;
   .lightbox[open] {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr) auto;
+    /* `minmax(0, 1fr)`, not the implicit `auto` column: an auto track floors
+       at its widest item's min-content, and a 36-dot rail min-contents at
+       554px. On a 390px phone that pushed every row off the left edge. */
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .lightbox {
@@ -234,7 +237,7 @@ const { pages, title } = Astro.props;
     padding: 0;
     border: none;
     background: #0d0b10;
-    color: var(--color-paper);
+    color: var(--color-ink);
     overflow: hidden;
   }
 
@@ -247,6 +250,7 @@ const { pages, title } = Astro.props;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-md);
+    min-inline-size: 0;
     padding: var(--space-2xs) clamp(0.75rem, 3vw, 2rem);
   }
 
@@ -260,25 +264,39 @@ const { pages, title } = Astro.props;
   }
 
   .lightbox-stage {
-    display: grid;
-    place-items: center;
+    position: relative;
+    min-inline-size: 0;
     min-block-size: 0;
-    padding: clamp(0.5rem, 2vw, 1.5rem);
+    /* Nothing may spill onto the control bar below, whatever the page ratio */
+    overflow: hidden;
   }
 
+  /* Absolutely positioned so the percentage has somewhere to land.
+     As an in-flow child of a `1fr` grid row, both `max-block-size: 100%` and
+     `block-size: 100%` resolved to auto — the row is not a definite height
+     at percentage-resolution time — so a 16:9 page took its full intrinsic
+     height, ran past the row and covered the prev/next buttons and the page
+     rail. Out of flow, 100% resolves against the stage's padding box, which
+     always is definite.
+
+     The gutter is padding on the image rather than on the stage: an
+     out-of-flow child is positioned against the padding box, so padding on
+     the stage would not inset it. `object-fit` fits the content box, so the
+     padding is exactly the letterbox margin. */
   .lightbox-img {
-    max-inline-size: 100%;
-    max-block-size: 100%;
-    inline-size: auto;
-    block-size: auto;
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    padding: clamp(0.5rem, 2vw, 1.5rem);
     object-fit: contain;
-    border-radius: var(--radius-xs);
   }
 
   .lightbox-bar {
     display: flex;
     align-items: center;
     gap: var(--space-2xs);
+    min-inline-size: 0;
     padding: var(--space-2xs) clamp(0.75rem, 3vw, 2rem) var(--space-md);
   }
 
@@ -320,7 +338,7 @@ const { pages, title } = Astro.props;
 
   @media (hover: hover) {
     .lightbox-dot:hover {
-      background: var(--color-paper);
+      background: var(--color-ink);
     }
   }
 
@@ -333,7 +351,7 @@ const { pages, title } = Astro.props;
     block-size: var(--control-h);
     border-radius: var(--radius-pill);
     font-size: var(--text-md);
-    color: var(--color-paper);
+    color: var(--color-ink);
     background: rgb(255 255 255 / 8%);
     transition:
       background-color var(--duration-fast) var(--ease-out),

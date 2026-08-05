@@ -439,10 +439,12 @@ p {
   color: var(--color-paper);
 }
 
-/* On dark surfaces: quiet secondary beside .button--paper */
+/* On dark surfaces: quiet secondary beside .button--paper.
+   Light text — this used --color-paper back when paper was the light value,
+   which since the obsidian palette landed meant near-black on near-black. */
 .button--ghost {
   background: transparent;
-  color: var(--color-paper);
+  color: var(--color-ink);
   box-shadow: inset 0 0 0 1px var(--color-line-on-ink-strong);
 }
 
@@ -462,7 +464,7 @@ p {
   }
 
   .button--ghost:hover {
-    box-shadow: inset 0 0 0 1px var(--color-paper);
+    box-shadow: inset 0 0 0 1px var(--color-ink);
   }
 }
 

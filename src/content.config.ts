@@ -116,12 +116,6 @@ const projects = defineCollection({
             .optional(),
         ),
         /**
-         * 1-based page numbers to feature in the curated gallery, in order.
-         * Empty = an even spread across the deck is chosen automatically.
-         * Curating this by hand is the single highest-value edit per project.
-         */
-        highlights: z.preprocess(emptyToUndef, z.array(z.number().int().positive()).optional()),
-        /**
          * CMS PDF upload (any filename). The build renders its pages and
          * generates cover + images automatically — leave those empty.
          */

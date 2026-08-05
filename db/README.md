@@ -100,13 +100,57 @@ worth solving deliberately rather than discovering later:
    build: the **Deploy** button in hPanel by hand, or a small script that
    commits the exported SQL back to the repo.
 
-## Keeping it closed
+## The arrangement in use: mirror
 
-If the build reads the database over the open internet, step 4 is required.
-If instead `npm run export-sql` keeps running locally and its output is
-committed, the database is never exposed: git stays the source the build
-reads, and MySQL is a queryable mirror. That is the safer arrangement and
-needs no Remote MySQL at all.
+**Git is the source. MySQL is a mirror.** Remote MySQL is not enabled and
+port 3306 is closed, so step 4 above does not apply — it is documented only
+in case the arrangement changes.
+
+What that means day to day:
+
+- Content is edited in `/admin/` exactly as before. Every save commits to
+  `main`, and the commit triggers the rebuild. Nothing about publishing
+  changes.
+- The build reads the repository, never the database. A site deploy cannot
+  be affected by the database being down, slow, or wrong.
+- `npm run export-sql` regenerates `db/seed.sql`. Importing it in phpMyAdmin
+  brings the mirror back in step.
+
+The database's job is to be a queryable copy: something to report off, hand to
+another tool, or migrate from later, without a query ever sitting between a
+visitor and a page.
+
+### Keeping the mirror in step
+
+An edit in `/admin/` updates the repo and does not touch MySQL, so the mirror
+drifts silently and the drift is invisible until someone imports a months-old
+file. The build therefore runs `export-sql --check` on every deploy, which
+compares what the content *would* generate against the committed `seed.sql`
+and prints a warning when they differ.
+
+It warns rather than fails on purpose. A stale mirror is a bookkeeping
+problem, not a broken site, and taking production down to report one would be
+the wrong trade. To check by hand at any time:
+
+```sh
+npm run check-sql
+```
+
+When it reports stale, refresh in two steps:
+
+```sh
+npm run export-sql        # rewrites db/seed.sql
+```
+
+then import `db/seed.sql` in phpMyAdmin as in step 3. Both are safe to repeat.
+
+### If the database should ever become the source
+
+It would need three things, and all three are real work rather than a switch:
+Remote MySQL opened to `%` (making the password the only guard), a replacement
+for `/admin/` — Sveltia is a git-based CMS and cannot read MySQL — and
+something to trigger a rebuild after a row changes, because a table edit
+publishes nothing on its own.
 
 ## Files
 

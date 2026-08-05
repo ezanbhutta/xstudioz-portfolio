@@ -11,13 +11,21 @@
  * a duplicate key. Deck pages are deleted and re-inserted per project, which
  * is the only way a page removed from a deck also disappears from the table.
  *
- *   node scripts/export-sql.mjs
+ *   node scripts/export-sql.mjs           write db/seed.sql
+ *   node scripts/export-sql.mjs --check   report whether it is stale, write nothing
+ *
+ * `--check` exists because the database is a mirror, not the source: content
+ * is edited in /admin/, which commits to the repo and never touches MySQL. So
+ * seed.sql goes stale silently, and the drift is invisible until someone
+ * imports a months-old file. The check is a pure comparison — no connection,
+ * no credentials — so it runs anywhere, including in the build.
  */
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const PROJECTS_DIR = 'src/content/projects';
 const OUT = 'db/seed.sql';
+const CHECK = process.argv.includes('--check');
 
 const read = (path) => JSON.parse(readFileSync(path, 'utf8'));
 
@@ -231,8 +239,26 @@ for (const [key, value] of Object.entries(site)) {
 }
 lines.push('');
 
-writeFileSync(OUT, lines.join('\n'), 'utf8');
-console.log(
-  `[export-sql] ${OUT}: ${categories.length} services, ${slugs.length} projects, ` +
-    `${pageCount} deck pages, ${Object.keys(site).length} settings.`,
-);
+const sql = lines.join('\n');
+const summary =
+  `${categories.length} services, ${slugs.length} projects, ` +
+  `${pageCount} deck pages, ${Object.keys(site).length} settings`;
+
+if (CHECK) {
+  const committed = existsSync(OUT) ? readFileSync(OUT, 'utf8') : null;
+  if (committed === sql) {
+    console.log(`[export-sql] ${OUT} is current — ${summary}.`);
+  } else {
+    // Deliberately not a non-zero exit: a stale mirror is not a broken site,
+    // and failing the build over it would take production down to report a
+    // bookkeeping problem. Warn loudly, carry on.
+    console.warn(
+      `[export-sql] ${OUT} is STALE. Content has changed since it was last ` +
+        `generated (now ${summary}). Run \`npm run export-sql\` and re-import ` +
+        `it in phpMyAdmin to bring the database back in step.`,
+    );
+  }
+} else {
+  writeFileSync(OUT, sql, 'utf8');
+  console.log(`[export-sql] ${OUT}: ${summary}.`);
+}

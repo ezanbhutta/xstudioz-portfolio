@@ -1,33 +1,41 @@
 ---
-import { SITE } from '@/config/site';
-import { CATEGORIES } from '@/data/categories';
+import { SITE, SOCIALS } from '@/config/site';
+import { ACTIVE_CATEGORIES } from '@/data/categories';
 import Logo from '@/components/Logo.astro';
 
+/**
+ * The closing band — the site's one dark surface, so it stays an event.
+ *
+ * Every link here resolves to a real page: services come from the active
+ * list, and a service page sells its scope whether or not it has published
+ * work, so none of them can bottom out in an empty grid. Social links render
+ * only when their URL is set in site.json.
+ */
 const year = new Date().getFullYear();
 ---
 
-<footer class="footer">
+<footer class="footer on-ink">
   <div class="container">
     <section class="footer-cta" aria-labelledby="footer-cta-heading">
-      <p class="overline footer-overline">Start a project</p>
-      <h2 id="footer-cta-heading">Ready for a transformation?</h2>
-      <p class="footer-lede">
-        We're storytellers as much as designers. Tell us your brand's story and we'll make people
-        feel it. Message us anytime.
-      </p>
+      <div class="footer-cta-text">
+        <p class="overline">Start a project</p>
+        <h2 id="footer-cta-heading" class="footer-cta-title">
+          Tell me about your brand<span class="accent-dot">.</span>
+        </h2>
+      </div>
       <div class="footer-actions">
         <a
-          class="button button--paper"
+          class="button button--paper button--lg"
           href={SITE.fiverrUrl}
           target="_blank"
           rel="noopener noreferrer"
         >
-          Message us on Fiverr <span aria-hidden="true">↗</span>
+          Message on Fiverr <span aria-hidden="true">↗</span>
         </a>
         {
           SITE.linkedinUrl && (
             <a
-              class="button button--ghost"
+              class="button button--ghost button--lg"
               href={SITE.linkedinUrl}
               target="_blank"
               rel="noopener noreferrer"
@@ -43,41 +51,51 @@ const year = new Date().getFullYear();
       <div class="footer-brand">
         <p class="wordmark wordmark-lockup footer-wordmark">
           <Logo size={26} />
-          XStudioz<span class="accent-dot" aria-hidden="true">.</span>
+          <span>{SITE.name}<span class="accent-dot" aria-hidden="true">.</span></span>
         </p>
-        <p class="footer-tag">Where your brand meets creative ideas.<br />The work speaks first.</p>
+        <p class="footer-tag">{SITE.tagline}</p>
       </div>
-      <nav aria-label="Services">
-        <p class="overline footer-overline" id="footer-categories">Services</p>
-        <ul role="list" aria-labelledby="footer-categories">
+
+      <nav aria-labelledby="footer-services">
+        <p class="overline overline--bare footer-heading" id="footer-services">Services</p>
+        <ul role="list">
           {
-            CATEGORIES.map((c) => (
+            ACTIVE_CATEGORIES.map((c) => (
               <li>
                 <a href={`/${c.id}/`} data-astro-prefetch>
-                  {c.title}
+                  {c.navLabel ?? c.title}
                 </a>
               </li>
             ))
           }
         </ul>
       </nav>
-      <nav aria-label="Studio">
-        <p class="overline footer-overline" id="footer-studio">Studio</p>
-        <ul role="list" aria-labelledby="footer-studio">
-          <li><a href="/" data-astro-prefetch>Work</a></li>
+
+      <nav aria-labelledby="footer-studio">
+        <p class="overline overline--bare footer-heading" id="footer-studio">Studio</p>
+        <ul role="list">
+          <li><a href="/work/" data-astro-prefetch>All work</a></li>
+          <li><a href="/services/" data-astro-prefetch>Services</a></li>
+          <li><a href="/process/" data-astro-prefetch>Process</a></li>
+        </ul>
+      </nav>
+
+      <nav aria-labelledby="footer-elsewhere">
+        <p class="overline overline--bare footer-heading" id="footer-elsewhere">Elsewhere</p>
+        <ul role="list">
           <li>
             <a href={SITE.fiverrUrl} target="_blank" rel="noopener noreferrer"
               >Fiverr <span aria-hidden="true">↗</span></a
             >
           </li>
           {
-            SITE.linkedinUrl && (
+            SOCIALS.map((s) => (
               <li>
-                <a href={SITE.linkedinUrl} target="_blank" rel="noopener noreferrer">
-                  LinkedIn <span aria-hidden="true">↗</span>
+                <a href={s.href} target="_blank" rel="noopener noreferrer">
+                  {s.label} <span aria-hidden="true">↗</span>
                 </a>
               </li>
-            )
+            ))
           }
         </ul>
       </nav>
@@ -91,45 +109,36 @@ const year = new Date().getFullYear();
   .footer {
     background: var(--color-ink);
     color: var(--color-paper);
-    margin-block-start: var(--space-section);
     padding-block: var(--space-section) var(--space-lg);
   }
 
+  /* Closing statement left, actions right — one row on desktop so the band
+     opens with a single confident line rather than a stacked paragraph. */
   .footer-cta {
-    max-width: var(--measure-wide);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--space-xl);
   }
 
-  .footer-overline {
-    color: var(--color-paper-mute);
-  }
-
-  /* The deep violet rule disappears against ink — on dark surfaces the
-     label leads with the bright end of the brand gradient instead. */
-  .footer-overline::before {
-    background: var(--color-accent-bright);
-  }
-
-  .footer-cta h2 {
-    font-size: var(--text-3xl);
-    margin-block: var(--space-3xs) var(--space-md);
-  }
-
-  .footer-lede {
-    color: var(--color-paper-mute);
-    max-width: var(--measure);
+  .footer-cta-title {
+    font-size: var(--text-4xl);
+    letter-spacing: var(--tracking-display);
+    margin-block-start: var(--space-2xs);
+    max-width: var(--measure-statement);
   }
 
   .footer-actions {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: var(--space-md);
-    margin-block-start: var(--space-lg);
+    gap: var(--space-sm);
   }
 
   .footer-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 2fr repeat(3, minmax(0, 1fr));
     gap: var(--space-lg);
     border-block-start: 1px solid var(--color-line-on-ink);
     margin-block-start: var(--space-3xl);
@@ -144,12 +153,17 @@ const year = new Date().getFullYear();
     color: var(--color-paper-mute);
     font-size: var(--text-sm);
     margin-block-start: var(--space-2xs);
+    max-width: 24ch;
+  }
+
+  .footer-heading {
+    color: var(--color-paper);
   }
 
   .footer-grid ul {
     list-style: none;
     padding: 0;
-    margin-block-start: var(--space-sm);
+    margin-block-start: var(--space-2xs);
     display: grid;
     gap: var(--space-3xs);
   }
@@ -175,13 +189,21 @@ const year = new Date().getFullYear();
     margin-block-start: var(--space-2xl);
   }
 
-  @media (max-width: 719px) {
+  @media (max-width: 899px) {
     .footer-grid {
       grid-template-columns: 1fr 1fr;
+      gap: var(--space-xl) var(--space-lg);
     }
 
     .footer-brand {
       grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 519px) {
+    .footer-actions {
+      display: grid;
+      width: 100%;
     }
   }
 </style>

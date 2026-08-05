@@ -1,23 +1,31 @@
 /* ---------------------------------------------------------------------------
    XStudioz design tokens — the single source of truth for the visual system.
-   Brand: white X mark on a violet→magenta gradient; clean geometric sans.
-   Colors are chosen for WCAG contrast on their intended surfaces:
-     ink       on paper  → 16.9:1
-     ink-soft  on paper  →  7.4:1
-     ink-mute  on paper  →  5.1:1
-     accent    on paper  →  5.1:1
-     paper     on accent-deep → 6.6:1
-     paper-mute on ink   →  8.5:1
-     accent-bright on ink → 7.2:1
+
+   The room: warm bone paper, near-black ink, one rationed violet. A cool
+   blue-white reads "software"; paper with warmth reads "print", which is the
+   room brand work belongs in. The accent is used once per view — on the thing
+   the visitor should do next — so it never stops meaning anything.
+
+   Contrast, measured against the surface each colour is used on:
+     ink            on paper       → 16.9:1
+     ink-soft       on paper       →  7.4:1
+     ink-mute       on paper       →  5.1:1
+     accent         on paper       →  6.4:1
+     paper          on accent-deep →  8.6:1
+     paper-mute     on ink         →  8.5:1
+     accent-bright  on ink         →  7.2:1
+     line-control   on paper       →  3.3:1  (WCAG 1.4.11, control borders)
 --------------------------------------------------------------------------- */
 :root {
-  /* Color — warm bone gallery neutrals. A cool blue-white reads "software";
-     paper with warmth reads "print", which is the room this work belongs in.
-     Violet stays the brand accent but is rationed: one accent moment per view. */
+  /* --- Surfaces & ink ---------------------------------------------------- */
   --color-paper: #f7f5f0;
   /* One step up from paper — panels and hovers separate without a border */
   --color-paper-raised: #f1eee7;
+  /* Two steps up — inset wells, thumbnail rails, quiet cards */
+  --color-paper-sunken: #ebe7dd;
   --color-ink: #17141b;
+  /* A panel that sits on the ink band without becoming a second colour */
+  --color-ink-raised: #221e29;
   --color-ink-soft: #55505c;
   --color-ink-mute: #6d6774;
   --color-line: #e5e0d6;
@@ -28,6 +36,8 @@
   --color-line-control: #8f8574;
   --color-accent: #7e22ce;
   --color-accent-deep: #6b21a8;
+  /* A wash of the accent, for the rare tinted surface */
+  --color-accent-wash: #f3ecfa;
   /* Brand gradient (logo, og image) */
   --color-brand-violet: #5e17b8;
   --color-brand-purple: #a928d9;
@@ -36,14 +46,16 @@
   --color-paper-mute: #b6b0c2;
   --color-accent-bright: #e879f9;
   --color-line-on-ink: rgb(255 255 255 / 14%);
+  --color-line-on-ink-strong: rgb(255 255 255 / 28%);
 
-  /* Typography — a split stack, chosen deliberately.
+  /* --- Typography -------------------------------------------------------- *
+     A split stack, chosen deliberately.
      Display: Bricolage Grotesque (variable, self-hosted, ~77 KB) carries the
      headlines, wordmark and labels. A brand-identity studio that sets its own
      site in the OS default font is arguing against itself; this is the one
      download the design earns.
      Body: still the native stack — zero download, zero layout shift on the
-     bulk of the text. */
+     bulk of the text.                                                        */
   --font-display:
     'Bricolage Grotesque', -apple-system, blinkmacsystemfont, 'SF Pro Display', 'Segoe UI', roboto,
     'Helvetica Neue', arial, sans-serif;
@@ -51,25 +63,29 @@
     -apple-system, blinkmacsystemfont, 'SF Pro Text', 'Segoe UI', roboto, 'Helvetica Neue', arial,
     sans-serif;
 
-  /* Fluid type scale — minor third on mobile opening to wider jumps on desktop */
+  /* Fluid scale. Labels stay fixed — fluid 12px type just gets illegible on
+     small screens — everything above body size opens up with the viewport. */
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
-  --text-md: 1rem;
-  --text-lg: 1.125rem;
+  --text-md: clamp(1rem, 0.97rem + 0.16vw, 1.0625rem);
+  --text-lg: clamp(1.125rem, 1.06rem + 0.32vw, 1.3125rem);
   --text-xl: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
   --text-2xl: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
   --text-3xl: clamp(1.9rem, 1.4rem + 2.5vw, 3.25rem);
-  --text-display: clamp(2.625rem, 1.5rem + 5.625vw, 6rem);
+  /* Section-scale statements — bigger than a heading, smaller than the hero */
+  --text-4xl: clamp(2.25rem, 1.5rem + 3.75vw, 4.5rem);
+  --text-display: clamp(2.75rem, 1.35rem + 6.4vw, 6.5rem);
   --text-wordmark: 1.5rem;
 
-  /* Weights — both fonts are variable; retune the voice from here */
+  /* Weights — the display face is variable; retune the voice from here */
   --weight-regular: 400;
   --weight-medium: 500;
-  --weight-display: 600; /* Outfit headings */
-  --weight-semibold: 600; /* overlines, labels */
+  --weight-display: 600;
+  --weight-semibold: 600;
   --weight-wordmark: 700;
 
-  --leading-tight: 1.05;
+  --leading-tight: 1.04;
+  --leading-snug: 1.2;
   --leading-body: 1.6;
 
   --tracking-tight: -0.02em;
@@ -77,7 +93,7 @@
   --tracking-display: -0.035em;
   --tracking-wide: 0.14em;
 
-  /* Spacing — 4px rhythm with fluid section spacing */
+  /* --- Spacing — 4px rhythm, fluid where sections breathe ---------------- */
   --space-3xs: 0.25rem;
   --space-2xs: 0.5rem;
   --space-xs: 0.75rem;
@@ -91,26 +107,53 @@
   --space-section: clamp(4.5rem, 3rem + 7vw, 9rem);
   --space-gallery: clamp(2rem, 1.25rem + 3vw, 4rem);
 
-  /* Layout */
+  /* --- Layout ------------------------------------------------------------ */
   --container-max: 85rem; /* 1360px */
   --gutter: clamp(1.25rem, 5vw, 4rem);
   --measure: 38rem; /* comfortable reading width ≈ 66ch */
   --measure-wide: 44rem;
+  /* A statement line wants to be wider than reading copy but still break */
+  --measure-statement: 26ch;
 
-  /* Controls */
+  /* --- Controls ---------------------------------------------------------- */
   --control-h: 2.75rem; /* 44px touch target */
+  --control-h-lg: 3.25rem;
+  /* The sticky header's exact height: 1rem padding × 2 + a 2.75rem control
+     row + its 1px rule. Anything else that sticks must start below this, or
+     it slides under the blur. */
+  --header-h: 4.8125rem;
 
-  /* Shape — print-like sharp imagery, soft panels, pill actions */
+  /* --- Shape — print-like sharp imagery, soft panels, pill actions -------- */
   --radius-xs: 2px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
   --radius-pill: 999px;
 
-  /* Motion */
+  /* --- Elevation --------------------------------------------------------- *
+     Warm-tinted shadows: a neutral grey shadow on bone paper reads as dirt.  */
+  --shadow-sm: 0 1px 2px rgb(23 20 27 / 5%);
+  --shadow-md: 0 0.5rem 1.5rem -0.75rem rgb(23 20 27 / 18%);
+  --shadow-lift: 0 1.25rem 3rem -1rem rgb(23 20 27 / 24%);
+
+  /* --- Image treatment --------------------------------------------------- *
+     Every portfolio image gets the same frame, so covers of wildly different
+     brightness sit together as one set.                                      */
+  --image-radius: var(--radius-xs);
+  --image-frame: inset 0 0 0 1px var(--color-line);
+  --image-frame-hover: inset 0 0 0 1px var(--color-line-strong);
+  --image-bg: var(--color-paper-raised);
+
+  /* --- Motion ------------------------------------------------------------ */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --duration-fast: 150ms;
   --duration-base: 250ms;
   --duration-slow: 450ms;
+  --duration-slower: 700ms;
 
-  /* Elevation for sticky surfaces */
-  --z-skip-link: 100;
+  /* --- Elevation order --------------------------------------------------- */
   --z-filter: 40;
+  --z-header: 50;
+  --z-menu: 80;
+  --z-skip-link: 100;
 }

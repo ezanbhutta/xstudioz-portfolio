@@ -3,27 +3,116 @@
     {
       "id": "logo-design",
       "title": "Logo Design",
-      "description": "Marks that stick. Every logo ships in SVG, PDF and PNG with color and mono versions."
+      "navLabel": "Logo Design",
+      "description": "Marks that stick. Every logo ships in SVG, PDF and PNG with color and mono versions.",
+      "outcome": "A mark that holds up at 16 pixels and on a shopfront.",
+      "intro": "Most logos fail somewhere: they blur at favicon size, fall apart in one colour, or look like three other businesses in the same category. The work starts from what your brand actually has to survive — a phone screen, an embroidered shirt, a printed invoice — and designs backwards from that.",
+      "deliverables": [
+        "Primary logo, plus a stacked or horizontal lockup where the layout needs one",
+        "Full-colour, single-colour and reversed (light-on-dark) versions",
+        "Vector source files: SVG, PDF and AI",
+        "Transparent PNGs at web and print resolution",
+        "Favicon / app-icon crop",
+        "Clear-space and minimum-size rules"
+      ],
+      "goodFor": [
+        "New businesses naming and launching for the first time",
+        "Established businesses whose mark no longer matches the work",
+        "Founders who need one asset that works everywhere, today"
+      ],
+      "relatedExtras": [],
+      "active": true
     },
     {
       "id": "brand-guidelines",
       "title": "Brand Guidelines",
-      "description": "The rulebook for your brand. Clear rules for logo, color and type, so every future design stays on point."
+      "navLabel": "Brand Guidelines",
+      "description": "The rulebook for your brand. Clear rules for logo, colour and type, so every future design stays on point.",
+      "outcome": "Everything anyone needs to use your brand without asking you first.",
+      "intro": "A logo is one asset. A brand is a system — and the moment a second person touches it (a printer, a developer, a freelancer, a future employee) the system either holds or drifts. Guidelines are what keep the fifth thing you make look related to the first.",
+      "deliverables": [
+        "Logo system: every version, with clear-space, sizing and misuse rules",
+        "Colour palette with HEX, RGB and CMYK values",
+        "Typography: typefaces, weights, hierarchy and usage",
+        "Layout, grid and composition principles",
+        "Imagery, texture and graphic-element direction",
+        "Do / don't pages so misuse is obvious",
+        "Delivered as a presentation-ready PDF"
+      ],
+      "goodFor": [
+        "Brands about to hand work to other designers, printers or agencies",
+        "Businesses that have outgrown a single logo file",
+        "Founders who want the brand to stay consistent as the team grows"
+      ],
+      "relatedExtras": [],
+      "active": true
     },
     {
       "id": "stationery",
       "title": "Stationery Design",
-      "description": "Business cards, letterheads and envelopes, print ready for any shop."
+      "navLabel": "Stationery",
+      "description": "Business cards, letterheads and envelopes, print ready for any shop.",
+      "outcome": "Print files you can send to any printer without a phone call.",
+      "intro": "Stationery is where a brand stops being a screen and becomes an object someone holds. It is also where amateur work shows fastest — wrong bleed, low-resolution logos, type that dies at the trim. Files go out print-ready, with bleed and crop marks, so the print shop has nothing to query.",
+      "deliverables": [
+        "Business card, front and back",
+        "Letterhead sized for A4 and US Letter",
+        "Envelope (DL / #10)",
+        "Email signature",
+        "Print-ready PDFs with bleed and crop marks",
+        "Editable source files"
+      ],
+      "goodFor": [
+        "Brands going to print for the first time",
+        "Studios, clinics and practices that hand over cards in person",
+        "Anyone whose current stationery was made in a word processor"
+      ],
+      "relatedExtras": ["Stationery Design Kit", "Business Card"],
+      "active": true
     },
     {
       "id": "social-media",
       "title": "Social Media Design",
-      "description": "Feed templates, stories and campaign tiles sized for every platform and built to stop the scroll."
+      "navLabel": "Social Media",
+      "description": "Feed templates, stories and campaign tiles sized for every platform and built to stop the scroll.",
+      "outcome": "A feed that looks designed rather than assembled.",
+      "intro": "Social is where most brands quietly come apart — a different font every week, a logo squashed into a circle, screenshots posted as artwork. The fix is not more posts, it is a small set of templates that are faster to use than to ignore.",
+      "deliverables": [
+        "Feed post templates covering your recurring post types",
+        "Story and reel-cover templates",
+        "Profile picture and cover art, cropped per platform",
+        "Highlight covers",
+        "Editable source files so you can publish without a designer"
+      ],
+      "goodFor": [
+        "Brands posting regularly with no visual system",
+        "Founders who publish their own content and want it to look consistent",
+        "Launches that need a coherent campaign set"
+      ],
+      "relatedExtras": ["Social Media Kit"],
+      "active": true
     },
     {
       "id": "animation",
       "title": "Animation",
-      "description": "Logo reveals and motion identities in MP4 and GIF, ready for web, decks and social."
+      "navLabel": "Animation",
+      "description": "Logo reveals and motion identities in MP4 and GIF, ready for web, decks and social.",
+      "outcome": "Your logo, resolving in motion.",
+      "intro": "A static mark says what you are. A mark that resolves in motion says you built something. Animation is the smallest upgrade with the largest perceived one — it is the first frame of a video, the loader on a site, the sting at the end of an ad.",
+      "deliverables": [
+        "Logo reveal / intro animation",
+        "MP4 for web, decks and video",
+        "GIF for email and messaging",
+        "Transparent version where the format allows",
+        "Sized for the placements you name"
+      ],
+      "goodFor": [
+        "Brands producing video, ads or pitch decks",
+        "Sites and apps that need a branded loading moment",
+        "Anyone whose identity already exists and needs one more dimension"
+      ],
+      "relatedExtras": [],
+      "active": true
     }
   ]
 }

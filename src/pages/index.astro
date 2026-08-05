@@ -1,16 +1,32 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import FilterBar from '@/components/FilterBar.astro';
+import FeaturedStrip from '@/components/FeaturedStrip.astro';
 import WorkGrid from '@/components/WorkGrid.astro';
+import ServicesIndex from '@/components/ServicesIndex.astro';
+import TrustSection from '@/components/TrustSection.astro';
+import ProcessSection from '@/components/ProcessSection.astro';
+import BriefSection from '@/components/BriefSection.astro';
 import { SITE } from '@/config/site';
-import { getSortedProjects, countByCategory, industriesByCategory } from '@/lib/projects';
+import { getSortedProjects, featuredProjects, countByCategory, industriesOf } from '@/lib/projects';
 import { siteGraph } from '@/lib/schema';
 
 const projects = await getSortedProjects();
 const counts = countByCategory(projects);
-const industries = industriesByCategory(projects);
-// Distinct industries across the whole portfolio, for the hero spec block.
-const industryCount = new Set(projects.map((p) => p.data.industry).filter(Boolean)).size;
+const industries = industriesOf(projects);
+
+// The opening three, and then everything else — no cover appears twice on
+// the page, which is what stops a small portfolio from looking padded.
+const featured = featuredProjects(projects, 3);
+const featuredIds = new Set(featured.map((p) => p.id));
+const rest = projects.filter((p) => !featuredIds.has(p.id)).slice(0, 6);
+
+// Only counts that are true by construction. Nothing here is a claim that
+// needs backing up — they are literally the length of what is on the site.
+const facts = [
+  { label: 'Projects published', value: String(projects.length).padStart(2, '0') },
+  { label: 'Industries served', value: String(industries.length).padStart(2, '0') },
+  { label: 'Ordered through', value: 'Fiverr' },
+];
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -23,122 +39,149 @@ const jsonLd = {
   description={SITE.description}
   jsonLd={jsonLd}
 >
-  <section class="hero container">
+  <section class="hero container" aria-labelledby="hero-heading">
     <p class="overline" data-enter style="--enter-step:0">Logo &amp; Brand Identity Studio</p>
-    <h1 class="hero-title" data-enter style="--enter-step:1">
-      Where your brand meets<br />creative ideas<span class="accent-dot">.</span>
+    <h1 id="hero-heading" class="hero-title" data-enter style="--enter-step:1">
+      {SITE.headline}
     </h1>
-    <div class="hero-body" data-enter style="--enter-step:2">
-      <p class="hero-lede">
-        Your brand deserves more than a logo. We design identities that stand out, get remembered,
-        and win you customers.
-      </p>
+
+    <div class="hero-body">
+      <div class="hero-pitch" data-enter style="--enter-step:2">
+        <p class="hero-lede">{SITE.lede}</p>
+        <div class="hero-actions">
+          <a
+            class="button button--primary button--lg"
+            href={SITE.fiverrUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Start on Fiverr <span aria-hidden="true">↗</span>
+          </a>
+          <a class="button button--outline button--lg" href="#selected-work"
+            >Explore selected work <span aria-hidden="true">↓</span></a
+          >
+        </div>
+      </div>
+
       {
         /* A spec block, the way a studio annotates a plate: the numbers that
-          answer "are these people real?" before the visitor scrolls. */
+          answer "are these people real?" before the visitor scrolls. Both
+          counts are computed from what is actually published. */
       }
-      <dl class="hero-facts">
-        <div class="hero-fact">
-          <dt>Projects</dt>
-          <dd>{String(projects.length).padStart(2, '0')}</dd>
-        </div>
-        <div class="hero-fact">
-          <dt>Industries</dt>
-          <dd>{String(industryCount).padStart(2, '0')}</dd>
-        </div>
-        <div class="hero-fact">
-          <dt>Delivery</dt>
-          <dd>Fiverr</dd>
-        </div>
+      <dl class="hero-facts" data-enter style="--enter-step:3">
+        {
+          facts.map((f) => (
+            <div class="hero-fact">
+              <dt>{f.label}</dt>
+              <dd>{f.value}</dd>
+            </div>
+          ))
+        }
       </dl>
     </div>
-    <div class="hero-actions" data-enter style="--enter-step:3">
-      <a
-        class="button button--primary"
-        href={SITE.fiverrUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Hire on Fiverr <span aria-hidden="true">↗</span>
-      </a>
-      <a class="button button--outline" href="#work"
-        >View the work <span aria-hidden="true">↓</span></a
-      >
-    </div>
   </section>
 
-  <section id="work" class="work-section" aria-label="Portfolio">
-    <FilterBar
-      counts={counts}
-      total={projects.length}
-      industries={industries}
-      active="logo-design"
-      enhanced
-    />
-    <div class="container work-container">
-      <WorkGrid
-        projects={projects}
-        eagerCount={2}
-        filterable
-        heading="Selected work"
-        initialCategory="logo-design"
-      />
-    </div>
-  </section>
+  {
+    featured.length > 0 && (
+      <section class="container featured" aria-label="Featured projects">
+        <FeaturedStrip projects={featured} />
+      </section>
+    )
+  }
 
-  <section class="container process" aria-labelledby="process-heading">
-    <p class="overline">Our process</p>
-    <h2 id="process-heading" class="process-title">
-      With you from start to finish<span class="accent-dot">.</span>
-    </h2>
-    <p class="process-lede">Four steps, one goal. Your vision, exactly how you pictured it.</p>
-    {
-      /* Ledger rows, not feature cards: each step is a full-width rule with
-        the numeral in the margin — reads as a printed index, and stays
-        legible at one column on a phone instead of shrinking to four. */
-    }
-    <ol class="process-steps" role="list">
+  <section id="selected-work" class="section section--ruled" aria-labelledby="selected-heading">
+    <div class="container">
+      <div class="section-head work-head">
+        <div>
+          <p class="overline">Selected work</p>
+          <h2 id="selected-heading" class="section-title">
+            Identity systems, start to finish<span class="accent-dot">.</span>
+          </h2>
+        </div>
+        <a class="link-arrow work-head-link" href="/work/" data-astro-prefetch>
+          View all {projects.length} projects
+        </a>
+      </div>
+
       {
-        [
-          ['Listen', 'It starts with your story. Your goals, your audience, your taste.'],
-          ['Conceptualize', 'Rough ideas become real directions for your brand.'],
-          ['Create', 'The strongest idea gets crafted into clean, polished visuals.'],
-          ['Refine', 'We fine-tune with you until it feels exactly right.'],
-        ].map(([name, text], i) => (
-          <li class="process-step">
-            <span class="process-num" aria-hidden="true">
-              {String(i + 1).padStart(2, '0')}
-            </span>
-            <h3 class="process-step-title">{name}</h3>
-            <p class="process-step-text">{text}</p>
-          </li>
-        ))
+        rest.length > 0 ? (
+          <div class="work-body">
+            <WorkGrid projects={rest} heading="Selected work" eagerCount={0} rhythm="editorial" />
+          </div>
+        ) : (
+          <p class="work-none">
+            More work is being prepared. In the meantime,{' '}
+            <a href={SITE.fiverrUrl} target="_blank" rel="noopener noreferrer">
+              ask about a project on Fiverr <span aria-hidden="true">↗</span>
+            </a>
+            .
+          </p>
+        )
       }
-    </ol>
+    </div>
   </section>
+
+  <section class="section section--ruled" aria-labelledby="services-heading">
+    <div class="container">
+      <div class="section-head">
+        <p class="overline">Services</p>
+        <h2 id="services-heading" class="section-title">
+          What you can commission<span class="accent-dot">.</span>
+        </h2>
+        <p class="section-lede">
+          Start with a mark, or take the whole system. Every service page lists exactly what lands
+          in your hands.
+        </p>
+      </div>
+      <ServicesIndex counts={counts} />
+    </div>
+  </section>
+
+  <TrustSection facts={facts.slice(0, 2)} />
+
+  <section class="section section--ruled" aria-labelledby="process-heading">
+    <div class="container">
+      <ProcessSection />
+      <p class="process-more">
+        <a class="link-arrow" href="/process/" data-astro-prefetch>
+          See the full process, stage by stage
+        </a>
+      </p>
+    </div>
+  </section>
+
+  <BriefSection />
 </BaseLayout>
 
 <style>
   /* Tighter than a marketing hero on purpose: this is a portfolio, so the
-     first row of work should be reachable in one short scroll, not two. */
+     first real work should be reachable in one short scroll, not two. */
   .hero {
-    padding-block: var(--space-2xl) var(--space-2xl);
+    padding-block: var(--space-3xl) var(--space-xl);
   }
 
   .hero-title {
     font-size: var(--text-display);
     letter-spacing: var(--tracking-display);
-    margin-block: var(--space-2xs) var(--space-lg);
+    margin-block: var(--space-xs) var(--space-xl);
+    /* Long enough to say something, short enough to break in two lines */
+    max-width: 16ch;
   }
 
-  /* Lede left, spec block right — asymmetric, and it puts proof beside the
-     claim instead of under it. */
+  /* Pitch left, spec block right — asymmetric, and it puts the proof beside
+     the claim instead of underneath it. */
   .hero-body {
     display: grid;
-    grid-template-columns: minmax(0, var(--measure)) auto;
-    align-items: start;
-    justify-content: space-between;
     gap: var(--space-xl);
+  }
+
+  @media (min-width: 900px) {
+    .hero-body {
+      grid-template-columns: minmax(0, var(--measure)) auto;
+      justify-content: space-between;
+      align-items: start;
+      gap: var(--space-2xl);
+    }
   }
 
   .hero-lede {
@@ -147,11 +190,33 @@ const jsonLd = {
     max-width: var(--measure);
   }
 
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-block-start: var(--space-lg);
+  }
+
+  @media (max-width: 419px) {
+    .hero-actions {
+      display: grid;
+    }
+  }
+
   .hero-facts {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-lg);
     margin: 0;
-    padding-block-start: var(--space-3xs);
+  }
+
+  @media (min-width: 900px) {
+    .hero-facts {
+      display: grid;
+      gap: var(--space-md);
+      padding-inline-start: var(--space-lg);
+      border-inline-start: 1px solid var(--color-line);
+    }
   }
 
   .hero-fact dt {
@@ -172,98 +237,41 @@ const jsonLd = {
     font-variant-numeric: tabular-nums;
   }
 
-  @media (max-width: 899px) {
-    .hero-body {
-      grid-template-columns: 1fr;
-      gap: var(--space-lg);
-    }
+  .featured {
+    padding-block-end: var(--space-xl);
   }
 
-  .hero-actions {
+  /* Heading left, escape hatch right — the "see everything" affordance sits
+     on the same line as the promise it qualifies. */
+  .work-head {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-sm);
-    margin-block-start: var(--space-xl);
-  }
-
-  .work-container {
-    padding-block-start: var(--space-xl);
-  }
-
-  .process {
-    margin-block-start: var(--space-3xl);
-    border-block-start: 1px solid var(--color-line);
-    padding-block-start: var(--space-2xl);
-  }
-
-  .process-title {
-    font-size: var(--text-3xl);
-    margin-block: var(--space-3xs) var(--space-md);
-  }
-
-  .process-lede {
-    color: var(--color-ink-soft);
-    max-width: var(--measure);
-  }
-
-  .process-steps {
-    list-style: none;
-    padding: 0;
-    margin: var(--space-xl) 0 0;
-    border-block-start: 1px solid var(--color-line);
-  }
-
-  /* Numeral in the margin, name in the second column, description in the
-     third — an index, not a card. The row rule does the separating work, so
-     nothing needs a box. */
-  .process-step {
-    display: grid;
-    grid-template-columns: 4rem minmax(9rem, 14rem) minmax(0, 1fr);
-    align-items: baseline;
+    align-items: end;
+    justify-content: space-between;
     gap: var(--space-md);
-    padding-block: var(--space-md);
-    border-block-end: 1px solid var(--color-line);
-    transition: background-color var(--duration-base) var(--ease-out);
+    max-width: none;
   }
 
-  @media (hover: hover) {
-    .process-step:hover {
-      background: var(--color-paper-raised);
-    }
+  .work-head-link {
+    white-space: nowrap;
   }
 
-  .process-num {
-    font-family: var(--font-display);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-semibold);
-    font-variant-numeric: tabular-nums;
-    color: var(--color-accent);
-    letter-spacing: var(--tracking-wide);
+  .work-body {
+    margin-block-start: var(--space-2xl);
   }
 
-  .process-step-title {
-    font-family: var(--font-display);
-    font-size: var(--text-xl);
-    font-weight: var(--weight-display);
-    letter-spacing: var(--tracking-tight);
-    margin: 0;
-  }
-
-  .process-step-text {
+  .work-none {
+    margin-block-start: var(--space-xl);
     color: var(--color-ink-soft);
-    max-width: var(--measure);
   }
 
-  @media (max-width: 719px) {
-    .process-step {
-      grid-template-columns: 2.5rem minmax(0, 1fr);
-      gap: var(--space-2xs) var(--space-sm);
-      padding-block: var(--space-sm);
-    }
+  .work-none a {
+    color: var(--color-ink);
+    font-weight: var(--weight-medium);
+    text-decoration-color: var(--color-accent);
+  }
 
-    .process-step-text {
-      grid-column: 2;
-      font-size: var(--text-sm);
-    }
+  .process-more {
+    margin-block-start: var(--space-lg);
   }
 </style>

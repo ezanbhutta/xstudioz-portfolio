@@ -17,7 +17,7 @@ backend:
   repo: ezanbhutta/xstudioz-portfolio
   branch: main
 
-site_url: https://xstudioz.com
+site_url: https://portfolio.xstudioz.com
 media_folder: public/uploads
 public_folder: /uploads
 
@@ -38,15 +38,15 @@ collections:
     slug: '{{slug}}'
     summary: '{{title}} — {{category}}'
     sortable_fields:
-      fields: [order, year, title]
+      fields: [order, title]
       default:
         field: order
     fields:
       - { name: title, label: Title, widget: string }
       - name: category
-        label: Category
+        label: Service
         widget: select
-        # Keep in sync with src/data/categories.json (Site settings → Categories)
+        # Keep in sync with src/data/categories.json (Site settings → Services)
         options:
           - logo-design
           - brand-guidelines
@@ -57,7 +57,7 @@ collections:
         label: Logo type
         widget: select
         required: false
-        hint: Logo Design projects only. Powers the Type filter dropdown.
+        hint: Logo Design projects only. Powers the Type filter on the All Work page.
         # Keep in sync with src/data/filters.ts
         options:
           - Wordmark
@@ -71,7 +71,7 @@ collections:
         label: Guidelines type
         widget: select
         required: false
-        hint: Brand Guidelines projects only. Powers the Type filter dropdown.
+        hint: Brand Guidelines projects only. Powers the Type filter on the All Work page.
         # Keep in sync with src/data/filters.ts
         options:
           - Short Brand Guidelines
@@ -82,7 +82,10 @@ collections:
         widget: select
         multiple: true
         required: false
-        hint: Anything included beyond the core sections. Listed on the project page, not a filter.
+        hint: >-
+          Anything included beyond the core sections. These are listed on the case study AND
+          they are what surfaces this project on the Stationery / Social Media service pages,
+          so tick them accurately.
         # Keep in sync with src/data/filters.ts
         options:
           - Social Media Kit
@@ -100,7 +103,7 @@ collections:
         label: Industry
         widget: select
         required: false
-        hint: 'Pick an existing industry when one fits — the goal is 4–5 projects per industry. Powers the Industry filter on the site.'
+        hint: 'Pick an existing industry when one fits — the goal is 4–5 projects per industry. Powers the Industry filter on the All Work page.'
         # Rebuilt from every project on each deploy by scripts/sync-industries.mjs — do not edit by hand.
         # industries:begin
         options:
@@ -122,7 +125,7 @@ collections:
         label: Brand website
         widget: string
         required: false
-        hint: 'Optional, e.g. brandname.com. Shown as a link on the project page only when filled.'
+        hint: 'Optional, e.g. brandname.com. Shown as a link on the case study only when filled.'
       - name: instagram
         label: Instagram
         widget: string
@@ -148,11 +151,72 @@ collections:
         widget: number
         value_type: int
         default: 99
-        hint: Lower numbers appear earlier in the grid.
+        hint: Lower numbers appear earlier everywhere — homepage, All Work, and prev/next.
+      - name: featured
+        label: Feature on the homepage
+        widget: boolean
+        required: false
+        default: false
+        hint: 'The three lowest-numbered featured projects fill the homepage opening. Pick three that show range, not three of the same industry.'
       - name: summary
         label: Details
         widget: text
-        hint: A sentence or two about the project, shown under the brand name.
+        hint: A sentence or two about the project. Shown on the case study and used as its meta description.
+      - name: intent
+        label: One-line intent
+        widget: string
+        required: false
+        hint: 'The strategic idea in about 70 characters, e.g. "Geometric precision for a product studio that ships software." Appears under the project name on every card.'
+
+      # ---- Case study story. Every field is optional; an empty field simply
+      # ---- hides its section. Never fill these in with guesses — they are
+      # ---- statements about a real client's business.
+      - name: context
+        label: 'Story — client & context'
+        widget: text
+        required: false
+        hint: 'Who the client is and the situation they were in. Leave empty to hide the section.'
+      - name: challenge
+        label: 'Story — the challenge'
+        widget: text
+        required: false
+        hint: 'The actual problem the design had to solve. Leave empty to hide the section.'
+      - name: direction
+        label: 'Story — creative direction'
+        widget: text
+        required: false
+        hint: 'The idea behind the work and why it was the right one. Leave empty to hide the section.'
+      - name: delivered
+        label: 'Story — what was delivered'
+        widget: list
+        required: false
+        hint: 'One deliverable per row. Leave empty and the list is built from the project type plus its extra elements.'
+      - name: outcome
+        label: 'Story — verified outcome'
+        widget: text
+        required: false
+        hint: 'ONLY a result the client actually reported. Leave empty if you do not have one — an empty field hides the section, an invented one is a lie a client can check.'
+      - name: testimonial
+        label: 'Story — client quote'
+        widget: object
+        required: false
+        collapsed: true
+        hint: 'Only with the client’s own words and their permission. Leave the quote empty to hide it.'
+        fields:
+          - { name: quote, label: Quote, widget: text, required: false }
+          - { name: name, label: Name, widget: string, required: false }
+          - { name: role, label: Role / company, widget: string, required: false }
+      - name: highlights
+        label: Featured pages
+        widget: list
+        required: false
+        field: { name: page, label: Page number, widget: number, value_type: int }
+        hint: >-
+          The strongest pages of the deck, by page number, in the order you want them shown.
+          These are the only pages a visitor sees before the call to action — the rest stay
+          behind "Explore the full deck". Leave empty and an even spread is picked for you.
+          Curating this is the single highest-value edit you can make to a project.
+
       - name: pdf
         label: Portfolio PDF
         widget: file
@@ -191,31 +255,192 @@ collections:
           - name: url
             label: Production URL
             widget: string
-            hint: 'No trailing slash, e.g. https://xstudioz.design — canonicals and sitemap derive from it.'
+            hint: 'No trailing slash, e.g. https://xstudioz.com — canonicals and sitemap derive from it.'
+          - name: headline
+            label: Homepage headline
+            widget: string
+            hint: 'The one line a first-time visitor reads. Say what they get, not what you do.'
+          - name: lede
+            label: Homepage paragraph
+            widget: text
+            hint: 'Two lines under the headline. Concrete: what is designed, and what is handed over.'
           - { name: tagline, label: Tagline, widget: string }
           - { name: description, label: Site description, widget: text }
           - name: fiverrUrl
             label: Fiverr profile URL
             widget: string
-            hint: Every "Hire on Fiverr" button points here.
+            hint: Every "Hire on Fiverr" and "Message on Fiverr" button on the site points here.
           - name: linkedinUrl
             label: Studio LinkedIn URL
             widget: string
             required: false
-            hint: 'Your LinkedIn page or profile link. When filled, "Connect on LinkedIn" buttons appear site-wide so visitors can add you. Leave empty to hide them.'
+            hint: 'Your LinkedIn page or profile link. When filled, "Connect on LinkedIn" actions appear site-wide. Leave empty to hide them.'
+          - name: behanceUrl
+            label: Behance URL
+            widget: string
+            required: false
+            hint: 'Optional. Shown in the footer when filled.'
+          - name: instagramUrl
+            label: Instagram URL
+            widget: string
+            required: false
+            hint: 'Optional. Shown in the footer when filled.'
           - { name: locale, label: Locale, widget: string, default: en }
+
       - name: categories
-        label: Categories
+        label: Services
         file: src/data/categories.json
         fields:
           - name: categories
-            label: Categories
-            label_singular: Category
+            label: Services
+            label_singular: Service
             widget: list
             fields:
               - name: id
                 label: ID
                 widget: string
-                hint: URL segment, kebab-case (e.g. logo-design). Also add new ids to the Projects category options in public/admin/config.yml.
+                hint: URL segment, kebab-case (e.g. logo-design). Also add new ids to the Projects service options in public/admin/config.yml.
               - { name: title, label: Title, widget: string }
-              - { name: description, label: Description, widget: text }
+              - name: navLabel
+                label: Short label
+                widget: string
+                required: false
+                hint: 'Used in navigation and filter chips where the full title is too long. Falls back to the title.'
+              - name: description
+                label: One-line description
+                widget: text
+                hint: Used as the meta description and on service cards.
+              - name: outcome
+                label: The promise
+                widget: string
+                required: false
+                hint: 'What the client ends up with, in their words. Sits under the service page title.'
+              - name: intro
+                label: Opening paragraph
+                widget: text
+                required: false
+                hint: Why this service exists and what it fixes.
+              - name: deliverables
+                label: What they get
+                widget: list
+                required: false
+                hint: 'One deliverable per row. IMPORTANT: this is a promise a client can hold you to — only list what you actually ship.'
+              - name: goodFor
+                label: Right for
+                widget: list
+                required: false
+                hint: One kind of client per row.
+              - name: relatedExtras
+                label: Counts as this service
+                widget: list
+                required: false
+                hint: >-
+                  Extra-element names (exactly as spelled on projects) that make a project count as
+                  evidence for this service. E.g. Stationery lists "Stationery Design Kit", so
+                  guideline projects that included one appear on the Stationery page.
+              - name: active
+                label: Currently offered
+                widget: boolean
+                default: true
+                hint: Turn off to remove the service from navigation, the services page, the footer and the work filters without deleting its copy.
+
+      - name: studio
+        label: Studio content
+        file: src/data/studio.json
+        fields:
+          - name: proof
+            label: Proof
+            widget: object
+            hint: >-
+              LEAVE THESE EMPTY UNTIL THEY ARE REAL. With no testimonials the homepage shows the
+              "What to expect" section instead — which is honest and still persuasive. An invented
+              testimonial is the one thing on this site a client could catch.
+            fields:
+              - name: testimonials
+                label: Testimonials
+                label_singular: Testimonial
+                widget: list
+                required: false
+                fields:
+                  - { name: quote, label: Quote, widget: text }
+                  - { name: name, label: Name, widget: string }
+                  - { name: role, label: Role / company, widget: string, required: false }
+                  - { name: project, label: Project slug, widget: string, required: false }
+              - name: clients
+                label: Client names
+                widget: list
+                required: false
+                hint: Only names you have permission to show.
+              - name: stats
+                label: Numbers
+                label_singular: Number
+                widget: list
+                required: false
+                hint: Only figures you can back up. Project and industry counts are computed automatically and do not belong here.
+                fields:
+                  - { name: value, label: Value, widget: string }
+                  - { name: label, label: Label, widget: string }
+                  - { name: note, label: Footnote, widget: string, required: false }
+          - name: expectations
+            label: What to expect
+            widget: object
+            collapsed: true
+            fields:
+              - { name: overline, label: Overline, widget: string }
+              - { name: title, label: Title, widget: string }
+              - { name: lede, label: Lede, widget: text }
+              - name: items
+                label: Points
+                label_singular: Point
+                widget: list
+                fields:
+                  - { name: title, label: Title, widget: string }
+                  - { name: text, label: Text, widget: text }
+          - name: process
+            label: Process
+            widget: object
+            collapsed: true
+            fields:
+              - { name: overline, label: Overline, widget: string }
+              - { name: title, label: Title, widget: string }
+              - { name: lede, label: Lede, widget: text }
+              - name: steps
+                label: Stages
+                label_singular: Stage
+                widget: list
+                fields:
+                  - { name: name, label: Name, widget: string }
+                  - { name: summary, label: Summary, widget: text }
+                  - { name: client, label: What the client provides, widget: list }
+                  - { name: studio, label: What XStudioz delivers, widget: list }
+              - name: revisionsNote
+                label: Revisions note
+                widget: string
+                required: false
+                hint: 'e.g. "Two revision rounds are included in every package." Leave empty and the line is not shown — do not guess your own terms.'
+              - name: timelineNote
+                label: Timeline note
+                widget: string
+                required: false
+                hint: 'e.g. "Most logo projects run 3–5 days." Leave empty and the line is not shown.'
+          - name: brief
+            label: Start a project
+            widget: object
+            collapsed: true
+            fields:
+              - { name: overline, label: Overline, widget: string }
+              - { name: title, label: Title, widget: string }
+              - { name: lede, label: Lede, widget: text }
+              - name: items
+                label: What to send
+                label_singular: Item
+                widget: list
+                fields:
+                  - { name: label, label: Label, widget: string }
+                  - { name: hint, label: Hint, widget: string }
+              - name: reassurance
+                label: Reassurance lines
+                widget: list
+                hint: Short factual lines about how working together actually runs.
+              - { name: ctaLabel, label: Button label, widget: string }
+              - { name: ctaNote, label: Note under the button, widget: string }

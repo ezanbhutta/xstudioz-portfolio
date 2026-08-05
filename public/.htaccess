@@ -1,9 +1,10 @@
 # Server rules for Hostinger (Apache / LiteSpeed).
 #
 # This file lives in public/ so Astro copies it verbatim into dist/ and the
-# deploy uploads it alongside the site. It replaces what vercel.json used
-# to do: long-lived caching for hashed assets, plus the 404 page, HTTPS and
-# compression that a static host has to be told about explicitly.
+# deploy publishes it alongside the site. It is the site's only server
+# configuration: long-lived caching for hashed assets, the 404 page, HTTPS
+# and compression — all things a static host has to be told about
+# explicitly.
 
 # ---------------------------------------------------------------------------
 # Error page — without this Apache serves its own bare 404, not the designed one
@@ -14,7 +15,9 @@ ErrorDocument 404 /404.html
 # Canonical host + HTTPS
 #
 # Two reachable copies of the site would undo the canonical work: keep one
-# scheme and one hostname. Apex is canonical, www redirects to it.
+# scheme and one hostname. The canonical host is whatever `url` in
+# src/config/site.json says; the www rule below is a safety net for hosts
+# that answer on both.
 # ---------------------------------------------------------------------------
 <IfModule mod_rewrite.c>
   RewriteEngine On

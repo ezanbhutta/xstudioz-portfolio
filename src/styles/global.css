@@ -34,15 +34,12 @@
 html {
   color-scheme: light;
   scroll-behavior: smooth;
-  /* Keeps scrolled-to and focused elements clear of the sticky filter bar */
-  scroll-padding-block-start: 5rem;
+  /* Anything scrolled to (or focused) must clear the sticky header. Pages
+     that stack a second sticky rail — the All Work filters — raise it. */
+  --sticky-offset: calc(var(--header-h) + 1rem);
+  scroll-padding-block-start: var(--sticky-offset);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-}
-
-/* Taller bar while the Logo Design dropdowns are showing */
-html:has(.subfilters.is-active) {
-  scroll-padding-block-start: 8.5rem;
 }
 
 body {
@@ -56,6 +53,9 @@ body {
   display: flex;
   flex-direction: column;
   position: relative;
+  /* Nothing on this site is wider than the viewport. If something ever is,
+     this contains the damage instead of shipping a sideways-scrolling page. */
+  overflow-x: hidden;
 }
 
 /* Paper grain — a single tiled SVG turbulence, ~0.4 KB inline, fixed so it
@@ -133,6 +133,11 @@ p {
   border-radius: var(--radius-xs);
 }
 
+/* On the ink band the deep violet ring disappears — switch to the bright end */
+.on-ink :focus-visible {
+  outline-color: var(--color-accent-bright);
+}
+
 /* ---------------------------------------------------------------------------
    Layout primitives
 --------------------------------------------------------------------------- */
@@ -143,12 +148,63 @@ p {
   padding-inline: var(--gutter);
 }
 
+/* A narrow column inside the wide container, for reading-length passages */
+.container--narrow {
+  max-width: calc(var(--measure-wide) + var(--gutter) * 2);
+}
+
+/* Standard vertical rhythm between major sections. Sections that need a rule
+   above them add .section--ruled rather than inventing their own border. */
+.section {
+  padding-block: var(--space-section);
+}
+
+.section--tight {
+  padding-block: var(--space-3xl);
+}
+
+.section--ruled {
+  border-block-start: 1px solid var(--color-line);
+}
+
+/* The dark band. Used for the closing Fiverr handoff and the footer — two
+   in a row read as one deliberate act, not as a repeated trick. */
+.section--ink {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+/* Shared section opener: overline → heading → lede. The overline hugs its
+   title (≈1:2 above/below) because they are one unit. */
+.section-head {
+  max-width: var(--measure-wide);
+}
+
+.section-title {
+  font-size: var(--text-3xl);
+  margin-block: var(--space-2xs) var(--space-md);
+}
+
+.section-lede {
+  font-size: var(--text-lg);
+  color: var(--color-ink-soft);
+  max-width: var(--measure);
+}
+
+.section--ink .section-lede {
+  color: var(--color-paper-mute);
+}
+
 /* Spec-sheet label. Set in the display face so even the smallest type on the
    page carries the studio's voice, and led by a short rule that turns a line
    of text into a caption. */
 .overline {
   display: flex;
   align-items: center;
+  /* Wraps: the project breadcrumb runs "Service · Industry · Type", which is
+     wider than a 320px phone. The rule stays on the first line. */
+  flex-wrap: wrap;
+  row-gap: 0.35em;
   gap: 0.75em;
   font-family: var(--font-display);
   font-size: var(--text-xs);
@@ -176,10 +232,21 @@ p {
   display: none;
 }
 
-/* Shared page-opening rhythm: overline → display H1 → lede.
-   The kicker hugs its title (≈1:2 above/below) — they are one unit. */
+/* The deep violet rule disappears against ink — on dark surfaces the label
+   leads with the bright end of the brand gradient instead. */
+.section--ink .overline,
+.on-ink .overline {
+  color: var(--color-paper-mute);
+}
+
+.section--ink .overline::before,
+.on-ink .overline::before {
+  background: var(--color-accent-bright);
+}
+
+/* Shared page-opening rhythm: overline → display H1 → lede. */
 .page-hero {
-  padding-block: var(--space-2xl) var(--space-xl);
+  padding-block: var(--space-3xl) var(--space-xl);
 }
 
 .page-title {
@@ -259,25 +326,38 @@ p {
   transform: none;
 }
 
-/* Pill buttons — the one recurring action shape */
+/* ---------------------------------------------------------------------------
+   Actions — one recurring pill, four surfaces
+--------------------------------------------------------------------------- */
 .button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5em;
   min-height: var(--control-h);
   padding: 0.625rem 1.375rem;
   border-radius: var(--radius-pill);
+  font-family: var(--font-display);
   font-size: var(--text-md);
   font-weight: var(--weight-medium);
+  letter-spacing: -0.005em;
+  text-align: center;
   text-decoration: none;
   transition:
     background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
     color var(--duration-fast) var(--ease-out),
     transform var(--duration-fast) var(--ease-out);
 }
 
 .button:active {
   transform: scale(0.98);
+}
+
+.button--lg {
+  min-height: var(--control-h-lg);
+  padding: 0.875rem 1.75rem;
+  font-size: var(--text-lg);
 }
 
 .button--primary {
@@ -301,7 +381,7 @@ p {
 .button--ghost {
   background: transparent;
   color: var(--color-paper);
-  box-shadow: inset 0 0 0 1px var(--color-line-on-ink);
+  box-shadow: inset 0 0 0 1px var(--color-line-on-ink-strong);
 }
 
 /* Hover only where hover exists — touch taps must not leave stuck states */
@@ -324,6 +404,94 @@ p {
   }
 }
 
+/* An inline text action with a travelling arrow — used wherever a full pill
+   would be too loud ("View all work", "Explore the full deck"). */
+.link-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-height: var(--control-h);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.link-arrow::after {
+  content: '→';
+  transition: translate var(--duration-base) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .link-arrow:hover {
+    color: var(--color-accent);
+  }
+
+  .link-arrow:hover::after {
+    translate: 0.3em 0;
+  }
+}
+
+.link-arrow:focus-visible::after {
+  translate: 0.3em 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Shared content shapes
+--------------------------------------------------------------------------- */
+
+/* A ruled list — the spec-sheet vocabulary used for deliverables and
+   checklists. Rules do the separating, so nothing needs a bullet or a box. */
+.spec-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-block-start: 1px solid var(--color-line);
+}
+
+.spec-list > li {
+  padding-block: var(--space-xs);
+  border-block-end: 1px solid var(--color-line);
+  color: var(--color-ink-soft);
+}
+
+.section--ink .spec-list,
+.on-ink .spec-list {
+  border-color: var(--color-line-on-ink);
+}
+
+.section--ink .spec-list > li,
+.on-ink .spec-list > li {
+  border-color: var(--color-line-on-ink);
+  color: var(--color-paper-mute);
+}
+
+/* Non-interactive metadata pill. Informational only — never a control. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  padding: 0.25rem 0.75rem;
+  font-size: var(--text-sm);
+  color: var(--color-ink-soft);
+  box-shadow: inset 0 0 0 1px var(--color-line-strong);
+}
+
+/* Consistent frame for every portfolio image on the site */
+.media {
+  overflow: hidden;
+  border-radius: var(--image-radius);
+  background: var(--image-bg);
+  box-shadow: var(--image-frame);
+}
+
+.media > img,
+.media :where(picture) > img {
+  width: 100%;
+  height: auto;
+}
+
 /* ---------------------------------------------------------------------------
    Scroll reveal — opt-in via data-reveal, driven by a tiny observer script.
    Falls back to fully visible without JS or with reduced motion.
@@ -334,13 +502,22 @@ p {
     transform: translateY(1rem);
     transition:
       opacity var(--duration-slow) var(--ease-out),
-      transform var(--duration-slow) var(--ease-out);
+      transform var(--duration-slow) var(--ease-out),
+      clip-path var(--duration-slower) var(--ease-out);
     transition-delay: var(--reveal-delay, 0ms);
+  }
+
+  /* Artwork reveals by uncovering rather than sliding — the frame stays put
+     and the image is wiped in, which reads as presentation, not as motion. */
+  html.js [data-reveal='wipe'] {
+    transform: none;
+    clip-path: inset(0 0 100% 0);
   }
 
   html.js [data-reveal].is-visible {
     opacity: 1;
     transform: none;
+    clip-path: inset(0 0 0 0);
   }
 }
 

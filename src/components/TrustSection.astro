@@ -1,0 +1,218 @@
+---
+import { STUDIO, hasTestimonials } from '@/data/studio';
+
+/**
+ * The credibility section.
+ *
+ * There is no invented social proof anywhere on this site, so this component
+ * has two faces. With real testimonials in studio.json it shows them. With
+ * none — the state it ships in — it shows "what to expect" instead: the
+ * concrete commitments behind the work, which persuade honestly and read as
+ * confidence rather than as a gap where reviews should be.
+ *
+ * Add a testimonial in the CMS (Site settings → Studio content → Proof) and
+ * this section changes shape on the next build. Nothing else needs editing.
+ */
+interface Props {
+  /** Computed counts the page already has; only rendered when non-zero. */
+  facts?: { value: string; label: string }[];
+}
+
+const { facts = [] } = Astro.props;
+const { expectations, proof } = STUDIO;
+---
+
+<section class="section section--ruled trust" aria-labelledby="trust-heading">
+  <div class="container">
+    <div class="section-head">
+      <p class="overline">{hasTestimonials ? 'Clients' : expectations.overline}</p>
+      <h2 id="trust-heading" class="section-title">
+        {hasTestimonials ? 'In their words' : expectations.title}
+      </h2>
+      {!hasTestimonials && <p class="section-lede">{expectations.lede}</p>}
+    </div>
+
+    {
+      hasTestimonials ? (
+        <ul class="quotes" role="list">
+          {proof.testimonials.map((t, i) => (
+            <li class="quote" data-reveal style={`--reveal-delay:${i * 70}ms`}>
+              <blockquote class="quote-text">
+                <p>{t.quote}</p>
+              </blockquote>
+              <p class="quote-by">
+                <span class="quote-name">{t.name}</span>
+                {t.role && <span class="quote-role">{t.role}</span>}
+              </p>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ol class="expectations" role="list">
+          {expectations.items.map((item, i) => (
+            <li class="expectation" data-reveal style={`--reveal-delay:${i * 60}ms`}>
+              <span class="expectation-num" aria-hidden="true">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <h3 class="expectation-title">{item.title}</h3>
+              <p class="expectation-text">{item.text}</p>
+            </li>
+          ))}
+        </ol>
+      )
+    }
+
+    {
+      (facts.length > 0 || proof.stats.length > 0) && (
+        <dl class="facts">
+          {facts.map((f) => (
+            <div class="fact">
+              <dt>{f.label}</dt>
+              <dd>{f.value}</dd>
+            </div>
+          ))}
+          {proof.stats.map((s) => (
+            <div class="fact">
+              <dt>
+                {s.label}
+                {s.note && <span class="fact-note"> {s.note}</span>}
+              </dt>
+              <dd>{s.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .expectations {
+    list-style: none;
+    padding: 0;
+    margin-block-start: var(--space-2xl);
+    display: grid;
+    gap: 0;
+    border-block-start: 1px solid var(--color-line);
+  }
+
+  /* Ledger rows: the numeral in the margin, the claim in the second column,
+     the substance in the third. An index, not a set of feature cards. */
+  .expectation {
+    display: grid;
+    grid-template-columns: 3.5rem minmax(10rem, 16rem) minmax(0, 1fr);
+    align-items: baseline;
+    gap: var(--space-md);
+    padding-block: var(--space-md);
+    border-block-end: 1px solid var(--color-line);
+    transition: background-color var(--duration-base) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .expectation:hover {
+      background: var(--color-paper-raised);
+    }
+  }
+
+  .expectation-num {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--tracking-wide);
+    color: var(--color-accent);
+  }
+
+  .expectation-title {
+    font-size: var(--text-lg);
+    margin: 0;
+  }
+
+  .expectation-text {
+    color: var(--color-ink-soft);
+    max-width: var(--measure);
+  }
+
+  @media (max-width: 899px) {
+    .expectation {
+      grid-template-columns: 2.5rem minmax(0, 1fr);
+      gap: var(--space-2xs) var(--space-sm);
+      padding-block: var(--space-sm);
+    }
+
+    .expectation-text {
+      grid-column: 2;
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* --- Testimonials (only once real ones exist) -------------------------- */
+  .quotes {
+    list-style: none;
+    padding: 0;
+    margin-block-start: var(--space-2xl);
+    display: grid;
+    gap: var(--space-lg);
+    grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+  }
+
+  .quote {
+    border-block-start: 2px solid var(--color-ink);
+    padding-block-start: var(--space-md);
+  }
+
+  .quote-text p {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    line-height: 1.4;
+    letter-spacing: var(--tracking-tight);
+  }
+
+  .quote-by {
+    margin-block-start: var(--space-sm);
+    font-size: var(--text-sm);
+    color: var(--color-ink-mute);
+  }
+
+  .quote-name {
+    font-weight: var(--weight-medium);
+    color: var(--color-ink);
+  }
+
+  .quote-role::before {
+    content: ' — ';
+  }
+
+  /* --- Counted facts ------------------------------------------------------ */
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-lg) var(--space-2xl);
+    margin-block-start: var(--space-2xl);
+    padding-block-start: var(--space-lg);
+    border-block-start: 1px solid var(--color-line);
+  }
+
+  .fact dt {
+    font-family: var(--font-display);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-ink-mute);
+  }
+
+  .fact-note {
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .fact dd {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-display);
+    letter-spacing: var(--tracking-tight);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

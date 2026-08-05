@@ -1,29 +1,73 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import FilterBar from '@/components/FilterBar.astro';
 import WorkGrid from '@/components/WorkGrid.astro';
+import ProcessSection from '@/components/ProcessSection.astro';
+import BriefSection from '@/components/BriefSection.astro';
 import { SITE } from '@/config/site';
-import { CATEGORIES } from '@/data/categories';
-import { getSortedProjects, countByCategory, industriesByCategory } from '@/lib/projects';
-import { siteGraph, WEBSITE_ID } from '@/lib/schema';
+import { ACTIVE_CATEGORIES, CATEGORIES, type Category } from '@/data/categories';
+import { getSortedProjects, projectsForService, metaDescription } from '@/lib/projects';
+import { siteGraph, ORGANIZATION_ID, WEBSITE_ID } from '@/lib/schema';
 
+/**
+ * A service page, not a filtered gallery.
+ *
+ * This is the answer to "Stationery leads to a 0-projects page": the page
+ * sells the service — the promise, the scope, exactly what is delivered, who
+ * it suits — and then shows work only if work exists. A service with nothing
+ * published yet is still a complete, useful, conversion-oriented page.
+ *
+ * Related work comes from two honest places: projects tagged with this
+ * service, and projects that *included* it as an extra element (a guidelines
+ * project with a Stationery Design Kit is real stationery work). See
+ * `relatedExtras` in src/data/categories.json.
+ */
 export async function getStaticPaths() {
+  // Every category keeps its URL — turning a service off removes it from
+  // navigation, not from the web, so existing links never 404.
   return CATEGORIES.map((category) => ({
     params: { category: category.id },
     props: { category },
   }));
 }
 
-const { category } = Astro.props;
+const { category } = Astro.props as { category: Category };
 const allProjects = await getSortedProjects();
-const counts = countByCategory(allProjects);
-const industries = industriesByCategory(allProjects);
-const projects = allProjects.filter((p) => p.data.category === category.id);
+const { direct, viaExtras } = projectsForService(allProjects, category);
+const others = ACTIVE_CATEGORIES.filter((c) => c.id !== category.id);
+
+const description = metaDescription(category.outcome, category.description);
 
 const jsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
     ...siteGraph(),
+    {
+      '@type': 'Service',
+      name: category.title,
+      description: category.description,
+      url: new URL(`/${category.id}/`, SITE.url).href,
+      provider: { '@id': ORGANIZATION_ID },
+      serviceType: category.title,
+      ...(category.deliverables?.length
+        ? {
+            hasOfferCatalog: {
+              '@type': 'OfferCatalog',
+              name: `${category.title} deliverables`,
+              itemListElement: category.deliverables.map((d) => ({
+                '@type': 'Offer',
+                itemOffered: { '@type': 'Service', name: d },
+              })),
+            },
+          }
+        : {}),
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Services', item: `${SITE.url}/services/` },
+        { '@type': 'ListItem', position: 2, name: category.title },
+      ],
+    },
     {
       '@type': 'CollectionPage',
       name: `${category.title} | ${SITE.name}`,
@@ -35,35 +79,301 @@ const jsonLd = {
 };
 ---
 
-<BaseLayout
-  title={`${category.title} Portfolio`}
-  description={category.description}
-  jsonLd={jsonLd}
->
-  <section class="page-hero container">
-    <p class="overline">
-      {projects.length}
-      {projects.length === 1 ? 'project' : 'projects'}
-    </p>
-    <h1 class="page-title">{category.title}</h1>
-    <p class="page-lede">{category.description}</p>
-  </section>
+<BaseLayout title={`${category.title}`} description={description} jsonLd={jsonLd}>
+  <article>
+    <header class="container page-hero service-hero">
+      <p class="overline">
+        <a class="overline-link" href="/services/" data-astro-prefetch>Services</a>
+      </p>
+      <h1 class="page-title service-title">{category.title}</h1>
+      {category.outcome && <p class="service-outcome">{category.outcome}</p>}
+      {category.intro && <p class="page-lede service-intro">{category.intro}</p>}
+      <div class="service-actions">
+        <a
+          class="button button--primary"
+          href={SITE.fiverrUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Start a {category.navLabel ?? category.title} project <span aria-hidden="true">↗</span>
+        </a>
+        {
+          direct.length + viaExtras.length > 0 && (
+            <a class="button button--outline" href="#service-work">
+              See the work <span aria-hidden="true">↓</span>
+            </a>
+          )
+        }
+      </div>
+    </header>
 
-  <section aria-label={`${category.title} projects`}>
-    <FilterBar
-      counts={counts}
-      total={allProjects.length}
-      active={category.id}
-      industries={industries}
+    {
+      (category.deliverables?.length || category.goodFor?.length) && (
+        <section class="section section--tight section--ruled" aria-labelledby="scope-heading">
+          <div class="container scope">
+            <div class="scope-head">
+              <p class="overline">Scope</p>
+              <h2 id="scope-heading" class="section-title">
+                What you get<span class="accent-dot">.</span>
+              </h2>
+            </div>
+            <div class="scope-cols">
+              {category.deliverables?.length && (
+                <div>
+                  <p class="overline overline--bare scope-label">Deliverables</p>
+                  <ul class="spec-list" role="list">
+                    {category.deliverables.map((d) => (
+                      <li>{d}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {category.goodFor?.length && (
+                <div>
+                  <p class="overline overline--bare scope-label">Right for</p>
+                  <ul class="spec-list" role="list">
+                    {category.goodFor.map((g) => (
+                      <li>{g}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )
+    }
+
+    {
+      direct.length + viaExtras.length > 0 ? (
+        <section id="service-work" class="section section--ruled" aria-labelledby="work-heading">
+          <div class="container">
+            <div class="section-head">
+              <p class="overline">Selected work</p>
+              <h2 id="work-heading" class="section-title">
+                {category.title} in practice<span class="accent-dot">.</span>
+              </h2>
+            </div>
+
+            {direct.length > 0 && (
+              <div class="service-grid">
+                <WorkGrid
+                  projects={direct}
+                  heading={`${category.title} projects`}
+                  eagerCount={1}
+                  rhythm="editorial"
+                />
+              </div>
+            )}
+
+            {viaExtras.length > 0 && (
+              <div class="service-grid service-grid--secondary">
+                <p class="service-secondary-label">
+                  {direct.length > 0 ? 'Also delivered as part of' : 'Delivered as part of'} these
+                  identity projects
+                </p>
+                <WorkGrid
+                  projects={viaExtras}
+                  heading={`Projects including ${category.title}`}
+                  eagerCount={0}
+                  rhythm="grid"
+                />
+              </div>
+            )}
+
+            <p class="service-all">
+              <a class="link-arrow" href="/work/" data-astro-prefetch>
+                Browse every project
+              </a>
+            </p>
+          </div>
+        </section>
+      ) : (
+        <section class="section section--ruled" aria-labelledby="work-heading">
+          <div class="container">
+            <div class="section-head">
+              <p class="overline">Selected work</p>
+              <h2 id="work-heading" class="section-title">
+                Nothing published here yet<span class="accent-dot">.</span>
+              </h2>
+              <p class="section-lede">
+                {category.title} is offered and delivered — it just has no standalone case study on
+                the site so far. The identity work below shows the standard the craft is held to,
+                and the same hands do this.
+              </p>
+            </div>
+            <p class="service-all">
+              <a class="link-arrow" href="/work/" data-astro-prefetch>
+                See the identity work
+              </a>
+            </p>
+          </div>
+        </section>
+      )
+    }
+
+    <section class="section section--ruled" aria-labelledby="service-process-heading">
+      <div class="container">
+        <ProcessSection headingId="service-process-heading" />
+        <p class="service-all">
+          <a class="link-arrow" href="/process/" data-astro-prefetch>
+            See the full process, stage by stage
+          </a>
+        </p>
+      </div>
+    </section>
+
+    <BriefSection
+      title={`Start a ${category.navLabel ?? category.title} project.`}
+      headingId="service-brief-heading"
     />
-    <div class="container category-grid">
-      <WorkGrid projects={projects} eagerCount={2} />
-    </div>
-  </section>
+
+    <nav class="section section--tight container other-services" aria-labelledby="other-heading">
+      <h2 id="other-heading" class="overline other-heading">Other services</h2>
+      <ul class="other-list" role="list">
+        {
+          others.map((c) => (
+            <li>
+              <a class="other-link" href={`/${c.id}/`} data-astro-prefetch>
+                {c.title} <span aria-hidden="true">→</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </article>
 </BaseLayout>
 
 <style>
-  .category-grid {
+  .service-hero {
+    padding-block-end: var(--space-2xl);
+  }
+
+  .service-title {
+    margin-block-end: var(--space-md);
+  }
+
+  /* The promise sits between the title and the argument, at statement scale */
+  .service-outcome {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-display);
+    letter-spacing: var(--tracking-tight);
+    line-height: var(--leading-snug);
+    color: var(--color-accent);
+    max-width: var(--measure-statement);
+    margin-block-end: var(--space-md);
+  }
+
+  .service-intro {
+    max-width: var(--measure);
+  }
+
+  .service-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-block-start: var(--space-xl);
+  }
+
+  .overline-link {
+    display: inline-block;
+    /* 44px hit area without growing the line box */
+    padding-block: 0.75rem;
+    margin-block: -0.75rem;
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 0.4em;
+    transition:
+      color var(--duration-fast) var(--ease-out),
+      text-decoration-color var(--duration-fast) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .overline-link:hover {
+      color: var(--color-accent);
+      text-decoration-color: currentColor;
+    }
+  }
+
+  .scope {
+    display: grid;
+    gap: var(--space-xl);
+  }
+
+  @media (min-width: 1000px) {
+    .scope {
+      grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+      gap: var(--space-3xl);
+      align-items: start;
+    }
+  }
+
+  .scope-cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+    gap: var(--space-xl);
+  }
+
+  .scope-label {
+    color: var(--color-ink);
+    margin-block-end: var(--space-2xs);
+  }
+
+  .service-grid {
+    margin-block-start: var(--space-2xl);
+  }
+
+  .service-grid--secondary {
+    margin-block-start: var(--space-3xl);
     padding-block-start: var(--space-xl);
+    border-block-start: 1px solid var(--color-line);
+  }
+
+  .service-secondary-label {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-ink-soft);
+    margin-block-end: var(--space-lg);
+    max-width: var(--measure);
+  }
+
+  .service-all {
+    margin-block-start: var(--space-xl);
+  }
+
+  .other-heading {
+    margin-block-end: var(--space-md);
+  }
+
+  .other-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs) var(--space-lg);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .other-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    min-height: var(--control-h);
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-medium);
+    color: var(--color-ink-soft);
+    text-decoration: none;
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .other-link:hover {
+      color: var(--color-accent);
+    }
   }
 </style>

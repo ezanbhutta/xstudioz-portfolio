@@ -80,8 +80,52 @@ const projects = defineCollection({
         year: z.number().int().optional(),
         /** Lower numbers appear first within the grid. */
         order: z.number().default(99),
+        /**
+         * Pulls the project into the homepage's opening triptych. Up to three
+         * are used, in `order`; without any, the first three by order stand in.
+         */
+        featured: z.preprocess(emptyToUndef, z.boolean().optional()),
         /** One-sentence description shown on the project page + meta description. */
         summary: z.string(),
+        /**
+         * The strategic idea in one short line (≤ ~70 chars) — the caption
+         * under a grid card and the standfirst on the case study. Distinct
+         * from `summary`, which is the full paragraph.
+         */
+        intent: z.preprocess(emptyToUndef, z.string().optional()),
+        /**
+         * Case-study narrative. Every field is optional and its section is
+         * simply not rendered when empty — a project with only a summary
+         * still produces a clean page. Never fill these with guesses; they
+         * are claims about a real client's business.
+         */
+        context: z.preprocess(emptyToUndef, z.string().optional()),
+        challenge: z.preprocess(emptyToUndef, z.string().optional()),
+        direction: z.preprocess(emptyToUndef, z.string().optional()),
+        /** What was actually handed over on this project. */
+        delivered: z.preprocess(emptyToUndef, z.array(z.string()).optional()),
+        /**
+         * A real, verifiable result. Leave empty unless the client reported
+         * it — the section does not render without one.
+         */
+        outcome: z.preprocess(emptyToUndef, z.string().optional()),
+        /** The client's own words, with permission. Omit rather than invent. */
+        testimonial: z.preprocess(
+          emptyToUndef,
+          z
+            .object({
+              quote: z.string(),
+              name: z.string(),
+              role: z.string().optional(),
+            })
+            .optional(),
+        ),
+        /**
+         * 1-based page numbers to feature in the curated gallery, in order.
+         * Empty = an even spread across the deck is chosen automatically.
+         * Curating this by hand is the single highest-value edit per project.
+         */
+        highlights: z.preprocess(emptyToUndef, z.array(z.number().int().positive()).optional()),
         /**
          * CMS PDF upload (any filename). The build renders its pages and
          * generates cover + images automatically — leave those empty.

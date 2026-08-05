@@ -46,6 +46,30 @@ Two rules the code enforces, so they survive future edits:
    Every hand-off link on the homepage lands on one of these, so none of them
    is a dead end even before a case study exists.
 
+### Navigation
+
+The header names **every service**, so the thing a visitor came to buy is one
+click from anywhere on the site:
+
+```
+XStudioz.   Brand Guidelines  Logo Design  Logo Animation  Social Media Kit
+            Stationery Design │ All work  Process          [ Hire on Fiverr ]
+```
+
+`All work` and `Process` sit behind a hairline because they answer a
+different question — "show me everything" and "how does this go" — rather
+than "what can I buy".
+
+The row is built from `categories.json`, so adding, renaming, reordering or
+deactivating a service updates the header, the mobile menu, the footer, the
+services hub and the homepage together.
+
+Seven items is a wide row. It collapses into the full-screen menu below
+**1180px**, a number taken from measuring the row rather than from a device
+class: all seven fit with room to spare at 1180px and the header would
+overflow below it. Add a sixth service and that number needs re-measuring —
+`nav.mjs`-style width sweeps are the way to do it.
+
 ### How work is split across pages
 
 The homepage does not hold the portfolio. It shows **two projects per

@@ -4,8 +4,20 @@ import { ACTIVE_CATEGORIES } from '@/data/categories';
 import Logo from '@/components/Logo.astro';
 
 /**
- * Site header: brand, three destinations, and a Fiverr call to action that
- * never leaves the screen.
+ * Site header: brand, one destination per service, and a Fiverr call to
+ * action that never leaves the screen.
+ *
+ * The services ARE the navigation. A visitor arrives wanting one specific
+ * thing — a logo, a rulebook, a set of templates — and the top of every page
+ * names all five and takes them straight there. A single "Services" link
+ * would have made that a two-click journey behind a word nobody is shopping
+ * for.
+ *
+ * `Work` and `Process` follow, set apart, because they answer a different
+ * question: not "what can I buy" but "show me everything" and "how does this
+ * go". Five service names plus two is a wide row, so the breakpoint at which
+ * this collapses into the menu is set by measurement, not by device class —
+ * see the media query below.
  *
  * The mobile menu is a native <dialog>, which buys the focus trap, the
  * Escape key, inert background content and the top layer for free. Its
@@ -14,16 +26,18 @@ import Logo from '@/components/Logo.astro';
  * links inline instead. A button that does nothing is worse than no button.
  */
 const path = Astro.url.pathname;
-const serviceIds = new Set(ACTIVE_CATEGORIES.map((c) => c.id));
+const segment = path.split('/')[1] ?? '';
 
-const isWork = path === '/' || path.startsWith('/work');
-const isServices = path.startsWith('/services') || serviceIds.has(path.split('/')[1] ?? '');
-const isProcess = path.startsWith('/process');
+/** One entry per service, in the order they are listed in categories.json. */
+const SERVICES = ACTIVE_CATEGORIES.map((c) => ({
+  href: `/${c.id}/`,
+  label: c.navLabel ?? c.title,
+  current: segment === c.id,
+}));
 
-const NAV = [
-  { href: '/work/', label: 'Work', current: isWork },
-  { href: '/services/', label: 'Services', current: isServices },
-  { href: '/process/', label: 'Process', current: isProcess },
+const SITE_NAV = [
+  { href: '/work/', label: 'All work', current: path.startsWith('/work') },
+  { href: '/process/', label: 'Process', current: path.startsWith('/process') },
 ];
 ---
 
@@ -45,8 +59,22 @@ const NAV = [
     <nav class="nav" aria-label="Main">
       <ul class="nav-list" role="list">
         {
-          NAV.map((item) => (
+          SERVICES.map((item) => (
             <li>
+              <a
+                class="nav-link"
+                href={item.href}
+                aria-current={item.current ? 'page' : undefined}
+                data-astro-prefetch
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+        {
+          SITE_NAV.map((item, i) => (
+            <li class:list={['nav-aside', { 'nav-aside--first': i === 0 }]}>
               <a
                 class="nav-link"
                 href={item.href}
@@ -101,10 +129,14 @@ const NAV = [
       </button>
     </div>
 
+    {
+      /* Same order as the desktop row: services first and set large, because
+        they are what a visitor came to choose between. */
+    }
     <nav class="menu-nav" aria-label="Menu">
       <ul class="menu-primary" role="list">
         {
-          NAV.map((item) => (
+          SERVICES.map((item) => (
             <li>
               <a
                 class="menu-link"
@@ -118,13 +150,16 @@ const NAV = [
         }
       </ul>
 
-      <p class="overline menu-heading" id="menu-services">Services</p>
-      <ul class="menu-services" role="list" aria-labelledby="menu-services">
+      <ul class="menu-secondary" role="list">
         {
-          ACTIVE_CATEGORIES.map((c) => (
+          SITE_NAV.map((item) => (
             <li>
-              <a class="menu-service" href={`/${c.id}/`}>
-                {c.navLabel ?? c.title}
+              <a
+                class="menu-service"
+                href={item.href}
+                aria-current={item.current ? 'page' : undefined}
+              >
+                {item.label}
               </a>
             </li>
           ))
@@ -182,7 +217,7 @@ const NAV = [
       if (event.target === menu) close();
     });
     // A menu open at phone width makes no sense once the desktop nav returns.
-    matchMedia('(min-width: 900px)').addEventListener('change', (event) => {
+    matchMedia('(min-width: 1180px)').addEventListener('change', (event) => {
       if (event.matches) close();
     });
   }
@@ -279,10 +314,20 @@ const NAV = [
   .nav-list {
     display: flex;
     align-items: center;
-    gap: var(--space-md);
+    /* Seven items in one row: the gap is the tightest that still reads as
+       separate destinations rather than a sentence. */
+    gap: 1.15rem;
     list-style: none;
     padding: 0;
     margin: 0;
+  }
+
+  /* Work and Process answer a different question from the five services, so
+     a hairline divides them rather than a wider gap that would just read as
+     inconsistent spacing. */
+  .nav-aside--first {
+    padding-inline-start: 1.15rem;
+    border-inline-start: 1px solid var(--color-line);
   }
 
   .nav-link {
@@ -291,10 +336,11 @@ const NAV = [
     align-items: center;
     min-height: var(--control-h);
     font-family: var(--font-display);
-    font-size: var(--text-md);
+    font-size: var(--text-sm);
     font-weight: var(--weight-medium);
     color: var(--color-ink-soft);
     text-decoration: none;
+    white-space: nowrap;
     transition: color var(--duration-fast) var(--ease-out);
   }
 
@@ -360,7 +406,7 @@ const NAV = [
      Below 900px the inline nav is replaced by the menu — but only once the
      menu can actually open. `html.has-menu` is set by this component's own
      script, so the swap and the trigger arrive together.                     */
-  @media (max-width: 899px) {
+  @media (max-width: 1179px) {
     :global(html.has-menu) .nav {
       display: none;
     }
@@ -380,7 +426,7 @@ const NAV = [
     }
   }
 
-  @media (min-width: 900px) {
+  @media (min-width: 1180px) {
     .menu-toggle {
       display: none !important;
     }
@@ -502,14 +548,12 @@ const NAV = [
     color: var(--color-accent-bright);
   }
 
-  .menu-heading {
-    margin-block: var(--space-xl) var(--space-sm);
-  }
-
-  .menu-services {
+  .menu-secondary {
     list-style: none;
     padding: 0;
-    margin: 0;
+    margin-block-start: var(--space-xl);
+    padding-block-start: var(--space-md);
+    border-block-start: 1px solid rgb(255 255 255 / 14%);
     display: grid;
     gap: var(--space-3xs);
   }
@@ -520,6 +564,10 @@ const NAV = [
     font-size: var(--text-lg);
     color: var(--color-paper-mute);
     text-decoration: none;
+  }
+
+  .menu-service[aria-current='page'] {
+    color: var(--color-accent-bright);
   }
 
   .menu-foot {

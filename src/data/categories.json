@@ -6,7 +6,7 @@
       "navLabel": "Logo Design",
       "description": "Marks that stick. Every logo ships in SVG, PDF and PNG with color and mono versions.",
       "outcome": "A mark that holds up at 16 pixels and on a shopfront.",
-      "intro": "Most logos fail somewhere: they blur at favicon size, fall apart in one colour, or look like three other businesses in the same category. The work starts from what your brand actually has to survive — a phone screen, an embroidered shirt, a printed invoice — and designs backwards from that.",
+      "intro": "Most logos fail somewhere: they blur at favicon size, fall apart in one colour, or look like three other businesses in the same category. The work starts from what your brand actually has to survive, a phone screen, an embroidered shirt, a printed invoice, and designs backwards from that.",
       "relatedExtras": [],
       "active": true
     },
@@ -16,7 +16,7 @@
       "navLabel": "Brand Guidelines",
       "description": "The rulebook for your brand. Clear rules for logo, colour and type, so every future design stays on point.",
       "outcome": "Everything anyone needs to use your brand without asking you first.",
-      "intro": "A logo is one asset. A brand is a system — and the moment a second person touches it (a printer, a developer, a freelancer, a future employee) the system either holds or drifts. Guidelines are what keep the fifth thing you make look related to the first.",
+      "intro": "A logo is one asset. A brand is a system, and the moment a second person touches it (a printer, a developer, a freelancer, a future employee) the system either holds or drifts. Guidelines are what keep the fifth thing you make look related to the first.",
       "relatedExtras": [],
       "active": true
     },
@@ -26,7 +26,7 @@
       "navLabel": "Logo Animation",
       "description": "Logo reveals and motion identities in MP4 and GIF, ready for web, decks and social.",
       "outcome": "Your logo, resolving in motion.",
-      "intro": "A static mark says what you are. A mark that resolves in motion says you built something. Animation is the smallest upgrade with the largest perceived one — it is the first frame of a video, the loader on a site, the sting at the end of an ad.",
+      "intro": "A static mark says what you are. A mark that resolves in motion says you built something. Animation is the smallest upgrade with the largest perceived one: the first frame of a video, the loader on a site, the sting at the end of an ad.",
       "relatedExtras": [],
       "active": true
     },
@@ -36,7 +36,7 @@
       "navLabel": "Social Media Kit",
       "description": "Feed templates, stories and campaign tiles sized for every platform and built to stop the scroll.",
       "outcome": "A feed that looks designed rather than assembled.",
-      "intro": "Social is where most brands quietly come apart — a different font every week, a logo squashed into a circle, screenshots posted as artwork. The fix is not more posts, it is a small set of templates that are faster to use than to ignore.",
+      "intro": "Social is where most brands quietly come apart. A different font every week, a logo squashed into a circle, screenshots posted as artwork. The fix is not more posts, it is a small set of templates that are faster to use than to ignore.",
       "relatedExtras": ["Social Media Kit"],
       "active": true
     },
@@ -46,7 +46,7 @@
       "navLabel": "Stationery Design",
       "description": "Business cards, letterheads and envelopes, print ready for any shop.",
       "outcome": "Print files you can send to any printer without a phone call.",
-      "intro": "Stationery is where a brand stops being a screen and becomes an object someone holds. It is also where amateur work shows fastest — wrong bleed, low-resolution logos, type that dies at the trim. Files go out print-ready, with bleed and crop marks, so the print shop has nothing to query.",
+      "intro": "Stationery is where a brand stops being a screen and becomes an object someone holds. It is also where amateur work shows fastest: wrong bleed, low-resolution logos, type that dies at the trim. Files go out print-ready, with bleed and crop marks, so the print shop has nothing to query.",
       "relatedExtras": ["Stationery Design Kit", "Business Card"],
       "active": true
     }

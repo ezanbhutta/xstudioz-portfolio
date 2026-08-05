@@ -2,6 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import ServicePreview from '@/components/ServicePreview.astro';
 import ServiceNav from '@/components/ServiceNav.astro';
+import CoverMarquee from '@/components/CoverMarquee.astro';
 import { SITE } from '@/config/site';
 import { ACTIVE_CATEGORIES } from '@/data/categories';
 import { getSortedProjects, industriesOf } from '@/lib/projects';
@@ -42,6 +43,15 @@ const facts = [
   { label: 'Ordered through', value: 'Fiverr' },
 ];
 
+/**
+ * The headline turns on its last word, so the gradient has one job and one
+ * place. Splitting here rather than storing markup in the config keeps
+ * site.json plain text that anyone can edit in the CMS.
+ */
+const words = SITE.headline.trim().split(' ');
+const headlineLead = words.slice(0, -1).join(' ');
+const headlineTurn = words.at(-1) ?? '';
+
 const jsonLd = {
   '@context': 'https://schema.org',
   '@graph': siteGraph(),
@@ -54,27 +64,26 @@ const jsonLd = {
   jsonLd={jsonLd}
 >
   <section class="hero container" aria-labelledby="hero-heading">
-    <p class="overline" data-enter style="--enter-step:0">Logo &amp; Brand Identity Studio</p>
-    <h1 id="hero-heading" class="hero-title" data-enter style="--enter-step:1">
-      {SITE.headline}
-    </h1>
+    <div class="hero-say">
+      <p class="overline" data-enter style="--enter-step:0">Logo &amp; Brand Identity Studio</p>
+      <h1 id="hero-heading" class="hero-title" data-enter style="--enter-step:1">
+        {headlineLead}{' '}<span class="accent-text">{headlineTurn}</span>
+      </h1>
 
-    <div class="hero-body">
-      <div class="hero-pitch" data-enter style="--enter-step:2">
-        <p class="hero-lede">{SITE.lede}</p>
-        <div class="hero-actions">
-          <a
-            class="button button--primary button--lg"
-            href={SITE.fiverrUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Start on Fiverr <span aria-hidden="true">↗</span>
-          </a>
-          <a class="button button--outline button--lg" href="#work"
-            >View the work <span aria-hidden="true">↓</span></a
-          >
-        </div>
+      <p class="hero-lede" data-enter style="--enter-step:2">{SITE.lede}</p>
+
+      <div class="hero-actions" data-enter style="--enter-step:3">
+        <a
+          class="button button--primary button--lg"
+          href={SITE.fiverrUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Start on Fiverr <span aria-hidden="true">↗</span>
+        </a>
+        <a class="button button--outline button--lg" href="#work"
+          >View the work <span aria-hidden="true">↓</span></a
+        >
       </div>
 
       {
@@ -82,7 +91,7 @@ const jsonLd = {
           answer "are these people real?" before the visitor scrolls. Both
           counts are computed from what is actually published. */
       }
-      <dl class="hero-facts" data-enter style="--enter-step:3">
+      <dl class="hero-facts" data-enter style="--enter-step:4">
         {
           facts.map((f) => (
             <div class="hero-fact">
@@ -92,6 +101,11 @@ const jsonLd = {
           ))
         }
       </dl>
+    </div>
+
+    {/* The work itself, in the first screen, before anyone has to scroll */}
+    <div class="hero-show" data-enter style="--enter-step:2">
+      <CoverMarquee projects={projects} />
     </div>
   </section>
 
@@ -116,34 +130,31 @@ const jsonLd = {
 </BaseLayout>
 
 <style>
-  /* Tighter than a marketing hero on purpose: this is a portfolio, so the
-     first real work should be reachable in one short scroll, not two. */
+  /* Two columns: what the studio says on the left, what it has made on the
+     right. Below 1100px the marquee drops under the words rather than
+     squeezing both into half a phone. */
   .hero {
-    padding-block: var(--space-3xl) var(--space-xl);
-  }
-
-  .hero-title {
-    font-size: var(--text-display);
-    letter-spacing: var(--tracking-display);
-    margin-block: var(--space-xs) var(--space-xl);
-    /* Long enough to say something, short enough to break in two lines */
-    max-width: 16ch;
-  }
-
-  /* Pitch left, spec block right — asymmetric, and it puts the proof beside
-     the claim instead of underneath it. */
-  .hero-body {
     display: grid;
-    gap: var(--space-xl);
+    gap: var(--space-2xl);
+    align-items: center;
+    padding-block: var(--space-3xl) var(--space-2xl);
   }
 
-  @media (min-width: 900px) {
-    .hero-body {
-      grid-template-columns: minmax(0, var(--measure)) auto;
-      justify-content: space-between;
-      align-items: start;
-      gap: var(--space-2xl);
+  @media (min-width: 1100px) {
+    .hero {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: var(--space-3xl);
     }
+  }
+
+  /* Sized for half a screen, not a full one: at --text-display this ran to
+     five lines and pushed the lede below the fold. */
+  .hero-title {
+    font-size: clamp(2.75rem, 1.6rem + 4vw, 5rem);
+    letter-spacing: var(--tracking-display);
+    line-height: 0.96;
+    margin-block: var(--space-xs) var(--space-lg);
+    max-width: 15ch;
   }
 
   .hero-lede {
@@ -169,20 +180,13 @@ const jsonLd = {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-lg);
-    margin: 0;
-  }
-
-  @media (min-width: 900px) {
-    .hero-facts {
-      display: grid;
-      gap: var(--space-md);
-      padding-inline-start: var(--space-lg);
-      border-inline-start: 1px solid var(--color-line);
-    }
+    margin-block-start: var(--space-xl);
+    padding-block-start: var(--space-lg);
+    border-block-start: 1px solid var(--color-line);
   }
 
   .hero-fact dt {
-    font-family: var(--font-display);
+    font-family: var(--font-sans);
     font-size: var(--text-xs);
     font-weight: var(--weight-semibold);
     letter-spacing: var(--tracking-wide);

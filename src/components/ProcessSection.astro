@@ -27,8 +27,10 @@ const { process } = STUDIO;
 
 <div class="process">
   <div class="section-head">
-    {/* On /process/ the page hero already carries this label — twice reads as
-      a template with the slots left in. */}
+    {
+      /* On /process/ the page hero already carries this label — twice reads as
+      a template with the slots left in. */
+    }
     {!detail && <p class="overline">{process.overline}</p>}
     <h2 id={headingId} class="section-title">{process.title}</h2>
     <p class="section-lede">{process.lede}</p>

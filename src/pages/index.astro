@@ -1,24 +1,27 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import FeaturedStrip from '@/components/FeaturedStrip.astro';
-import WorkGrid from '@/components/WorkGrid.astro';
-import ServicesIndex from '@/components/ServicesIndex.astro';
-import TrustSection from '@/components/TrustSection.astro';
+import CategorySection from '@/components/CategorySection.astro';
 import ProcessSection from '@/components/ProcessSection.astro';
 import BriefSection from '@/components/BriefSection.astro';
 import { SITE } from '@/config/site';
-import { getSortedProjects, featuredProjects, countByCategory, industriesOf } from '@/lib/projects';
+import { ACTIVE_CATEGORIES } from '@/data/categories';
+import { getSortedProjects, industriesOf } from '@/lib/projects';
 import { siteGraph } from '@/lib/schema';
 
 const projects = await getSortedProjects();
-const counts = countByCategory(projects);
 const industries = industriesOf(projects);
 
-// The opening three, and then everything else — no cover appears twice on
-// the page, which is what stops a small portfolio from looking padded.
-const featured = featuredProjects(projects, 3);
-const featuredIds = new Set(featured.map((p) => p.id));
-const rest = projects.filter((p) => !featuredIds.has(p.id)).slice(0, 6);
+// One section per service, in the order services are listed in
+// src/data/categories.json. A service with nothing published still gets its
+// row — it just says so instead of showing an empty grid.
+const sections = ACTIVE_CATEGORIES.map((category) => ({
+  category,
+  projects: projects.filter((p) => p.data.category === category.id),
+}));
+
+// The first card on the page is the mobile LCP: it loads eagerly and paints
+// instead of scroll-revealing.
+const firstWithWork = sections.findIndex((s) => s.projects.length > 0);
 
 // Only counts that are true by construction. Nothing here is a claim that
 // needs backing up — they are literally the length of what is on the site.
@@ -57,8 +60,8 @@ const jsonLd = {
           >
             Start on Fiverr <span aria-hidden="true">↗</span>
           </a>
-          <a class="button button--outline button--lg" href="#selected-work"
-            >Explore selected work <span aria-hidden="true">↓</span></a
+          <a class="button button--outline button--lg" href="#work"
+            >View the work <span aria-hidden="true">↓</span></a
           >
         </div>
       </div>
@@ -82,62 +85,21 @@ const jsonLd = {
   </section>
 
   {
-    featured.length > 0 && (
-      <section class="container featured" aria-label="Featured projects">
-        <FeaturedStrip projects={featured} />
-      </section>
-    )
+    /* The portfolio, split by what a buyer came to buy. Each service owns a
+      section, filters its own work, and links to its own page. */
   }
-
-  <section id="selected-work" class="section section--ruled" aria-labelledby="selected-heading">
-    <div class="container">
-      <div class="section-head work-head">
-        <div>
-          <p class="overline">Selected work</p>
-          <h2 id="selected-heading" class="section-title">
-            Identity systems, start to finish<span class="accent-dot">.</span>
-          </h2>
-        </div>
-        <a class="link-arrow work-head-link" href="/work/" data-astro-prefetch>
-          View all {projects.length} projects
-        </a>
-      </div>
-
-      {
-        rest.length > 0 ? (
-          <div class="work-body">
-            <WorkGrid projects={rest} heading="Selected work" eagerCount={0} rhythm="editorial" />
-          </div>
-        ) : (
-          <p class="work-none">
-            More work is being prepared. In the meantime,{' '}
-            <a href={SITE.fiverrUrl} target="_blank" rel="noopener noreferrer">
-              ask about a project on Fiverr <span aria-hidden="true">↗</span>
-            </a>
-            .
-          </p>
-        )
-      }
-    </div>
-  </section>
-
-  <section class="section section--ruled" aria-labelledby="services-heading">
-    <div class="container">
-      <div class="section-head">
-        <p class="overline">Services</p>
-        <h2 id="services-heading" class="section-title">
-          What you can commission<span class="accent-dot">.</span>
-        </h2>
-        <p class="section-lede">
-          Start with a mark, or take the whole system. Every service page lists exactly what lands
-          in your hands.
-        </p>
-      </div>
-      <ServicesIndex counts={counts} />
-    </div>
-  </section>
-
-  <TrustSection facts={facts.slice(0, 2)} />
+  <div id="work">
+    {
+      sections.map(({ category, projects: items }, i) => (
+        <CategorySection
+          category={category}
+          projects={items}
+          eagerCount={i === firstWithWork ? 2 : 0}
+          leadFirst={i === firstWithWork}
+        />
+      ))
+    }
+  </div>
 
   <section class="section section--ruled" aria-labelledby="process-heading">
     <div class="container">
@@ -157,7 +119,7 @@ const jsonLd = {
   /* Tighter than a marketing hero on purpose: this is a portfolio, so the
      first real work should be reachable in one short scroll, not two. */
   .hero {
-    padding-block: var(--space-3xl) var(--space-xl);
+    padding-block: var(--space-3xl) var(--space-2xl);
   }
 
   .hero-title {
@@ -235,40 +197,6 @@ const jsonLd = {
     font-weight: var(--weight-display);
     letter-spacing: var(--tracking-tight);
     font-variant-numeric: tabular-nums;
-  }
-
-  .featured {
-    padding-block-end: var(--space-xl);
-  }
-
-  /* Heading left, escape hatch right — the "see everything" affordance sits
-     on the same line as the promise it qualifies. */
-  .work-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: end;
-    justify-content: space-between;
-    gap: var(--space-md);
-    max-width: none;
-  }
-
-  .work-head-link {
-    white-space: nowrap;
-  }
-
-  .work-body {
-    margin-block-start: var(--space-2xl);
-  }
-
-  .work-none {
-    margin-block-start: var(--space-xl);
-    color: var(--color-ink-soft);
-  }
-
-  .work-none a {
-    color: var(--color-ink);
-    font-weight: var(--weight-medium);
-    text-decoration-color: var(--color-accent);
   }
 
   .process-more {

@@ -73,7 +73,9 @@ const cardSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="63
 const MARK_SIZE = 300;
 const markBuffer = ORIGINAL
   ? await sharp(ORIGINAL).resize(MARK_SIZE, MARK_SIZE, { fit: 'cover' }).png().toBuffer()
-  : await sharp(Buffer.from(badgeSvg(MARK_SIZE))).png().toBuffer();
+  : await sharp(Buffer.from(badgeSvg(MARK_SIZE)))
+      .png()
+      .toBuffer();
 
 await sharp(Buffer.from(cardSvg))
   .composite([{ input: markBuffer, left: 810, top: 165 }])
@@ -91,5 +93,7 @@ if (ORIGINAL) {
   await sharp(ORIGINAL).resize(64, 64, { fit: 'cover' }).png().toFile('public/favicon.png');
   console.log(`✓ used exact logo file: ${ORIGINAL} (og.png, apple-touch-icon.png, favicon.png)`);
 } else {
-  console.log('✓ public/og.png\n✓ public/apple-touch-icon.png (vector recreation — add src/assets/logo-original.png for the exact file)');
+  console.log(
+    '✓ public/og.png\n✓ public/apple-touch-icon.png (vector recreation — add src/assets/logo-original.png for the exact file)',
+  );
 }

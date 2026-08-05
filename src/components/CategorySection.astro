@@ -1,0 +1,376 @@
+---
+import WorkGrid from '@/components/WorkGrid.astro';
+import { TYPE_FILTERS } from '@/data/filters';
+import { industriesOf, projectType } from '@/lib/projects';
+import type { Category } from '@/data/categories';
+import type { ReadyProject } from '@/lib/projects';
+
+/**
+ * One service, one section of the homepage: its own heading, its own filters,
+ * its own grid. Five of these stacked is the whole portfolio, sorted the way
+ * a buyer shops — by the thing they came to buy.
+ *
+ * A service with nothing published renders as a quiet label and stops there.
+ * It says the studio offers the service without promising work behind it.
+ *
+ * Both dropdowns are built from the projects in THIS section, and only offer
+ * values that actually occur here, so no choice can return an empty grid.
+ * They ship `hidden` and are revealed by this component's script — on a
+ * static host they cannot filter anything until it runs, and a control that
+ * does nothing is worse than no control.
+ */
+interface Props {
+  category: Category;
+  /** Projects tagged with this category, in display order. */
+  projects: ReadyProject[];
+  /** How many covers in this section start above the fold. */
+  eagerCount?: number;
+  /** The very first card on the page paints instantly (it is the LCP). */
+  leadFirst?: boolean;
+}
+
+const { category, projects, eagerCount = 0, leadFirst = false } = Astro.props;
+
+const headingId = `section-${category.id}`;
+
+const distinct = (values: (string | undefined)[]) =>
+  [...new Set(values.filter((v): v is string => Boolean(v)))].sort((a, b) => a.localeCompare(b));
+
+/**
+ * A facet is offered only when it can actually divide THIS section: at least
+ * two values present among these projects. One option is not a choice, and
+ * the full taxonomy would list types no project here has.
+ *
+ * `facet` names the card's data attribute, so `logoType` reads
+ * `data-logo-type` — the script matches them without a lookup table.
+ */
+const facets = [
+  {
+    facet: 'type',
+    label: 'type',
+    all: 'All types',
+    // Only where the category has a taxonomy of its own (see TYPE_FILTERS).
+    options: TYPE_FILTERS[category.id] ? distinct(projects.map((p) => projectType(p.data))) : [],
+  },
+  {
+    facet: 'logoType',
+    label: 'logo type',
+    all: 'All logo types',
+    // The mark at the centre of the work. Skipped where it IS the category's
+    // own type, which the first facet already covers.
+    options:
+      TYPE_FILTERS[category.id]?.key === 'logoType'
+        ? []
+        : distinct(projects.map((p) => p.data.logoType)),
+  },
+  {
+    facet: 'industry',
+    label: 'industry',
+    all: 'All industries',
+    options: industriesOf(projects),
+  },
+].filter((f) => f.options.length > 1);
+
+const hasFilters = facets.length > 0;
+---
+
+{
+  projects.length === 0 ? (
+    <section class="cat cat--empty" aria-labelledby={headingId}>
+      <div class="container cat-head">
+        <h2 id={headingId} class="cat-title cat-title--empty">
+          {category.title}
+        </h2>
+        <p class="cat-soon">Coming soon</p>
+      </div>
+    </section>
+  ) : (
+    <section class="cat" aria-labelledby={headingId} data-cat-section={category.id}>
+      <div class="container">
+        <div class="cat-head">
+          <h2 id={headingId} class="cat-title">
+            {category.title}
+            <span class="cat-count" aria-hidden="true">
+              {projects.length}
+            </span>
+          </h2>
+
+          {hasFilters && (
+            <div class="cat-filters">
+              {facets.map((f) => (
+                <p class="field" data-enhanced hidden>
+                  <label class="visually-hidden" for={`${headingId}-${f.facet}`}>
+                    Filter {category.title} by {f.label}
+                  </label>
+                  <select id={`${headingId}-${f.facet}`} data-facet={f.facet}>
+                    <option value="">{f.all}</option>
+                    {f.options.map((o) => (
+                      <option value={o}>{o}</option>
+                    ))}
+                  </select>
+                </p>
+              ))}
+              <button type="button" class="cat-reset" data-reset data-enhanced hidden>
+                Clear
+              </button>
+            </div>
+          )}
+        </div>
+
+        <p class="cat-lede">{category.description}</p>
+
+        <div class="cat-body">
+          <WorkGrid
+            projects={projects}
+            eagerCount={eagerCount}
+            leadFirst={leadFirst}
+            labelled
+            filterable={hasFilters}
+          />
+          {hasFilters && (
+            <>
+              <p class="cat-none" data-empty hidden>
+                No {category.title} projects match that combination.{' '}
+                <button type="button" class="cat-none-reset" data-reset>
+                  Clear the filters
+                </button>
+                .
+              </p>
+              <p class="visually-hidden" role="status" data-status />
+            </>
+          )}
+        </div>
+
+        <p class="cat-more">
+          <a class="link-arrow" href={`/${category.id}/`} data-astro-prefetch>
+            About {category.title}
+          </a>
+        </p>
+      </div>
+    </section>
+  )
+}
+
+<script>
+  // Astro hoists this once per page no matter how many sections render, so it
+  // wires every section rather than assuming there is one.
+  for (const section of document.querySelectorAll<HTMLElement>('[data-cat-section]')) {
+    const selects = [...section.querySelectorAll<HTMLSelectElement>('select[data-facet]')];
+    if (selects.length === 0) continue;
+
+    const items = [...section.querySelectorAll<HTMLLIElement>('li[data-category]')];
+    const resets = [...section.querySelectorAll<HTMLButtonElement>('[data-reset]')];
+    const empty = section.querySelector<HTMLElement>('[data-empty]');
+    const status = section.querySelector<HTMLElement>('[data-status]');
+
+    // The controls work now, so now is when they may appear. Clear stays
+    // hidden until there is something to clear — `apply` decides that.
+    for (const el of section.querySelectorAll<HTMLElement>('[data-enhanced]:not([data-reset])')) {
+      el.hidden = false;
+    }
+
+    const apply = () => {
+      let shown = 0;
+      for (const li of items) {
+        const show = selects.every((s) => !s.value || li.dataset[s.dataset.facet!] === s.value);
+        li.hidden = !show;
+        if (show) {
+          shown += 1;
+          // A revealed card must be visible NOW: the view transition snapshots
+          // before the scroll-reveal observer's async callback would run.
+          li.querySelector('[data-reveal]')?.classList.add('is-visible');
+        }
+      }
+
+      const active = selects.some((s) => s.value !== '');
+      for (const s of selects) s.classList.toggle('has-value', s.value !== '');
+      for (const r of resets) if (r.hasAttribute('data-enhanced')) r.hidden = !active;
+      if (empty) empty.hidden = shown > 0;
+      if (status) status.textContent = `Showing ${shown} ${shown === 1 ? 'project' : 'projects'}`;
+    };
+
+    const run = () => {
+      const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (document.startViewTransition && !reduceMotion) document.startViewTransition(apply);
+      else apply();
+    };
+
+    for (const s of selects) s.addEventListener('change', run);
+
+    for (const r of resets) {
+      r.addEventListener('click', () => {
+        for (const s of selects) s.value = '';
+        run();
+        selects[0]?.focus();
+      });
+    }
+
+    // Back can restore select values after first paint; re-filter so the grid
+    // matches the controls the visitor is looking at.
+    window.addEventListener('pageshow', () => {
+      if (selects.some((s) => s.value)) apply();
+    });
+  }
+</script>
+
+<style>
+  .cat {
+    padding-block: var(--space-2xl);
+    border-block-start: 1px solid var(--color-line);
+  }
+
+  /* Nothing to show and nothing to click: the row states the service exists
+     and takes up as little of the page as saying so requires. */
+  .cat--empty {
+    padding-block: var(--space-lg);
+  }
+
+  .cat-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-sm) var(--space-lg);
+  }
+
+  .cat-title {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-display);
+    letter-spacing: var(--tracking-tight);
+  }
+
+  .cat-title--empty {
+    color: var(--color-ink-mute);
+    font-weight: var(--weight-medium);
+  }
+
+  /* Raised like a footnote marker: the count annotates the heading rather
+     than sitting on the baseline competing with it. */
+  .cat-count {
+    display: inline-block;
+    margin-inline-start: 0.5em;
+    vertical-align: super;
+    font-size: 0.6875rem;
+    font-weight: var(--weight-semibold);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-accent);
+    letter-spacing: 0;
+  }
+
+  .cat-soon {
+    font-family: var(--font-display);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-ink-mute);
+  }
+
+  .cat-lede {
+    margin-block-start: var(--space-2xs);
+    max-width: var(--measure);
+    color: var(--color-ink-soft);
+  }
+
+  .cat-body {
+    margin-block-start: var(--space-xl);
+  }
+
+  .cat-filters {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+  }
+
+  @media (max-width: 559px) {
+    .cat-filters {
+      inline-size: 100%;
+    }
+
+    .field {
+      flex: 1 1 0;
+      min-inline-size: 0;
+    }
+
+    .field select {
+      inline-size: 100%;
+    }
+  }
+
+  .field {
+    margin: 0;
+  }
+
+  .field select {
+    appearance: none;
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-ink-soft);
+    background-color: transparent;
+    border: none;
+    box-shadow: inset 0 0 0 1px var(--color-line-control);
+    border-radius: var(--radius-pill);
+    min-height: var(--control-h);
+    padding: 0.375rem 2.25rem 0.375rem 1rem;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23554e60' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    transition:
+      box-shadow var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .field select:hover {
+      box-shadow: inset 0 0 0 1px var(--color-ink);
+      color: var(--color-ink);
+    }
+  }
+
+  /* A chosen value reads as active */
+  .field select.has-value {
+    box-shadow: inset 0 0 0 1px var(--color-ink);
+    color: var(--color-ink);
+  }
+
+  .cat-reset {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--control-h);
+    padding-inline: var(--space-xs);
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-ink-soft);
+    text-decoration: underline;
+    text-decoration-color: var(--color-line-strong);
+    text-underline-offset: 0.3em;
+    white-space: nowrap;
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .cat-reset:hover {
+      color: var(--color-accent);
+    }
+  }
+
+  .cat-none {
+    color: var(--color-ink-soft);
+  }
+
+  .cat-none-reset {
+    font: inherit;
+    color: var(--color-ink);
+    font-weight: var(--weight-medium);
+    text-decoration: underline;
+    text-decoration-color: var(--color-accent);
+    text-underline-offset: 0.2em;
+  }
+
+  .cat-more {
+    margin-block-start: var(--space-lg);
+  }
+</style>

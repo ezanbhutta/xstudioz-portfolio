@@ -157,12 +157,7 @@ const jsonLd = {
 
             {direct.length > 0 && (
               <div class="service-grid">
-                <WorkGrid
-                  projects={direct}
-                  heading={`${category.title} projects`}
-                  eagerCount={1}
-                  rhythm="editorial"
-                />
+                <WorkGrid projects={direct} heading={`${category.title} projects`} eagerCount={1} />
               </div>
             )}
 
@@ -176,7 +171,6 @@ const jsonLd = {
                   projects={viaExtras}
                   heading={`Projects including ${category.title}`}
                   eagerCount={0}
-                  rhythm="grid"
                 />
               </div>
             )}

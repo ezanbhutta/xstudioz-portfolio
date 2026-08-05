@@ -1,0 +1,412 @@
+---
+/**
+ * Edit one project.
+ *
+ * Field for field this is the old Sveltia form, hints included — the editor
+ * should not have to relearn anything because the storage moved. Everything
+ * optional stays optional, and an empty narrative field still hides its
+ * section rather than printing an empty heading.
+ *
+ * The one rule worth repeating in the UI: nothing here may be filled in with a
+ * guess. `context`, `challenge`, `outcome` and the testimonial are statements
+ * about a real client's business.
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import {
+  getProject,
+  getProjectImages,
+  saveProject,
+  deleteProject,
+  validateProject,
+  EXTRA_OPTIONS,
+  type FieldErrors,
+} from '@/lib/admin-data';
+import { CATEGORIES } from '@/data/categories';
+import { LOGO_TYPES, GUIDELINE_TYPES } from '@/data/filters';
+import { getSortedProjects } from '@/lib/content';
+
+const routeSlug = Astro.params.slug!;
+const isNew = routeSlug === 'new';
+
+let errors: FieldErrors = {};
+let submitted: FormData | null = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+
+  if (form.get('_action') === 'delete' && !isNew) {
+    await deleteProject(routeSlug);
+    return Astro.redirect(`/admin/?deleted=${encodeURIComponent(routeSlug)}`, 303);
+  }
+
+  errors = validateProject(form, isNew);
+  const slug = isNew ? String(form.get('slug') ?? '').trim() : routeSlug;
+
+  // A new project cannot reuse a slug: the insert would silently overwrite the
+  // existing one, because the save is an upsert keyed on it.
+  if (isNew && slug && !errors.slug && (await getProject(slug))) {
+    errors.slug = 'A project already uses this URL.';
+  }
+
+  if (Object.keys(errors).length === 0) {
+    await saveProject(form, slug);
+    return Astro.redirect(`/admin/?saved=${encodeURIComponent(String(form.get('title')))}`, 303);
+  }
+  submitted = form;
+}
+
+const existing = isNew ? undefined : await getProject(routeSlug);
+if (!isNew && !existing) return Astro.redirect('/admin/', 303);
+
+const images = isNew ? [] : await getProjectImages(routeSlug);
+
+/** Prefer what was just typed (so a failed save keeps the edits), then the row. */
+const val = (name: string, fallback: unknown = ''): string => {
+  if (submitted) {
+    const v = submitted.get(name);
+    return typeof v === 'string' ? v : '';
+  }
+  return fallback == null ? '' : String(fallback);
+};
+
+const jsonArr = (raw: unknown): string[] => {
+  if (Array.isArray(raw)) return raw as string[];
+  try {
+    const p = JSON.parse(String(raw ?? '[]'));
+    return Array.isArray(p) ? p : [];
+  } catch {
+    return [];
+  }
+};
+
+const listVal = (name: string, raw: unknown): string =>
+  submitted ? val(name) : jsonArr(raw).join('\n');
+
+const checkedExtras = submitted
+  ? submitted.getAll('extras').map(String)
+  : jsonArr(existing?.extras);
+
+const testimonial = (() => {
+  try {
+    return JSON.parse(String(existing?.testimonial ?? 'null')) ?? {};
+  } catch {
+    return {};
+  }
+})();
+
+// Industries already in use, so a new project joins an existing group rather
+// than starting a category of one.
+const industries = [
+  ...new Set((await getSortedProjects()).map((p) => p.data.industry).filter(Boolean)),
+].sort() as string[];
+
+const currentIndustry = val('industry', existing?.industry);
+const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
+---
+
+<AdminLayout title={title}>
+  <h1>{title}</h1>
+  <p class="sub">
+    {
+      isNew
+        ? 'Text now, images after — a project without images stays off the site until it has them.'
+        : `${images.length} page${images.length === 1 ? '' : 's'}. Saving publishes immediately.`
+    }
+  </p>
+
+  {
+    Object.keys(errors).length > 0 && (
+      <p class="flash bad">Nothing was saved — check the fields marked below.</p>
+    )
+  }
+
+  <form method="POST">
+    <fieldset>
+      <legend>Basics</legend>
+
+      {
+        isNew && (
+          <label>
+            <span class="lab">URL slug</span>
+            <span class="hint">
+              Becomes /work/&lt;slug&gt;/. Lowercase, hyphens, no spaces. Cannot be changed later.
+            </span>
+            <input
+              type="text"
+              name="slug"
+              value={val('slug')}
+              aria-invalid={errors.slug ? 'true' : undefined}
+              required
+            />
+            {errors.slug && <span class="err">{errors.slug}</span>}
+          </label>
+        )
+      }
+
+      <label>
+        <span class="lab">Title</span>
+        <input
+          type="text"
+          name="title"
+          value={val('title', existing?.title)}
+          aria-invalid={errors.title ? 'true' : undefined}
+          required
+        />
+        {errors.title && <span class="err">{errors.title}</span>}
+      </label>
+
+      <div class="grid2">
+        <label>
+          <span class="lab">Service</span>
+          <select name="category" aria-invalid={errors.category ? 'true' : undefined} required>
+            {
+              CATEGORIES.map((c) => (
+                <option value={c.id} selected={val('category', existing?.category) === c.id}>
+                  {c.title}
+                </option>
+              ))
+            }
+          </select>
+          {errors.category && <span class="err">{errors.category}</span>}
+        </label>
+
+        <label>
+          <span class="lab">Grid position</span>
+          <span class="hint">Lower appears earlier everywhere.</span>
+          <input
+            type="number"
+            name="sort_order"
+            min="0"
+            value={val('sort_order', existing?.sort_order ?? 99)}
+            aria-invalid={errors.sort_order ? 'true' : undefined}
+          />
+          {errors.sort_order && <span class="err">{errors.sort_order}</span>}
+        </label>
+      </div>
+
+      <div class="grid2">
+        <label>
+          <span class="lab">Logo type</span>
+          <span class="hint">
+            Logo Design projects. Also names the mark behind a guidelines project.
+          </span>
+          <select name="logo_type">
+            <option value="">— none —</option>
+            {
+              LOGO_TYPES.map((t) => (
+                <option value={t} selected={val('logo_type', existing?.logo_type) === t}>
+                  {t}
+                </option>
+              ))
+            }
+          </select>
+        </label>
+
+        <label>
+          <span class="lab">Guidelines type</span>
+          <span class="hint">Brand Guidelines projects only.</span>
+          <select name="guideline_type">
+            <option value="">— none —</option>
+            {
+              GUIDELINE_TYPES.map((t) => (
+                <option value={t} selected={val('guideline_type', existing?.guideline_type) === t}>
+                  {t}
+                </option>
+              ))
+            }
+          </select>
+        </label>
+      </div>
+
+      <label>
+        <span class="lab">Industry</span>
+        <span class="hint">
+          Reuse an existing spelling where one fits — two projects sharing a spelling group
+          together, a typo makes a category of one. Type a new one to start a group.
+        </span>
+        <input type="text" name="industry" value={currentIndustry} list="industries" />
+        <datalist id="industries">
+          {industries.map((i) => <option value={i} />)}
+        </datalist>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Extra elements</legend>
+      <p class="legend-note">
+        Anything included beyond the core sections. Listed on the case study, so tick them
+        accurately.
+      </p>
+      <div class="checks">
+        {
+          EXTRA_OPTIONS.map((e) => (
+            <label>
+              <input type="checkbox" name="extras" value={e} checked={checkedExtras.includes(e)} />
+              <span>{e}</span>
+            </label>
+          ))
+        }
+      </div>
+      <label>
+        <span class="lab">Custom extras</span>
+        <span class="hint">Anything the list above does not cover, one per line.</span>
+        <textarea name="extras_custom">{listVal('extras_custom', existing?.extras_custom)}</textarea
+        >
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Copy</legend>
+
+      <label>
+        <span class="lab">Details</span>
+        <span class="hint">
+          A sentence or two. Shown on the case study and used as its meta description.
+        </span>
+        <textarea name="summary" aria-invalid={errors.summary ? 'true' : undefined} required
+          >{val('summary', existing?.summary)}</textarea
+        >
+        {errors.summary && <span class="err">{errors.summary}</span>}
+      </label>
+
+      <label>
+        <span class="lab">One-line intent</span>
+        <span class="hint">
+          The strategic idea in about 70 characters. The standfirst on the case study.
+        </span>
+        <input type="text" name="intent" value={val('intent', existing?.intent)} />
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Story</legend>
+      <p class="legend-note">
+        Every field optional — an empty one hides its section. Never fill these with a guess: they
+        are statements about a real client's business.
+      </p>
+
+      <label>
+        <span class="lab">Client &amp; context</span>
+        <textarea name="context">{val('context', existing?.context)}</textarea>
+      </label>
+      <label>
+        <span class="lab">The challenge</span>
+        <textarea name="challenge">{val('challenge', existing?.challenge)}</textarea>
+      </label>
+      <label>
+        <span class="lab">Creative direction</span>
+        <textarea name="direction">{val('direction', existing?.direction)}</textarea>
+      </label>
+      <label>
+        <span class="lab">What was delivered</span>
+        <span class="hint">
+          One per line. Leave empty and it is built from the project type plus its extras.
+        </span>
+        <textarea name="delivered">{listVal('delivered', existing?.delivered)}</textarea>
+      </label>
+      <label>
+        <span class="lab">Verified outcome</span>
+        <span class="hint">
+          ONLY a result the client actually reported. Empty hides the section; an invented one is a
+          lie a client can check.
+        </span>
+        <textarea name="outcome">{val('outcome', existing?.outcome)}</textarea>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Client quote</legend>
+      <p class="legend-note">Only their own words, only with their permission.</p>
+      <label>
+        <span class="lab">Quote</span>
+        <textarea
+          name="testimonial_quote"
+          aria-invalid={errors.testimonial_quote ? 'true' : undefined}
+          >{val('testimonial_quote', testimonial.quote)}</textarea
+        >
+        {errors.testimonial_quote && <span class="err">{errors.testimonial_quote}</span>}
+      </label>
+      <div class="grid2">
+        <label>
+          <span class="lab">Name</span>
+          <input
+            type="text"
+            name="testimonial_name"
+            value={val('testimonial_name', testimonial.name)}
+          />
+        </label>
+        <label>
+          <span class="lab">Role / company</span>
+          <input
+            type="text"
+            name="testimonial_role"
+            value={val('testimonial_role', testimonial.role)}
+          />
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Links</legend>
+      <div class="grid2">
+        <label>
+          <span class="lab">Brand website</span>
+          <input type="text" name="website" value={val('website', existing?.website)} />
+        </label>
+        <label>
+          <span class="lab">Instagram</span>
+          <input type="text" name="instagram" value={val('instagram', existing?.instagram)} />
+        </label>
+        <label>
+          <span class="lab">Facebook</span>
+          <input type="text" name="facebook" value={val('facebook', existing?.facebook)} />
+        </label>
+        <label>
+          <span class="lab">LinkedIn</span>
+          <input type="text" name="linkedin" value={val('linkedin', existing?.linkedin)} />
+        </label>
+      </div>
+      <label>
+        <span class="lab">Other links</span>
+        <span class="hint">One per line — TikTok, Behance, X…</span>
+        <textarea name="other_links">{listVal('other_links', existing?.other_links)}</textarea>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Images</legend>
+      <p class="legend-note">
+        {
+          images.length > 0
+            ? `${images.length} page${images.length === 1 ? '' : 's'} plus the grid cover.`
+            : 'No images yet — the project stays off the site until it has them.'
+        }
+      </p>
+      <label>
+        <span class="lab">Cover alt text</span>
+        <span class="hint">Describe what the grid thumbnail shows.</span>
+        <input type="text" name="cover_alt" value={val('cover_alt', existing?.cover_alt)} />
+      </label>
+    </fieldset>
+
+    <div class="row">
+      <button class="btn" type="submit">Save — publishes immediately</button>
+      <a class="btn ghost" href="/admin/">Cancel</a>
+    </div>
+  </form>
+
+  {
+    !isNew && (
+      <form
+        method="POST"
+        style="margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--color-line)"
+        onsubmit="return confirm('Delete this project? It disappears from the live site immediately. This cannot be undone.')"
+      >
+        <input type="hidden" name="_action" value="delete" />
+        <button class="btn danger" type="submit">
+          Delete project
+        </button>
+      </form>
+    )
+  }
+</AdminLayout>

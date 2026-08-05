@@ -1,0 +1,55 @@
+---
+/**
+ * Sign in.
+ *
+ * The only /admin/ route the middleware lets through unauthenticated.
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import { checkPassword, sessionCookie } from '@/lib/auth';
+
+let error = '';
+const next = Astro.url.searchParams.get('next') ?? '/admin/';
+
+// Only ever redirect somewhere inside this site. An open redirect here would
+// let a phishing link borrow the domain's credibility.
+const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/admin/';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const password = String(form.get('password') ?? '');
+  try {
+    if (checkPassword(password)) {
+      const cookie = sessionCookie();
+      Astro.cookies.set(cookie.name, cookie.value, cookie.options);
+      return Astro.redirect(safeNext, 303);
+    }
+    // Deliberately not "no such user" or "wrong password" — one message means
+    // a guess reveals nothing about what was wrong with it.
+    error = 'Incorrect password.';
+  } catch (e) {
+    error = e instanceof Error ? e.message : 'Admin is not configured.';
+  }
+}
+---
+
+<AdminLayout title="Sign in" nav={false}>
+  <h1>XStudioz admin</h1>
+  <p class="sub">Sign in to edit the live site.</p>
+
+  {error && <p class="flash bad">{error}</p>}
+
+  <form method="POST">
+    <label>
+      <span class="lab">Password</span>
+      <input
+        type="password"
+        name="password"
+        autocomplete="current-password"
+        required
+        autofocus
+        aria-invalid={error ? 'true' : undefined}
+      />
+    </label>
+    <button class="btn" type="submit">Sign in</button>
+  </form>
+</AdminLayout>

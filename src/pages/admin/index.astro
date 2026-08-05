@@ -1,0 +1,70 @@
+---
+/**
+ * Project list — the admin's home.
+ *
+ * Ordered the way the grid orders them, because that is the order the editor
+ * is thinking in when they come here to move something up.
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import { listProjects } from '@/lib/admin-data';
+import { CATEGORIES } from '@/data/categories';
+
+const projects = await listProjects();
+const titleOf = (id: string) => CATEGORIES.find((c) => c.id === id)?.title ?? id;
+const saved = Astro.url.searchParams.get('saved');
+const deleted = Astro.url.searchParams.get('deleted');
+---
+
+<AdminLayout title="Projects">
+  <h1>Projects</h1>
+  <p class="sub">
+    {projects.length} project{projects.length === 1 ? '' : 's'}. Changes are live on the site
+    immediately — there is no publish step and no undo.
+  </p>
+
+  {saved && <p class="flash ok">Saved “{saved}”. It is live now.</p>}
+  {deleted && <p class="flash ok">Deleted “{deleted}”. Its image files were left on disk.</p>}
+
+  <div class="row" style="margin-bottom:1.5rem">
+    <a class="btn" href="/admin/project/new/">New project</a>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Service</th>
+        <th class="num">Position</th>
+        <th class="num">Pages</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        projects.map((p) => (
+          <tr>
+            <td>
+              <a href={`/admin/project/${p.slug}/`}>{p.title}</a>
+            </td>
+            <td>{titleOf(p.category)}</td>
+            <td class="num">{p.sort_order}</td>
+            <td class="num">{p.pages}</td>
+            <td class="num">
+              <a href={`/work/${p.slug}/`} target="_blank" rel="noopener">
+                View ↗
+              </a>
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+
+  {
+    projects.length === 0 && (
+      <p class="sub" style="margin-top:2rem">
+        No projects yet. “New project” adds one.
+      </p>
+    )
+  }
+</AdminLayout>

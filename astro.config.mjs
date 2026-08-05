@@ -13,6 +13,15 @@ export default defineConfig({
   // opens to the internet.
   output: 'server',
   adapter: node({ mode: 'standalone' }),
+  security: {
+    // Astro's own check compares the Origin header against `site`, which is
+    // the production URL. That makes every POST fail anywhere else — on
+    // localhost, on a staging domain, behind a preview URL — so the admin
+    // could only ever be exercised in production. src/middleware.ts runs the
+    // equivalent check against the request's real host instead, which blocks
+    // the same cross-site form posts and can actually be tested.
+    checkOrigin: false,
+  },
   integrations: [sitemap()],
   image: {
     // Portfolio images are the product — allow generous responsive widths.

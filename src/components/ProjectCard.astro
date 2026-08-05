@@ -1,5 +1,4 @@
 ---
-import { Picture } from 'astro:assets';
 import { getCategory } from '@/data/categories';
 import { lqipStyle } from '@/lib/lqip';
 import { projectType } from '@/lib/projects';
@@ -34,7 +33,7 @@ const kind = projectType(project.data);
 const meta = [serviceLabel, industry].filter(Boolean).join(' · ');
 const href = `/work/${project.id}/`;
 const delay = (index % 2) * 60;
-const placeholder = await lqipStyle(cover);
+const placeholder = await lqipStyle(cover.src);
 ---
 
 <li
@@ -60,15 +59,16 @@ const placeholder = await lqipStyle(cover);
     style={lead ? undefined : `--reveal-delay:${delay}ms`}
   >
     <div class="card-media" data-vt={`work-${project.id}`}>
-      <Picture
-        src={cover}
-        alt={coverAlt || `${title} presentation cover`}
-        formats={['webp']}
-        fallbackFormat="webp"
-        widths={[480, 900, 1400]}
+      <img
+        src={cover.src}
+        srcset={cover.srcset}
         sizes={sizes}
+        alt={coverAlt || `${title} presentation cover`}
+        width={cover.width}
+        height={cover.height}
         loading={eager ? 'eager' : 'lazy'}
         fetchpriority={eager ? 'high' : 'auto'}
+        decoding="async"
         style={placeholder}
       />
 

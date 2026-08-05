@@ -18,6 +18,7 @@
  */
 import type { ImageMetadata } from 'astro';
 import { query, jsonList, jsonObject, opt } from './db';
+import { srcsetFor } from './uploads';
 import { CATEGORY_IDS, type CategoryId } from '@/data/categories';
 
 /**
@@ -32,14 +33,56 @@ const IMAGES = import.meta.glob<{ default: ImageMetadata }>(
   { eager: true },
 );
 
-/** Resolve a stored path (`./page-01.png`) against its project folder. */
-function resolveImage(slug: string, src: string | null | undefined): ImageMetadata | undefined {
-  if (!src) return undefined;
-  const file = src.replace(/^\.\//, '').replace(/^\//, '');
-  return IMAGES[`/src/content/projects/${slug}/${file}`]?.default;
-}
+/**
+ * One image, however it is stored.
+ *
+ * Both kinds resolve to the same four fields, so nothing that renders an image
+ * has to know whether it came from the build or from an upload. `width` and
+ * `height` are always present because the page uses them to reserve space —
+ * without them a thirty-six page deck reflows thirty-six times as it loads.
+ */
+export type ResolvedImage = {
+  src: string;
+  srcset?: string;
+  width: number;
+  height: number;
+};
 
-export type ProjectImage = { src: ImageMetadata; alt: string };
+export type ProjectImage = ResolvedImage & { alt: string };
+
+/**
+ * Resolve a stored path.
+ *
+ * `upload` — written by the admin into the uploads directory and served as a
+ * plain file, with its dimensions recorded at the time it was written.
+ *
+ * `asset` — the original arrangement, resolved through the build glob. Kept as
+ * a fallback so a row the migration could not convert still renders instead of
+ * vanishing; `scripts/migrate-images.mjs` moves them across.
+ */
+function resolveImage(
+  slug: string,
+  src: string | null | undefined,
+  storage: unknown,
+  width: unknown,
+  height: unknown,
+): ResolvedImage | undefined {
+  if (!src) return undefined;
+
+  if (storage === 'upload') {
+    const w = Number(width) || 0;
+    const h = Number(height) || 0;
+    // A row with no dimensions would render an image the layout cannot
+    // reserve space for. Treat it as unresolved so the warning names it.
+    if (w === 0 || h === 0) return undefined;
+    return { src, srcset: srcsetFor(src, w), width: w, height: h };
+  }
+
+  const file = src.replace(/^\.\//, '').replace(/^\//, '');
+  const meta = IMAGES[`/src/content/projects/${slug}/${file}`]?.default;
+  if (!meta) return undefined;
+  return { src: meta.src, width: meta.width, height: meta.height };
+}
 
 export type ProjectData = {
   title: string;
@@ -64,18 +107,25 @@ export type ProjectData = {
   outcome?: string;
   testimonial?: { quote: string; name?: string; role?: string };
   pdf?: string;
-  cover?: ImageMetadata;
+  cover?: ResolvedImage;
   coverAlt?: string;
   images: ProjectImage[];
 };
 
 export type Project = { id: string; data: ProjectData };
 export type ReadyProject = Project & {
-  data: ProjectData & { cover: ImageMetadata; images: ProjectImage[] };
+  data: ProjectData & { cover: ResolvedImage; images: ProjectImage[] };
 };
 
 type ProjectRow = Record<string, unknown>;
-type ImageRow = { project_slug: string; src: string; alt: string };
+type ImageRow = {
+  project_slug: string;
+  src: string;
+  alt: string;
+  storage: string;
+  width: number | null;
+  height: number | null;
+};
 
 /** A bare domain gets https:// so a link the studio typed by hand still works. */
 const urlize = (value: unknown): string | undefined => {
@@ -96,7 +146,8 @@ export async function getSortedProjects(): Promise<ReadyProject[]> {
   const [rows, imageRows] = await Promise.all([
     query<ProjectRow>(`SELECT * FROM projects ORDER BY sort_order ASC, title ASC`),
     query<ImageRow>(
-      `SELECT project_slug, src, alt FROM project_images ORDER BY project_slug, sort_order ASC`,
+      `SELECT project_slug, src, alt, storage, width, height
+         FROM project_images ORDER BY project_slug, sort_order ASC`,
     ),
   ]);
 
@@ -121,9 +172,18 @@ export async function getSortedProjects(): Promise<ReadyProject[]> {
       continue;
     }
 
-    const cover = resolveImage(slug, opt(row.cover));
+    const cover = resolveImage(
+      slug,
+      opt(row.cover),
+      row.cover_storage,
+      row.cover_width,
+      row.cover_height,
+    );
     const images = (bySlug.get(slug) ?? [])
-      .map((img) => ({ src: resolveImage(slug, img.src), alt: img.alt }))
+      .map((img) => ({
+        ...resolveImage(slug, img.src, img.storage, img.width, img.height),
+        alt: img.alt,
+      }))
       .filter((img): img is ProjectImage => Boolean(img.src));
 
     // Same rule the content-collection version applied: a project without

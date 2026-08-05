@@ -1,5 +1,4 @@
 ---
-import { Picture, getImage } from 'astro:assets';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Lightbox from '@/components/Lightbox.astro';
 import { SITE } from '@/config/site';
@@ -82,12 +81,9 @@ const pages = await Promise.all(
   })),
 );
 
-const viewerPages = await Promise.all(
-  images.map(async (img) => {
-    const full = await getImage({ src: img.src, width: 1600, format: 'webp' });
-    return { src: full.src, alt: img.alt };
-  }),
-);
+// The stored path already points at the widest WebP that was written, so the
+// full-screen viewer uses it directly rather than asking the build for one.
+const viewerPages = images.map((img) => ({ src: img.src, alt: img.alt }));
 
 // Brand links, rendered only when set in the CMS. A social accepts a
 // full link or a bare username (the platform base is prepended); a value
@@ -146,16 +142,10 @@ const specs = [
   ['Pages', `${images.length}`],
 ].filter((row): row is [string, string] => Boolean(row[1]));
 
-// Social card + structured data use the processed cover, cropped to the
-// 1.91:1 ratio large-image cards expect.
-const social = await getImage({
-  src: cover,
-  width: 1200,
-  height: 630,
-  fit: 'cover',
-  format: 'jpeg',
-});
-const socialUrl = new URL(social.src, SITE.url).href;
+// Social card and structured data point at the cover. It is already a served
+// WebP at a known size, so there is nothing to derive — an absolute URL is all
+// the crawlers need, and they crop to their own ratio anyway.
+const socialUrl = new URL(cover.src, SITE.url).href;
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -188,11 +178,10 @@ const jsonLd = {
   ],
 };
 
+// The responsive widths are no longer declared here: each image carries its
+// own srcset, built from the variants actually written to disk at upload, so
+// the page can never advertise a width that returns 404.
 const heroSizes = '(min-width: 1360px) 1232px, 92vw';
-const heroWidths = [720, 1200, 1600];
-// Deck pages are read, not featured — two widths is plenty and keeps the
-// build's transform count in budget.
-const pageWidths = [900, 1400];
 ---
 
 <BaseLayout
@@ -257,15 +246,16 @@ const pageWidths = [900, 1400];
         style={`view-transition-name: work-${project.id}`}
         aria-label={`Open the ${title} presentation, page 1 of ${images.length}`}
       >
-        <Picture
+        <img
           src={hero.src}
-          alt={hero.alt}
-          formats={['webp']}
-          fallbackFormat="webp"
-          widths={heroWidths}
+          srcset={hero.srcset}
           sizes={heroSizes}
+          alt={hero.alt}
+          width={hero.width}
+          height={hero.height}
           loading="eager"
           fetchpriority="high"
+          decoding="async"
           style={heroPlaceholder}
         />
         <span class="page-cue" aria-hidden="true">View full screen</span>
@@ -371,14 +361,15 @@ const pageWidths = [900, 1400];
                   data-open-page={at}
                   aria-label={`Open page ${at + 1} of ${images.length} full screen`}
                 >
-                  <Picture
+                  <img
                     src={img.src}
-                    alt={img.alt}
-                    formats={['webp']}
-                    fallbackFormat="webp"
-                    widths={pageWidths}
+                    srcset={img.srcset}
                     sizes={heroSizes}
+                    alt={img.alt}
+                    width={img.width}
+                    height={img.height}
                     loading="lazy"
+                    decoding="async"
                     style={placeholder}
                   />
                   <span class="page-num" aria-hidden="true">
@@ -406,14 +397,15 @@ const pageWidths = [900, 1400];
                 <li>
                   <a class="project-nav-link" href={`/work/${p.id}/`} data-astro-prefetch>
                     <span class="project-nav-media media">
-                      <Picture
-                        src={p.data.cover}
-                        alt=""
-                        formats={['webp']}
-                        fallbackFormat="webp"
-                        widths={[480, 900]}
+                      <img
+                        src={p.data.cover.src}
+                        srcset={p.data.cover.srcset}
                         sizes="(min-width: 760px) 40vw, 92vw"
+                        alt=""
+                        width={p.data.cover.width}
+                        height={p.data.cover.height}
                         loading="lazy"
+                        decoding="async"
                       />
                     </span>
                     <span class="project-nav-title">{p.data.title}</span>

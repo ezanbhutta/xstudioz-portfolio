@@ -15,7 +15,8 @@
     "ingest": "node scripts/ingest.mjs",
     "export-sql": "node scripts/export-sql.mjs",
     "check-sql": "node scripts/export-sql.mjs --check",
-    "start": "node --env-file-if-exists=.env ./dist/server/entry.mjs"
+    "start": "node --env-file-if-exists=.env ./dist/server/entry.mjs",
+    "migrate-images": "node --env-file=.env --experimental-strip-types scripts/migrate-images.mjs"
   },
   "dependencies": {
     "@astrojs/node": "^9.5.5",

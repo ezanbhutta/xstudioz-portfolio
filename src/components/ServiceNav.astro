@@ -23,8 +23,8 @@ const { current } = Astro.props;
 <nav class="servicenav" aria-label="Services">
   <ul class="servicenav-list container" role="list">
     {
-      ACTIVE_CATEGORIES.map((c) => (
-        <li>
+      ACTIVE_CATEGORIES.map((c, i) => (
+        <li data-reveal style={`--reveal-delay:${i * 45}ms`}>
           <a
             class="servicenav-link"
             href={`/${c.id}/`}

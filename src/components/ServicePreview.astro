@@ -43,7 +43,7 @@ const remaining = projects.length - preview.length;
 
 <section class="preview" aria-labelledby={headingId}>
   <div class="container">
-    <h2 id={headingId} class="preview-title">{category.title}</h2>
+    <h2 id={headingId} class="preview-title" data-reveal>{category.title}</h2>
 
     {
       preview.length > 0 && (
@@ -53,7 +53,7 @@ const remaining = projects.length - preview.length;
       )
     }
 
-    <p class="preview-more">
+    <p class="preview-more" data-reveal>
       <a class="link-arrow" href={`/${category.id}/`} data-astro-prefetch>
         {
           /* Names what is behind the link. A bare "See all" makes the visitor

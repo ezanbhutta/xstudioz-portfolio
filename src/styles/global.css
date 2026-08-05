@@ -562,9 +562,57 @@ p {
   }
 }
 
-/* Cross-document view transitions (progressive enhancement, zero JS) */
+/* ---------------------------------------------------------------------------
+   Cross-document view transitions (progressive enhancement, zero JS).
+
+   Two speeds on purpose. The page itself changes fast — a short fade with a
+   few pixels of drift, enough to feel like a considered change rather than a
+   reload, short enough that nobody waits for it. A named cover moves slower,
+   because that one is the point: click a project and its artwork travels to
+   the top of the case study instead of blinking out and back.
+
+   ProjectCard names the clicked cover at interaction time (see WorkGrid's
+   script) and the case study's hero carries the matching name, so the pair
+   is found automatically. Everything degrades to an ordinary navigation in
+   a browser without the API.
+--------------------------------------------------------------------------- */
 @view-transition {
   navigation: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Every named group (the travelling artwork) gets the studio easing and a
+     duration long enough to read as one continuous object. */
+  ::view-transition-group(*) {
+    animation-duration: var(--duration-slow);
+    animation-timing-function: var(--ease-out);
+  }
+
+  /* The page body is the exception: fast, so navigation never feels laggy. */
+  ::view-transition-group(root) {
+    animation-duration: var(--duration-base);
+  }
+
+  ::view-transition-old(root) {
+    animation: vt-leave 180ms var(--ease-in-out) both;
+  }
+
+  ::view-transition-new(root) {
+    animation: vt-arrive var(--duration-base) var(--ease-out) both;
+  }
+}
+
+@keyframes vt-leave {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

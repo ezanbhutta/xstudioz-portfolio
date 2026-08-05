@@ -1,29 +1,6 @@
 {
   "categories": [
     {
-      "id": "logo-design",
-      "title": "Logo Design",
-      "navLabel": "Logo Design",
-      "description": "Marks that stick. Every logo ships in SVG, PDF and PNG with color and mono versions.",
-      "outcome": "A mark that holds up at 16 pixels and on a shopfront.",
-      "intro": "Most logos fail somewhere: they blur at favicon size, fall apart in one colour, or look like three other businesses in the same category. The work starts from what your brand actually has to survive — a phone screen, an embroidered shirt, a printed invoice — and designs backwards from that.",
-      "deliverables": [
-        "Primary logo, plus a stacked or horizontal lockup where the layout needs one",
-        "Full-colour, single-colour and reversed (light-on-dark) versions",
-        "Vector source files: SVG, PDF and AI",
-        "Transparent PNGs at web and print resolution",
-        "Favicon / app-icon crop",
-        "Clear-space and minimum-size rules"
-      ],
-      "goodFor": [
-        "New businesses naming and launching for the first time",
-        "Established businesses whose mark no longer matches the work",
-        "Founders who need one asset that works everywhere, today"
-      ],
-      "relatedExtras": [],
-      "active": true
-    },
-    {
       "id": "brand-guidelines",
       "title": "Brand Guidelines",
       "navLabel": "Brand Guidelines",
@@ -43,6 +20,29 @@
         "Brands about to hand work to other designers, printers or agencies",
         "Businesses that have outgrown a single logo file",
         "Founders who want the brand to stay consistent as the team grows"
+      ],
+      "relatedExtras": [],
+      "active": true
+    },
+    {
+      "id": "logo-design",
+      "title": "Logo Design",
+      "navLabel": "Logo Design",
+      "description": "Marks that stick. Every logo ships in SVG, PDF and PNG with color and mono versions.",
+      "outcome": "A mark that holds up at 16 pixels and on a shopfront.",
+      "intro": "Most logos fail somewhere: they blur at favicon size, fall apart in one colour, or look like three other businesses in the same category. The work starts from what your brand actually has to survive — a phone screen, an embroidered shirt, a printed invoice — and designs backwards from that.",
+      "deliverables": [
+        "Primary logo, plus a stacked or horizontal lockup where the layout needs one",
+        "Full-colour, single-colour and reversed (light-on-dark) versions",
+        "Vector source files: SVG, PDF and AI",
+        "Transparent PNGs at web and print resolution",
+        "Favicon / app-icon crop",
+        "Clear-space and minimum-size rules"
+      ],
+      "goodFor": [
+        "New businesses naming and launching for the first time",
+        "Established businesses whose mark no longer matches the work",
+        "Founders who need one asset that works everywhere, today"
       ],
       "relatedExtras": [],
       "active": true

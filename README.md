@@ -46,18 +46,28 @@ Two rules the code enforces, so they survive future edits:
 
 ### The homepage sections
 
-The homepage is one section per service, in the order they appear in
-`src/data/categories.json`. Each section carries its own heading, its own
-filters and its own grid, and filters independently of its neighbours.
+The homepage is one section per service **that has published work**, in the
+order those services appear in `src/data/categories.json`. Each section
+carries its own heading, its own filters and its own grid, and filters
+independently of its neighbours.
 
-A service with no published projects renders as a quiet, unclickable heading
-with *Coming soon* beside it and nothing under it. It is not a link and it
-does not advertise a zero. The moment a project is tagged to that service, the
-section fills in on the next build — heading, filters and grid — with no other
-edit needed.
+**The running order is a content edit.** Whichever service is listed first in
+`categories.json` opens the portfolio, so the strongest body of work leads by
+being listed first — no code involved. That order also drives navigation, the
+footer and the services hub, so all four agree.
 
-Note that a service page at `/<id>/` can still show work when the homepage
-section is empty: `/stationery/` and `/social-media/` pull in guideline
+Services with nothing published do **not** get a section. They are named
+together in one line under the last grid — *"Also offered — no case study
+published yet"* — each linking to its own service page. Three empty headings
+in a row cost more attention than they return, and a visitor met them at
+exactly the moment they were deciding whether to message.
+
+Tag a project to one of those services and it grows a full section on the
+next build — heading, filters, grid — and drops out of the line automatically.
+Nothing else needs editing.
+
+Note that a service page at `/<id>/` can still show work when it has no
+homepage section: `/stationery/` and `/social-media/` pull in guideline
 projects that included them as extras (see `relatedExtras` below). The
 homepage section counts only projects filed under the service itself.
 

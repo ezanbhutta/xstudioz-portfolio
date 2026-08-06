@@ -37,9 +37,15 @@ export const GET: APIRoute = async () => {
     `port: ${process.env.PORT ?? '(unset, using 3000)'}`,
     '',
     'Environment:',
-    ...['DB_HOST', 'DB_PORT', 'DB_USER', 'DB_NAME', 'DB_PASSWORD', 'ADMIN_PASSWORD', 'SESSION_SECRET'].map(
-      (n) => `  ${shown(n)}`,
-    ),
+    ...[
+      'DB_HOST',
+      'DB_PORT',
+      'DB_USER',
+      'DB_NAME',
+      'DB_PASSWORD',
+      'ADMIN_PASSWORD',
+      'SESSION_SECRET',
+    ].map((n) => `  ${shown(n)}`),
     '',
     'Database:',
   ];
@@ -47,11 +53,7 @@ export const GET: APIRoute = async () => {
   try {
     const rows = await query<{ n: number }>('SELECT COUNT(*) AS n FROM projects');
     const images = await query<{ n: number }>('SELECT COUNT(*) AS n FROM project_images');
-    lines.push(
-      '  CONNECTED',
-      `  projects: ${rows[0]?.n ?? 0}`,
-      `  images:   ${images[0]?.n ?? 0}`,
-    );
+    lines.push('  CONNECTED', `  projects: ${rows[0]?.n ?? 0}`, `  images:   ${images[0]?.n ?? 0}`);
   } catch (error) {
     const e = error as { code?: string; errno?: number; sqlMessage?: string; message?: string };
     lines.push(

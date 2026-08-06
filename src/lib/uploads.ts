@@ -15,7 +15,9 @@
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import sharp from 'sharp';
+// sharp is imported inside writeImage: it is a native module, and keeping it
+// off the server's startup path means a runtime that cannot load it still
+// serves every page instead of failing to boot.
 
 /** The widths the case study and the grid actually request. */
 export const WIDTHS = [640, 1024, 1600] as const;
@@ -63,6 +65,7 @@ export async function writeImage(
 ): Promise<WrittenImage> {
   const safeSlug = safeSegment(slug);
   const safeBase = safeSegment(basename);
+  const { default: sharp } = await import('sharp');
   const dir = path.join(uploadsDir(), safeSlug);
   await mkdir(dir, { recursive: true });
 

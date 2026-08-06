@@ -25,6 +25,15 @@ export default defineConfig({
     // Set here rather than via a HOST environment variable so it cannot be
     // forgotten when the app moves.
     host: true,
+
+    // The port to fall back to when the platform does not set PORT.
+    //
+    // `process.env.PORT` still wins at runtime — this is only the default, and
+    // it is 3000 rather than Astro's 4321 because 3000 is what Node hosts
+    // proxy to by convention, Hostinger included. Listening on the wrong port
+    // fails exactly like binding the wrong host: the process is healthy, the
+    // build is green, and nothing can reach it.
+    port: 3000,
   },
   security: {
     // Astro's own check compares the Origin header against `site`, which is

@@ -7,9 +7,13 @@
  * a buffer and returns buffers, because an HTTP upload has no folder yet and
  * nothing should touch disk until the pages have actually rendered.
  */
-import sharp from 'sharp';
-import { createCanvas } from '@napi-rs/canvas';
-import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
+// Imported inside the functions, not at the top.
+//
+// `@napi-rs/canvas` and `sharp` are native modules that need system libraries
+// present at load time. Importing them here puts them on the server's startup
+// path, so a runtime missing one of those libraries kills the process before
+// any of this code runs — no page, no log, no error anyone can read. Nothing
+// about serving a page needs them; only rendering an upload does.
 
 /** Matches the build: wide enough for a 2× retina read at display size. */
 const PAGE_WIDTH = 1600;
@@ -33,6 +37,10 @@ export type RenderedPage = { index: number; png: Buffer };
  * which is what exhausted the builder on this project before.
  */
 export async function renderPdf(data: Buffer): Promise<RenderedPage[]> {
+  const [{ createCanvas }, { getDocument }] = await Promise.all([
+    import('@napi-rs/canvas'),
+    import('pdfjs-dist/legacy/build/pdf.mjs'),
+  ]);
   const task = getDocument({
     data: new Uint8Array(data),
     // A PDF is an untrusted upload. Never let it execute anything.
@@ -88,6 +96,7 @@ export async function renderPdf(data: Buffer): Promise<RenderedPage[]> {
  * else keeps its own proportions — a logo sheet cropped to 16:9 loses the mark.
  */
 export async function makeCover(pageOne: Buffer, category: string): Promise<Buffer> {
+  const { default: sharp } = await import('sharp');
   const image = sharp(pageOne);
   if (category === 'brand-guidelines') {
     return image

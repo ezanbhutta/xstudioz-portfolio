@@ -1,4 +1,3 @@
-import sharp from 'sharp';
 import path from 'node:path';
 import { uploadsDir } from './uploads';
 
@@ -32,12 +31,17 @@ export function lqip(src: string): Promise<string | null> {
 
   let hit = cache.get(file);
   if (!hit) {
-    hit = sharp(file)
-      .resize(16)
-      .webp({ quality: 30 })
-      .toBuffer()
-      .then((buffer) => `data:image/webp;base64,${buffer.toString('base64')}`)
-      // A missing or unreadable file costs one placeholder, never the page.
+    // Native module, loaded on demand — a placeholder is a nicety, and it must
+    // never be the reason the server cannot start.
+    hit = import('sharp')
+      .then(({ default: sharp }) =>
+        sharp(file)
+          .resize(16)
+          .webp({ quality: 30 })
+          .toBuffer()
+          .then((buffer) => `data:image/webp;base64,${buffer.toString('base64')}`),
+      )
+      // A missing file, or a sharp that will not load, costs one placeholder.
       .catch(() => null);
     cache.set(file, hit);
   }

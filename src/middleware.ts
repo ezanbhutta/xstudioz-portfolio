@@ -9,6 +9,7 @@
 import { defineMiddleware } from 'astro:middleware';
 import { isSignedIn, COOKIE_NAME } from '@/lib/auth';
 import { readUpload } from '@/lib/uploads';
+import { healthReport } from '@/lib/health';
 
 /** The only /admin/ paths reachable without a session. */
 const PUBLIC_ADMIN_PATHS = new Set(['/admin/login', '/admin/login/']);
@@ -52,6 +53,21 @@ const TYPES: Record<string, string> = {
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const path = context.url.pathname;
+
+  /**
+   * Health check, answered before routing.
+   *
+   * The platform requests exactly `/health`, does not follow redirects, and
+   * fails the deployment on anything that is not a 200. With
+   * `trailingSlash: 'always'` a page at this path answers `/health/` and
+   * redirects `/health` — so the app started correctly and the deployment was
+   * failed anyway, six times, by a 301 nobody could see.
+   *
+   * Both spellings answer here, ahead of the redirect that caused it.
+   */
+  if (path === '/health' || path === '/health/') {
+    return healthReport();
+  }
 
   /**
    * Uploaded images, served before routing.

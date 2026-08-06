@@ -14,9 +14,14 @@
  * is, which is enough to catch the common causes (missing, empty, or a value
  * with a stray space or quote) without exposing the value itself. It is
  * unauthenticated because the failure it diagnoses can prevent signing in.
+ *
+ * Served from middleware rather than as a page. The site sets
+ * `trailingSlash: 'always'`, so a page here answers `/health/` and redirects
+ * `/health` — and Hostinger's deployment health check requests exactly
+ * `/health`, does not follow redirects, and fails the deployment on anything
+ * that is not a 200. Six deployments failed on that redirect.
  */
-import type { APIRoute } from 'astro';
-import { query } from '@/lib/db';
+import { query } from './db';
 
 const shown = (name: string) => {
   const value = process.env[name];
@@ -29,7 +34,7 @@ const shown = (name: string) => {
   return `${name}: set (${notes.join(', ')})`;
 };
 
-export const GET: APIRoute = async () => {
+export async function healthReport(): Promise<Response> {
   const lines: string[] = [
     'XStudioz portfolio — status',
     `time: ${new Date().toISOString()}`,
@@ -76,4 +81,4 @@ export const GET: APIRoute = async () => {
       'X-Robots-Tag': 'noindex, nofollow',
     },
   });
-};
+}

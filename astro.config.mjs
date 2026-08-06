@@ -13,6 +13,19 @@ export default defineConfig({
   // opens to the internet.
   output: 'server',
   adapter: node({ mode: 'standalone' }),
+  server: {
+    // Bind 0.0.0.0, not localhost.
+    //
+    // The standalone server takes its host from `server.host` here, not from
+    // an option on the adapter. The default, localhost, is right for a laptop
+    // and wrong for any host that puts a proxy in front of the process: the
+    // server starts, answers nothing the proxy can reach, and the platform
+    // reports a failed deployment underneath a build log that succeeded.
+    //
+    // Set here rather than via a HOST environment variable so it cannot be
+    // forgotten when the app moves.
+    host: true,
+  },
   security: {
     // Astro's own check compares the Origin header against `site`, which is
     // the production URL. That makes every POST fail anywhere else — on

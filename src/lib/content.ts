@@ -112,6 +112,16 @@ export type ProjectData = {
   images: ProjectImage[];
 };
 
+/**
+ * The last database failure, for /health to report.
+ *
+ * The alternative is asking someone to find a stack trace in a hosting panel
+ * that may not surface one at all — which is exactly the position this project
+ * spent four deployments in.
+ */
+let lastDatabaseError: string | null = null;
+export const databaseError = () => lastDatabaseError;
+
 export type Project = { id: string; data: ProjectData };
 export type ReadyProject = Project & {
   data: ProjectData & { cover: ResolvedImage; images: ProjectImage[] };
@@ -143,13 +153,28 @@ const urlize = (value: unknown): string | undefined => {
  * memory.
  */
 export async function getSortedProjects(): Promise<ReadyProject[]> {
-  const [rows, imageRows] = await Promise.all([
-    query<ProjectRow>(`SELECT * FROM projects ORDER BY sort_order ASC, title ASC`),
-    query<ImageRow>(
-      `SELECT project_slug, src, alt, storage, width, height
-         FROM project_images ORDER BY project_slug, sort_order ASC`,
-    ),
-  ]);
+  let rows: ProjectRow[];
+  let imageRows: ImageRow[];
+
+  try {
+    [rows, imageRows] = await Promise.all([
+      query<ProjectRow>(`SELECT * FROM projects ORDER BY sort_order ASC, title ASC`),
+      query<ImageRow>(
+        `SELECT project_slug, src, alt, storage, width, height
+           FROM project_images ORDER BY project_slug, sort_order ASC`,
+      ),
+    ]);
+  } catch (error) {
+    // An unreachable database used to take every page down with it, which on a
+    // platform that health-checks the site reads as a failed deployment and
+    // hides the actual error. Rendering an empty portfolio is wrong, but it is
+    // visibly wrong and it keeps the process up — including /health, which
+    // says what went wrong in plain words.
+    lastDatabaseError = error instanceof Error ? error.message : String(error);
+    console.error('[content] Database unreachable — serving an empty portfolio:', error);
+    return [];
+  }
+  lastDatabaseError = null;
 
   const bySlug = new Map<string, ImageRow[]>();
   for (const row of imageRows) {

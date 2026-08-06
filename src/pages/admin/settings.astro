@@ -1,0 +1,77 @@
+---
+/**
+ * Brand and links.
+ *
+ * Rendered from the rows that exist rather than a hardcoded field list, so a
+ * setting added to the database appears here without a code change. The labels
+ * and hints below are the ones the old CMS showed; a key with no entry falls
+ * back to its own name, which is ugly but never hides a field.
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import { listSettings, saveSettings } from '@/lib/admin-data';
+
+const META: Record<string, { label: string; hint?: string; multiline?: boolean }> = {
+  name: { label: 'Studio name' },
+  url: {
+    label: 'Production URL',
+    hint: 'No trailing slash. Canonicals, the sitemap and social cards all derive from it — if this is wrong, search engines are told the wrong address.',
+  },
+  headline: {
+    label: 'Homepage headline',
+    hint: 'The one line a first-time visitor reads. Say what they get, not what you do.',
+  },
+  lede: {
+    label: 'Homepage paragraph',
+    hint: 'Two lines under the headline. Concrete: what is designed, and what is handed over.',
+    multiline: true,
+  },
+  tagline: { label: 'Tagline' },
+  description: { label: 'Site description', multiline: true },
+  fiverrUrl: {
+    label: 'Fiverr profile URL',
+    hint: 'Every "Hire on Fiverr" button on the site points here.',
+  },
+  linkedinUrl: {
+    label: 'Studio LinkedIn URL',
+    hint: 'When filled, "Connect on LinkedIn" appears site-wide. Empty hides it.',
+  },
+  behanceUrl: { label: 'Behance URL', hint: 'Optional. Footer only when filled.' },
+  instagramUrl: { label: 'Instagram URL', hint: 'Optional. Footer only when filled.' },
+  locale: { label: 'Locale' },
+};
+
+let saved = false;
+if (Astro.request.method === 'POST') {
+  await saveSettings(await Astro.request.formData());
+  saved = true;
+}
+
+const settings = await listSettings();
+---
+
+<AdminLayout title="Settings">
+  <h1>Brand &amp; links</h1>
+  <p class="sub">Used across every page. Changes are live immediately.</p>
+
+  {saved && <p class="flash ok">Saved. Live now.</p>}
+
+  <form method="POST">
+    {
+      settings.map(({ setting_key, setting_value }) => {
+        const meta = META[setting_key] ?? { label: setting_key };
+        return (
+          <label>
+            <span class="lab">{meta.label}</span>
+            {meta.hint && <span class="hint">{meta.hint}</span>}
+            {meta.multiline ? (
+              <textarea name={setting_key}>{setting_value}</textarea>
+            ) : (
+              <input type="text" name={setting_key} value={setting_value} />
+            )}
+          </label>
+        );
+      })
+    }
+    <button class="btn" type="submit">Save</button>
+  </form>
+</AdminLayout>

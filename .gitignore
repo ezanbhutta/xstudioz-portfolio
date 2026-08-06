@@ -14,3 +14,9 @@ npm-debug.log*
 !.env.example
 # macOS-specific files
 .DS_Store
+.env
+
+# Uploaded portfolio images. Written at runtime into public_html/uploads on
+# the host, which survives redeploys; keeping them in git would put the 62 MB
+# back that the migration just took out.
+public/uploads/

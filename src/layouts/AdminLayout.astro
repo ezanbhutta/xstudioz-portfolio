@@ -1,0 +1,315 @@
+---
+/**
+ * Chrome for the admin.
+ *
+ * Deliberately not BaseLayout: the public layout carries the site header,
+ * footer, analytics, structured data and social tags, none of which belong on
+ * a page that only one person ever sees and that search engines must never
+ * index. It borrows the design tokens so the admin still looks like this
+ * studio's tool rather than a generic form.
+ */
+// tokens.css for the colour, type and control variables; global.css because
+// the @font-face rules live there and the admin should render in the studio's
+// own typefaces rather than a system fallback.
+import '@/styles/tokens.css';
+import '@/styles/global.css';
+
+interface Props {
+  title: string;
+  /** Hidden on the login screen, which has nothing to navigate to yet. */
+  nav?: boolean;
+}
+
+const { title, nav = true } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} · XStudioz admin</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    {
+      nav && (
+        <header class="bar">
+          <a class="brand" href="/admin/">
+            XStudioz admin
+          </a>
+          <nav>
+            <a href="/admin/">Projects</a>
+            <a href="/admin/settings/">Settings</a>
+            <a href="/" target="_blank" rel="noopener">
+              View site ↗
+            </a>
+            <form method="POST" action="/admin/logout/">
+              <button type="submit" class="link">
+                Sign out
+              </button>
+            </form>
+          </nav>
+        </header>
+      )
+    }
+    <main class:list={['wrap', !nav && 'centered']}>
+      <slot />
+    </main>
+
+    <style is:global>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--color-paper);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        font-size: 15px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--color-accent);
+      }
+
+      .bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.85rem 1.25rem;
+        border-bottom: 1px solid var(--color-line);
+        background: var(--color-paper-raised);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .brand {
+        font-family: var(--font-display);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-decoration: none;
+        color: var(--color-ink);
+      }
+      .bar nav {
+        display: flex;
+        gap: 1.1rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .bar nav a,
+      .bar .link {
+        color: var(--color-ink-soft);
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+      .bar nav a:hover,
+      .bar .link:hover {
+        color: var(--color-ink);
+      }
+      .bar form {
+        display: inline;
+      }
+      .link {
+        background: none;
+        border: 0;
+        padding: 0;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .wrap {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 5rem;
+      }
+      .centered {
+        max-width: 380px;
+        padding-top: 12vh;
+      }
+
+      h1 {
+        font-family: var(--font-display);
+        font-size: 1.6rem;
+        margin: 0 0 0.35rem;
+      }
+      .sub {
+        color: var(--color-ink-mute);
+        margin: 0 0 2rem;
+      }
+
+      /* Forms. No precedent existed in the public site — it has no forms —
+         so this is the admin's own small system, built on the shared tokens. */
+      label {
+        display: block;
+        margin-bottom: 1.2rem;
+      }
+      .lab {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+      }
+      .hint {
+        display: block;
+        color: var(--color-ink-mute);
+        font-size: 0.83rem;
+        margin-bottom: 0.4rem;
+      }
+      input[type='text'],
+      input[type='password'],
+      input[type='number'],
+      input[type='url'],
+      select,
+      textarea {
+        width: 100%;
+        padding: 0.55rem 0.7rem;
+        border: 1px solid var(--color-line-control);
+        border-radius: 8px;
+        background: var(--color-paper-raised);
+        color: var(--color-ink);
+        font: inherit;
+      }
+      textarea {
+        min-height: 5.5rem;
+        resize: vertical;
+      }
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 1px;
+      }
+      .err {
+        color: #d33;
+        font-size: 0.83rem;
+        margin-top: 0.3rem;
+      }
+      input[aria-invalid='true'],
+      select[aria-invalid='true'],
+      textarea[aria-invalid='true'] {
+        border-color: #d33;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        height: var(--control-h);
+        padding: 0 1.1rem;
+        border: 0;
+        border-radius: 999px;
+        background: var(--color-accent);
+        color: #fff;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      .btn:hover {
+        background: var(--color-accent-deep);
+      }
+      .btn.ghost {
+        background: transparent;
+        color: var(--color-ink);
+        border: 1px solid var(--color-line-strong);
+      }
+      .btn.danger {
+        background: transparent;
+        color: #d33;
+        border: 1px solid #d33;
+      }
+      .btn.danger:hover {
+        background: #d33;
+        color: #fff;
+      }
+
+      .row {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0 1rem;
+      }
+
+      fieldset {
+        border: 1px solid var(--color-line);
+        border-radius: 12px;
+        padding: 1.2rem 1.2rem 0.2rem;
+        margin: 0 0 1.6rem;
+      }
+      legend {
+        font-family: var(--font-display);
+        font-weight: 600;
+        padding: 0 0.4rem;
+      }
+      .legend-note {
+        color: var(--color-ink-mute);
+        font-size: 0.83rem;
+        margin: -0.4rem 0 1.1rem;
+      }
+
+      .checks {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.4rem 1rem;
+        margin-bottom: 1.2rem;
+      }
+      .checks label {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        margin: 0;
+        font-weight: 400;
+      }
+      .checks input {
+        width: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.7rem 0.6rem;
+        border-bottom: 1px solid var(--color-line);
+      }
+      th {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--color-ink-mute);
+      }
+      td.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .flash {
+        padding: 0.7rem 0.9rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        border: 1px solid;
+      }
+      .flash.ok {
+        border-color: #2a7;
+        background: color-mix(in srgb, #2a7 10%, transparent);
+      }
+      .flash.bad {
+        border-color: #d33;
+        background: color-mix(in srgb, #d33 10%, transparent);
+      }
+    </style>
+  </body>
+</html>

@@ -6,7 +6,20 @@ import { SITE } from './src/config/site';
 
 export default defineConfig({
   site: SITE.url,
-  trailingSlash: 'always',
+  // 'ignore' rather than 'always'.
+  //
+  // 'always' makes Astro answer any unslashed path with a 301 before routing,
+  // before static assets, and before middleware — nothing in the app can
+  // intercept it. Hostinger's deployment health check requests exactly
+  // `/health`, does not follow redirects, and fails the deployment on any
+  // non-200, so six deployments were failed by that redirect while the app
+  // itself was starting and serving correctly.
+  //
+  // 'ignore' serves both spellings instead of enforcing one. Every link and
+  // sitemap entry this site generates still carries the trailing slash, so the
+  // canonical form is unchanged — Astro simply stops turning the other one
+  // into a redirect the platform reads as a failure.
+  trailingSlash: 'ignore',
   // Server-rendered so a content edit is live on the next request rather than
   // the next build. Hostinger runs the Node process on the same machine as
   // MySQL, so the database is reached over localhost and port 3306 never

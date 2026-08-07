@@ -21,7 +21,9 @@
  * `/health`, does not follow redirects, and fails the deployment on anything
  * that is not a 200. Six deployments failed on that redirect.
  */
+import { existsSync } from 'node:fs';
 import { query } from './db';
+import { uploadsDir } from './uploads';
 
 const shown = (name: string) => {
   const value = process.env[name];
@@ -50,7 +52,21 @@ export async function healthReport(): Promise<Response> {
       'DB_PASSWORD',
       'ADMIN_PASSWORD',
       'SESSION_SECRET',
+      'UPLOADS_DIR',
     ].map((n) => `  ${shown(n)}`),
+    '',
+    // The resolved path, not just the variable.
+    //
+    // UPLOADS_DIR falls back to `path.resolve('public/uploads')`, which is
+    // relative to the working directory the process was launched from — so
+    // leaving it unset does not fail, it silently points somewhere inside the
+    // deployed app. Every uploaded image then 404s, and the next deploy erases
+    // the originals. Printing where it actually landed, and whether anything
+    // is there, is the only way to see that before it costs the portfolio.
+    'Uploads:',
+    `  resolved: ${uploadsDir()}`,
+    `  exists:   ${existsSync(uploadsDir()) ? 'yes' : 'NO — uploaded images will 404'}`,
+    `  cwd:      ${process.cwd()}`,
     '',
     'Database:',
   ];

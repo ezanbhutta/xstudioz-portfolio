@@ -15,6 +15,7 @@
     "ingest": "node scripts/ingest.mjs",
     "export-sql": "node scripts/export-sql.mjs",
     "check-sql": "node scripts/export-sql.mjs --check",
+    "admin-secret": "node -e \"console.log(require('node:crypto').randomBytes(32).toString('hex'))\"",
     "start": "node ./dist/server/entry.mjs",
     "migrate-images": "node --env-file=.env --experimental-strip-types scripts/migrate-images.mjs",
     "start:local": "node --env-file=.env ./dist/server/entry.mjs"

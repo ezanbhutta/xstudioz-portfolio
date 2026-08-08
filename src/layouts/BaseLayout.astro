@@ -88,6 +88,24 @@ const ogImageUrl = ogImage ?? new URL('/og.png', SITE.url).href;
       // Marks JS availability before first paint so reveal styles only apply
       // when the observer that resolves them is guaranteed to run.
       document.documentElement.classList.add('js');
+
+      // Restore a chosen theme before the first pixel.
+      //
+      // This has to be inline, in <head>, and synchronous. A module script is
+      // deferred until after the document parses, which is long after the
+      // browser has painted — so someone who chose light would watch the page
+      // load black and then flip. The flash is the whole bug; everything else
+      // about this feature is styling.
+      //
+      // Nothing is written here when no choice is stored, which leaves the
+      // root following `prefers-color-scheme` on its own.
+      try {
+        var t = localStorage.getItem('xs-theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {
+        // Storage can throw outright in private modes. Falling through means
+        // the system preference decides, which is a fine answer.
+      }
     </script>
   </head>
   <body>

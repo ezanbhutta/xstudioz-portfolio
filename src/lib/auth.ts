@@ -85,27 +85,56 @@ export function checkPassword(submitted: string): boolean {
   return safeEqual(submitted, authConfig().password);
 }
 
+/**
+ * Send the cookie over HTTPS only — except on a loopback address.
+ *
+ * `secure` was unconditional, which meant the browser accepted the redirect
+ * after a correct password and then threw the cookie away, because it will not
+ * store a Secure cookie from an http:// origin. The next request arrived
+ * signed out and bounced back to the login form. The admin was therefore
+ * impossible to open on `astro dev` or any local build: correct password,
+ * no error message, straight back to the password box.
+ *
+ * Loopback is the one origin where this is safe to relax. There is no network
+ * hop to intercept, browsers already treat 127.0.0.1 and localhost as secure
+ * contexts for exactly this reason, and any real deployment — including a
+ * staging box on a LAN — is not loopback and still gets Secure. A blanket
+ * `secure: !import.meta.env.PROD` would have been the easy version and would
+ * have shipped a session cookie in the clear to anyone who ran a production
+ * build behind plain HTTP.
+ */
+function isLoopback(url: URL): boolean {
+  return url.hostname === '127.0.0.1' || url.hostname === '::1' || url.hostname === 'localhost';
+}
+
+function cookieOptions(url: URL, maxAge: number) {
+  return {
+    httpOnly: true, // unreachable from JavaScript, so an XSS cannot steal it
+    secure: url.protocol === 'https:' || !isLoopback(url),
+    sameSite: 'lax' as const, // a cross-site POST cannot ride the session
+    path: '/',
+    maxAge,
+  };
+}
+
 /** The Set-Cookie value for a fresh session. */
-export function sessionCookie(): { name: string; value: string; options: Record<string, unknown> } {
+export function sessionCookie(url: URL): {
+  name: string;
+  value: string;
+  options: Record<string, unknown>;
+} {
   const expiresAt = Date.now() + MAX_AGE_SECONDS * 1000;
   return {
     name: COOKIE,
     value: sign(expiresAt, authConfig().secret),
-    options: {
-      httpOnly: true, // unreachable from JavaScript, so an XSS cannot steal it
-      secure: true, // HTTPS only
-      sameSite: 'lax' as const, // a cross-site POST cannot ride the session
-      path: '/',
-      maxAge: MAX_AGE_SECONDS,
-    },
+    options: cookieOptions(url, MAX_AGE_SECONDS),
   };
 }
 
-export const clearedCookie = {
-  name: COOKIE,
-  value: '',
-  options: { httpOnly: true, secure: true, sameSite: 'lax' as const, path: '/', maxAge: 0 },
-};
+/** Clearing has to match the flags it was set with, or the browser keeps it. */
+export function clearedCookie(url: URL) {
+  return { name: COOKIE, value: '', options: cookieOptions(url, 0) };
+}
 
 /** Is this request signed in? */
 export function isSignedIn(cookieValue: string | undefined): boolean {

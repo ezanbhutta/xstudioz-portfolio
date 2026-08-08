@@ -1,0 +1,863 @@
+---
+/**
+ * The deck: upload it, then manage the pages in it.
+ *
+ * What this replaces was a file input and a submit button at the very bottom
+ * of a four-thousand-pixel form, below the save button, with the note "a long
+ * deck can take a minute; do not close the tab". There was no way to see the
+ * pages, so there was no way to fix one. A single wrong page meant re-exporting
+ * the PDF and re-uploading all thirty-six.
+ *
+ * Three things follow from that:
+ *
+ *   - The pages are visible. You cannot manage what you cannot see, and a deck
+ *     is the actual deliverable on a case study page.
+ *   - Upload reports progress. "Do not close the tab" is what you write when
+ *     the interface cannot say how far along it is; a 60 MB file over a slow
+ *     connection is minutes of nothing.
+ *   - Adding pages does not mean replacing the deck. Append is a separate
+ *     choice, because "I have three more slides" and "here is the new deck"
+ *     are different sentences.
+ *
+ * Every page operation saves on the spot. This section is deliberately not
+ * part of the surrounding form: dragging a page and then losing it because you
+ * navigated away without pressing Save would be indefensible, and nesting a
+ * second form inside the first is invalid HTML anyway.
+ */
+import type { DeckPage } from '@/lib/deck';
+
+interface Props {
+  slug: string;
+  pages: DeckPage[];
+  /** Filename of the PDF this deck came from, when one is recorded. */
+  pdf?: string | null;
+}
+
+const { slug, pages, pdf } = Astro.props;
+---
+
+<section class="deck" data-deck data-slug={slug} aria-labelledby="deck-heading">
+  <div class="deck-head">
+    <div>
+      <h2 id="deck-heading">The deck</h2>
+      <p class="deck-sub">
+        {
+          pages.length === 0
+            ? 'No pages yet. Upload a PDF and every page becomes a page of the case study.'
+            : `${pages.length} page${pages.length === 1 ? '' : 's'}. Drag to reorder — each change saves immediately.`
+        }
+        {pdf && <span class="deck-pdf">From {pdf}</span>}
+      </p>
+    </div>
+  </div>
+
+  {/* --- Upload ---------------------------------------------------------- */}
+  <form
+    class="up"
+    method="POST"
+    action={`/admin/project/${slug}/upload/`}
+    enctype="multipart/form-data"
+    data-up
+  >
+    <div class="up-drop" data-drop>
+      <input
+        class="up-file"
+        type="file"
+        name="pdf"
+        id="deck-pdf"
+        accept="application/pdf,.pdf"
+        required
+        data-file
+      />
+      <label class="up-label" for="deck-pdf">
+        <span class="up-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="26" height="26">
+            <path
+              d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"></path>
+          </svg>
+        </span>
+        <span class="up-text">
+          <strong data-drop-name>Choose a PDF</strong>
+          <span class="up-hint">or drop one here · 60 MB max</span>
+        </span>
+      </label>
+    </div>
+
+    <fieldset class="up-mode">
+      <legend class="up-legend">What to do with it</legend>
+      <label class="up-radio">
+        <input type="radio" name="mode" value="replace" checked />
+        <span>
+          <strong>Replace the deck</strong>
+          <span class="up-note">
+            {
+              pages.length > 0
+                ? `Removes all ${pages.length} pages and rebuilds the cover.`
+                : 'Builds the deck and its cover.'
+            }
+          </span>
+        </span>
+      </label>
+      <label class="up-radio">
+        <input type="radio" name="mode" value="append" disabled={pages.length === 0} />
+        <span>
+          <strong>Add to the end</strong>
+          <span class="up-note">
+            {
+              pages.length === 0
+                ? 'Nothing to add to yet.'
+                : 'Keeps the pages and cover already here.'
+            }
+          </span>
+        </span>
+      </label>
+    </fieldset>
+
+    <div class="up-go">
+      <button class="btn" type="submit" data-up-submit>Upload</button>
+      {/* Only meaningful once JS is driving the request. */}
+      <div class="up-prog" data-prog hidden>
+        <div class="up-bar"><span data-bar></span></div>
+        <p class="up-stat" data-stat></p>
+      </div>
+    </div>
+    <p class="up-warn" data-up-nojs>
+      Large decks take a minute or two to render. Keep this tab open until it finishes.
+    </p>
+  </form>
+
+  {/* --- Pages ----------------------------------------------------------- */}
+  {
+    pages.length > 0 && (
+      <>
+        <p class="deck-help" id="deck-help">
+          Drag a page to move it. With the keyboard: focus a page, press Space to pick it up, arrow
+          keys to move, Space to drop.
+        </p>
+
+        <ol class="pages" data-pages aria-describedby="deck-help">
+          {pages.map((page, i) => (
+            <li
+              class="page"
+              draggable="true"
+              tabindex="0"
+              data-page
+              data-src={page.src}
+              aria-label={`Page ${i + 1}`}
+            >
+              <span class="page-no" data-no aria-hidden="true">
+                {i + 1}
+              </span>
+
+              {page.display ? (
+                <img
+                  class="page-img"
+                  src={page.display.src}
+                  srcset={page.display.srcset}
+                  sizes="180px"
+                  width={page.display.width}
+                  height={page.display.height}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                /* The row exists but its file does not resolve. Saying so beats
+                   a broken-image icon, which looks like the admin is broken. */
+                <span class="page-missing">Image missing</span>
+              )}
+
+              <div class="page-tools">
+                <button
+                  class="page-btn"
+                  type="button"
+                  data-alt-open
+                  aria-label={`Describe page ${i + 1}`}
+                  title="Description"
+                >
+                  <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                    <path
+                      d="M4 6h16M4 12h16M4 18h10"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </button>
+                <button
+                  class="page-btn page-btn--danger"
+                  type="button"
+                  data-del
+                  aria-label={`Delete page ${i + 1}`}
+                  title="Delete"
+                >
+                  <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                    <path
+                      d="M5 7h14M10 7V5h4v2m-7 0 1 12h8l1-12"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <label class="page-alt" hidden data-alt-wrap>
+                <span class="page-alt-label">What is on this page?</span>
+                <textarea class="page-alt-input" rows="2" data-alt maxlength="400">
+                  {page.alt}
+                </textarea>
+              </label>
+            </li>
+          ))}
+        </ol>
+      </>
+    )
+  }
+
+  {
+    /* Every operation reports here, once, for people who cannot see the grid
+      rearrange itself. */
+  }
+  <p class="deck-live" role="status" aria-live="polite" data-live></p>
+</section>
+
+<script>
+  /**
+   * Deck management.
+   *
+   * Reorder, delete and describe all POST to /admin/project/<slug>/pages/ and
+   * save on the spot. Upload goes over XHR purely for `upload.onprogress` —
+   * fetch() still cannot report how many bytes have been sent, and on a 60 MB
+   * PDF that is the difference between a progress bar and a frozen tab.
+   */
+  type Deck = HTMLElement & { dataset: { slug: string } };
+
+  for (const deck of document.querySelectorAll<Deck>('[data-deck]')) {
+    const slug = deck.dataset.slug;
+    const live = deck.querySelector<HTMLElement>('[data-live]')!;
+    const list = deck.querySelector<HTMLOListElement>('[data-pages]');
+
+    const say = (message: string) => {
+      live.textContent = message;
+    };
+
+    const post = async (body: Record<string, unknown>) => {
+      const res = await fetch(`/admin/project/${slug}/pages/`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? 'That did not save.');
+      return data;
+    };
+
+    /** Renumber the badges so the visible order is the saved order. */
+    const renumber = () => {
+      if (!list) return;
+      const items = [...list.querySelectorAll<HTMLElement>('[data-page]')];
+      for (const [i, item] of items.entries()) {
+        item.querySelector('[data-no]')!.textContent = String(i + 1);
+        item.setAttribute('aria-label', `Page ${i + 1}`);
+      }
+      return items;
+    };
+
+    const saveOrder = async () => {
+      if (!list) return;
+      const order = [...list.querySelectorAll<HTMLElement>('[data-page]')].map(
+        (el) => el.dataset.src!,
+      );
+      try {
+        await post({ action: 'reorder', order });
+        say('Order saved.');
+      } catch (error) {
+        // The DOM already moved, so a failure here means the screen and the
+        // database disagree. Reloading is the honest fix — silently leaving a
+        // wrong order on screen would have the operator believe it saved.
+        say(`${(error as Error).message} Reloading to show what is actually stored.`);
+        setTimeout(() => location.reload(), 1500);
+      }
+    };
+
+    // --- Drag to reorder ---------------------------------------------------
+    let dragged: HTMLElement | null = null;
+
+    list?.addEventListener('dragstart', (event) => {
+      const item = (event.target as HTMLElement).closest<HTMLElement>('[data-page]');
+      if (!item) return;
+      dragged = item;
+      item.classList.add('is-dragging');
+      event.dataTransfer!.effectAllowed = 'move';
+      // Firefox does not start a drag unless something is set.
+      event.dataTransfer!.setData('text/plain', item.dataset.src!);
+    });
+
+    list?.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      const over = (event.target as HTMLElement).closest<HTMLElement>('[data-page]');
+      if (!over || !dragged || over === dragged) return;
+      // Insert before or after depending on which way the page is travelling,
+      // so the placeholder lands where the pointer is rather than always left.
+      const after = dragged.compareDocumentPosition(over) & Node.DOCUMENT_POSITION_FOLLOWING;
+      over.parentNode!.insertBefore(dragged, after ? over.nextSibling : over);
+    });
+
+    list?.addEventListener('dragend', () => {
+      if (!dragged) return;
+      dragged.classList.remove('is-dragging');
+      dragged = null;
+      renumber();
+      void saveOrder();
+    });
+
+    // --- Keyboard reorder --------------------------------------------------
+    // The ARIA pattern: Space picks a page up, arrows move it, Space drops it.
+    // Without this the whole feature is mouse-only, and reordering a 36-page
+    // deck is exactly the sort of long mechanical task where that hurts most.
+    let held: HTMLElement | null = null;
+
+    list?.addEventListener('keydown', (event) => {
+      const item = (event.target as HTMLElement).closest<HTMLElement>('[data-page]');
+      if (!item) return;
+
+      if (event.key === ' ' || event.key === 'Enter') {
+        event.preventDefault();
+        if (held === item) {
+          held.classList.remove('is-held');
+          held = null;
+          say('Page dropped.');
+          void saveOrder();
+        } else {
+          held?.classList.remove('is-held');
+          held = item;
+          item.classList.add('is-held');
+          say(`Page ${item.querySelector('[data-no]')!.textContent} picked up.`);
+        }
+        return;
+      }
+
+      if (event.key === 'Escape' && held) {
+        event.preventDefault();
+        held.classList.remove('is-held');
+        held = null;
+        say('Cancelled. Reloading to show the saved order.');
+        location.reload();
+        return;
+      }
+
+      const back = event.key === 'ArrowLeft' || event.key === 'ArrowUp';
+      const forward = event.key === 'ArrowRight' || event.key === 'ArrowDown';
+      if (!back && !forward) return;
+      event.preventDefault();
+
+      if (!held) {
+        // Not carrying anything — arrows just walk the grid.
+        const items = [...list.querySelectorAll<HTMLElement>('[data-page]')];
+        const next = items[items.indexOf(item) + (back ? -1 : 1)];
+        next?.focus();
+        return;
+      }
+
+      const sibling = back ? held.previousElementSibling : held.nextElementSibling;
+      if (!sibling) return;
+      held.parentNode!.insertBefore(back ? held : sibling, back ? sibling : held);
+      renumber();
+      held.focus();
+      say(`Moved to position ${held.querySelector('[data-no]')!.textContent}.`);
+    });
+
+    // --- Delete ------------------------------------------------------------
+    list?.addEventListener('click', async (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLElement>('[data-del]');
+      if (!button) return;
+      const item = button.closest<HTMLElement>('[data-page]')!;
+      const number = item.querySelector('[data-no]')!.textContent;
+
+      // Deleting is immediate and there is no undo anywhere in this admin, so
+      // it asks. Everything else here is reversible by dragging it back.
+      if (!confirm(`Delete page ${number}? This cannot be undone.`)) return;
+
+      item.classList.add('is-going');
+      try {
+        await post({ action: 'delete', src: item.dataset.src });
+        item.remove();
+        const left = renumber()?.length ?? 0;
+        say(`Page ${number} deleted. ${left} left.`);
+        if (left === 0) location.reload();
+      } catch (error) {
+        item.classList.remove('is-going');
+        say((error as Error).message);
+      }
+    });
+
+    // --- Describe ----------------------------------------------------------
+    list?.addEventListener('click', (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLElement>('[data-alt-open]');
+      if (!button) return;
+      const item = button.closest<HTMLElement>('[data-page]')!;
+      const wrap = item.querySelector<HTMLElement>('[data-alt-wrap]')!;
+      wrap.hidden = !wrap.hidden;
+      if (!wrap.hidden) item.querySelector<HTMLTextAreaElement>('[data-alt]')!.focus();
+    });
+
+    // Saved on blur rather than per keystroke: one request when the operator
+    // is finished typing, not one per character.
+    list?.addEventListener(
+      'blur',
+      async (event) => {
+        const field = event.target as HTMLTextAreaElement;
+        if (!field.matches('[data-alt]')) return;
+        const item = field.closest<HTMLElement>('[data-page]')!;
+        const value = field.value.trim();
+        if (value === field.defaultValue.trim()) return;
+        try {
+          await post({ action: 'alt', src: item.dataset.src, alt: value });
+          field.defaultValue = value;
+          say('Description saved.');
+        } catch (error) {
+          say((error as Error).message);
+        }
+      },
+      true,
+    );
+
+    // --- Upload ------------------------------------------------------------
+    const form = deck.querySelector<HTMLFormElement>('[data-up]');
+    const file = deck.querySelector<HTMLInputElement>('[data-file]');
+    const drop = deck.querySelector<HTMLElement>('[data-drop]');
+    const name = deck.querySelector<HTMLElement>('[data-drop-name]');
+    const prog = deck.querySelector<HTMLElement>('[data-prog]');
+    const bar = deck.querySelector<HTMLElement>('[data-bar]');
+    const stat = deck.querySelector<HTMLElement>('[data-stat]');
+    const submit = deck.querySelector<HTMLButtonElement>('[data-up-submit]');
+    const warn = deck.querySelector<HTMLElement>('[data-up-nojs]');
+
+    // The "keep this tab open" note is for the no-JS form post. With a real
+    // progress bar it is just noise.
+    if (warn) warn.hidden = true;
+
+    const showName = () => {
+      const chosen = file?.files?.[0];
+      if (name) {
+        name.textContent = chosen
+          ? `${chosen.name} · ${(chosen.size / 1024 / 1024).toFixed(1)} MB`
+          : 'Choose a PDF';
+      }
+    };
+    file?.addEventListener('change', showName);
+    showName();
+
+    for (const type of ['dragenter', 'dragover']) {
+      drop?.addEventListener(type, (event) => {
+        event.preventDefault();
+        drop.classList.add('is-over');
+      });
+    }
+    for (const type of ['dragleave', 'drop']) {
+      drop?.addEventListener(type, () => drop.classList.remove('is-over'));
+    }
+    drop?.addEventListener('drop', (event) => {
+      event.preventDefault();
+      const dropped = (event as DragEvent).dataTransfer?.files?.[0];
+      if (!dropped || !file) return;
+      const bag = new DataTransfer();
+      bag.items.add(dropped);
+      file.files = bag.files;
+      showName();
+    });
+
+    form?.addEventListener('submit', (event) => {
+      if (!file?.files?.length) return; // let the browser's own validation speak
+      event.preventDefault();
+
+      const request = new XMLHttpRequest();
+      const data = new FormData(form);
+
+      submit!.disabled = true;
+      submit!.textContent = 'Uploading…';
+      prog!.hidden = false;
+
+      request.upload.addEventListener('progress', (e) => {
+        if (!e.lengthComputable) return;
+        const percent = Math.round((e.loaded / e.total) * 100);
+        bar!.style.inlineSize = `${percent}%`;
+        stat!.textContent =
+          percent < 100
+            ? `Uploading — ${percent}%`
+            : // The bytes are up; the server is now rendering every page, which
+              // is the slow half and reports nothing until it is done.
+              'Uploaded. Rendering pages — this is the slow part.';
+      });
+
+      request.addEventListener('load', () => {
+        let payload: { ok?: boolean; message?: string; error?: string } = {};
+        try {
+          payload = JSON.parse(request.responseText);
+        } catch {
+          payload = { error: 'The server sent something unexpected.' };
+        }
+        if (request.status === 200 && payload.ok) {
+          bar!.style.inlineSize = '100%';
+          stat!.textContent = `${payload.message} Reloading…`;
+          location.reload();
+        } else {
+          bar!.style.inlineSize = '0%';
+          stat!.textContent = payload.error ?? 'The upload failed.';
+          submit!.disabled = false;
+          submit!.textContent = 'Upload';
+        }
+      });
+
+      request.addEventListener('error', () => {
+        stat!.textContent = 'The connection dropped. Nothing was changed.';
+        submit!.disabled = false;
+        submit!.textContent = 'Upload';
+      });
+
+      request.open('POST', form.action);
+      request.setRequestHeader('accept', 'application/json');
+      request.send(data);
+    });
+  }
+</script>
+
+<style>
+  .deck {
+    border: 1px solid var(--color-line-strong);
+    border-radius: 14px;
+    padding: 1.4rem;
+    margin-block: 2rem;
+    background: var(--color-paper-raised);
+  }
+
+  .deck-head h2 {
+    font-size: 1.15rem;
+    margin: 0;
+  }
+
+  .deck-sub {
+    color: var(--color-ink-soft);
+    font-size: 0.85rem;
+    margin: 0.3rem 0 0;
+  }
+
+  .deck-pdf {
+    display: block;
+    color: var(--color-ink-mute);
+    font-size: 0.8rem;
+  }
+
+  /* --- Upload ------------------------------------------------------------ */
+  .up {
+    display: grid;
+    gap: 1rem;
+    margin-block-start: 1.2rem;
+  }
+
+  @media (min-width: 760px) {
+    .up {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .up-go {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .up-drop {
+    position: relative;
+    border: 1.5px dashed var(--color-line-control);
+    border-radius: 12px;
+    transition:
+      border-color 120ms ease,
+      background-color 120ms ease;
+  }
+
+  .up-drop.is-over {
+    border-color: var(--color-accent);
+    background: var(--color-accent-wash);
+  }
+
+  /* Visually hidden but still the control that gets focus and validation. */
+  .up-file {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    cursor: pointer;
+  }
+
+  .up-label {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 1.1rem;
+    pointer-events: none;
+  }
+
+  .up-file:focus-visible + .up-label {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 12px;
+  }
+
+  .up-icon {
+    color: var(--color-accent);
+    flex: none;
+  }
+
+  .up-text strong {
+    display: block;
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
+  }
+
+  .up-hint {
+    color: var(--color-ink-mute);
+    font-size: 0.78rem;
+  }
+
+  .up-mode {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .up-legend {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-ink-mute);
+    padding: 0;
+    margin-block-end: 0.2rem;
+  }
+
+  .up-radio {
+    display: flex;
+    gap: 0.55rem;
+    align-items: start;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  .up-radio:has(input:disabled) {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .up-radio strong {
+    display: block;
+    font-weight: 600;
+  }
+
+  .up-note {
+    color: var(--color-ink-mute);
+    font-size: 0.78rem;
+  }
+
+  .up-go {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .up-prog {
+    flex: 1 1 14rem;
+    min-inline-size: 0;
+  }
+
+  .up-bar {
+    block-size: 6px;
+    border-radius: 999px;
+    background: var(--color-line-strong);
+    overflow: hidden;
+  }
+
+  .up-bar span {
+    display: block;
+    block-size: 100%;
+    inline-size: 0;
+    background: var(--gradient-accent);
+    transition: inline-size 160ms ease;
+  }
+
+  .up-stat {
+    font-size: 0.8rem;
+    color: var(--color-ink-soft);
+    margin: 0.35rem 0 0;
+  }
+
+  .up-warn {
+    grid-column: 1 / -1;
+    font-size: 0.8rem;
+    color: var(--color-ink-mute);
+    margin: 0;
+  }
+
+  /* --- Pages ------------------------------------------------------------- */
+  .deck-help {
+    font-size: 0.8rem;
+    color: var(--color-ink-mute);
+    margin-block: 1.4rem 0.6rem;
+    padding-block-start: 1.2rem;
+    border-block-start: 1px solid var(--color-line);
+  }
+
+  .pages {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.8rem;
+  }
+
+  .page {
+    position: relative;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--image-bg);
+    cursor: grab;
+  }
+
+  .page:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  .page.is-dragging {
+    opacity: 0.35;
+    cursor: grabbing;
+  }
+
+  /* Held by the keyboard — needs to read as "picked up" without a pointer. */
+  .page.is-held {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--color-accent-wash);
+  }
+
+  .page.is-going {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .page-img {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+
+  .page-missing {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 3;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    text-align: center;
+    color: var(--color-danger);
+    background: var(--color-paper-sunken);
+  }
+
+  .page-no {
+    position: absolute;
+    inset-block-start: 0.4rem;
+    inset-inline-start: 0.4rem;
+    min-inline-size: 1.5rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 999px;
+    background: rgb(0 0 0 / 65%);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .page-tools {
+    position: absolute;
+    inset-block-start: 0.4rem;
+    inset-inline-end: 0.4rem;
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+
+  /* Touch has no hover, so the controls would be unreachable. */
+  @media (hover: none) {
+    .page-tools {
+      opacity: 1;
+    }
+  }
+
+  .page:hover .page-tools,
+  .page:focus-within .page-tools {
+    opacity: 1;
+  }
+
+  .page-btn {
+    display: grid;
+    place-items: center;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border: 0;
+    border-radius: 6px;
+    background: rgb(0 0 0 / 70%);
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .page-btn:hover {
+    background: rgb(0 0 0 / 88%);
+  }
+
+  .page-btn--danger:hover {
+    background: var(--color-danger-fill);
+  }
+
+  .page-alt {
+    display: block;
+    padding: 0.5rem;
+    background: var(--color-paper-raised);
+    border-block-start: 1px solid var(--color-line);
+  }
+
+  .page-alt-label {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--color-ink-mute);
+    margin-block-end: 0.25rem;
+  }
+
+  .page-alt-input {
+    inline-size: 100%;
+    font: inherit;
+    font-size: 0.78rem;
+    resize: vertical;
+  }
+
+  .deck-live {
+    font-size: 0.82rem;
+    color: var(--color-ink-soft);
+    margin-block: 0.9rem 0;
+    min-block-size: 1.2em;
+  }
+</style>

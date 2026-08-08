@@ -12,15 +12,16 @@
  * about a real client's business.
  */
 import AdminLayout from '@/layouts/AdminLayout.astro';
+import DeckManager from '@/components/admin/DeckManager.astro';
 import {
   getProject,
-  getProjectImages,
   saveProject,
   deleteProject,
   validateProject,
   EXTRA_OPTIONS,
   type FieldErrors,
 } from '@/lib/admin-data';
+import { listPages } from '@/lib/deck';
 import { CATEGORIES } from '@/data/categories';
 import { LOGO_TYPES, GUIDELINE_TYPES } from '@/data/filters';
 import { getSortedProjects } from '@/lib/content';
@@ -58,7 +59,7 @@ if (Astro.request.method === 'POST') {
 const existing = isNew ? undefined : await getProject(routeSlug);
 if (!isNew && !existing) return Astro.redirect('/admin/', 303);
 
-const images = isNew ? [] : await getProjectImages(routeSlug);
+const images = isNew ? [] : await listPages(routeSlug);
 
 /** Prefer what was just typed (so a failed save keeps the edits), then the row. */
 const val = (name: string, fallback: unknown = ''): string => {
@@ -124,6 +125,14 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
     Object.keys(errors).length > 0 && (
       <p class="flash bad">Nothing was saved — check the fields marked below.</p>
     )
+  }
+
+  {
+    /* The deck sits above the form, not below it. It is what an operator comes
+       here to change, and it was previously the last thing on a 4,000px page —
+       below the save button, which is why it read as "there is no upload". It
+       saves on its own, so it must not be inside the form either. */
+    !isNew && <DeckManager slug={routeSlug} pages={images} pdf={existing?.pdf} />
   }
 
   <form method="POST">
@@ -380,13 +389,10 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
     </fieldset>
 
     <fieldset>
-      <legend>Images</legend>
+      <legend>Grid cover</legend>
       <p class="legend-note">
-        {
-          images.length > 0
-            ? `${images.length} page${images.length === 1 ? '' : 's'} plus the grid cover.`
-            : 'No images yet — the project stays off the site until it has them.'
-        }
+        The cover is built from page one of the deck. This is what a screen reader announces for the
+        thumbnail on the work grid.
       </p>
       <label>
         <span class="lab">Cover alt text</span>
@@ -400,33 +406,6 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
       <a class="btn ghost" href="/admin/">Cancel</a>
     </div>
   </form>
-
-  {
-    !isNew && (
-      <form
-        method="POST"
-        action={`/admin/project/${routeSlug}/upload/`}
-        enctype="multipart/form-data"
-        style="margin-top:2.5rem"
-      >
-        <fieldset>
-          <legend>Upload the deck</legend>
-          <p class="legend-note">
-            Choose the presentation PDF. Every page is rendered and the grid cover is made from page
-            one — it replaces whatever is there now, and it is live the moment it finishes. A long
-            deck can take a minute; do not close the tab.
-          </p>
-          <label>
-            <span class="lab">Portfolio PDF</span>
-            <input type="file" name="pdf" accept="application/pdf,.pdf" required />
-          </label>
-          <button class="btn" type="submit">
-            Upload and publish
-          </button>
-        </fieldset>
-      </form>
-    )
-  }
 
   {
     !isNew && (

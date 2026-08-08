@@ -19,7 +19,7 @@ if (Astro.request.method === 'POST') {
   const password = String(form.get('password') ?? '');
   try {
     if (checkPassword(password)) {
-      const cookie = sessionCookie();
+      const cookie = sessionCookie(Astro.url);
       Astro.cookies.set(cookie.name, cookie.value, cookie.options);
       return Astro.redirect(safeNext, 303);
     }

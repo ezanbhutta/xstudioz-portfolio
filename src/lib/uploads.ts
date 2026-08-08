@@ -12,7 +12,7 @@
  * Visitors get the same three widths either way; only the moment of
  * generation moved.
  */
-import { mkdir, writeFile, readFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 // sharp is imported inside writeImage: it is a native module, and keeping it
@@ -119,4 +119,34 @@ export async function readUpload(slug: string, file: string): Promise<Buffer | n
   } catch {
     return null;
   }
+}
+
+/**
+ * Delete an uploaded image and every variant `writeImage` wrote beside it.
+ *
+ * Takes the public `src` rather than a basename because that is what the
+ * database stores and what the admin hands back when a page is removed.
+ *
+ * Missing files are not an error. A half-written upload, a manual tidy-up, or
+ * a second delete of the same page all end in the state the caller wanted, and
+ * failing the request because the bytes were already gone would leave the row
+ * in the database — the one outcome worse than an orphaned file.
+ */
+export async function removeImage(src: string): Promise<void> {
+  const match = /^\/uploads\/([^/]+)\/([^/]+)\.webp$/.exec(src);
+  if (!match) return; // Not an uploaded file — a seeded asset, nothing to remove.
+
+  const dir = path.join(uploadsDir(), safeSegment(match[1]));
+  const base = safeSegment(match[2]);
+  const names = [`${base}.webp`, ...WIDTHS.map((w) => `${base}-${w}.webp`)];
+
+  await Promise.all(
+    names.map(async (name) => {
+      try {
+        await rm(path.join(dir, name));
+      } catch {
+        // Already gone.
+      }
+    }),
+  );
 }

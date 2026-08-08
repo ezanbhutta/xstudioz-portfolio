@@ -60,7 +60,7 @@ export type ProjectImage = ResolvedImage & { alt: string };
  * a fallback so a row the migration could not convert still renders instead of
  * vanishing; `scripts/migrate-images.mjs` moves them across.
  */
-function resolveImage(
+export function resolveImage(
   slug: string,
   src: string | null | undefined,
   storage: unknown,

@@ -319,6 +319,27 @@ const { title, nav = true } = Astro.props;
         margin-bottom: 1.5rem;
         border: 1px solid;
       }
+      /* Where the deck upload will be, on a project that does not exist yet.
+         Dashed rather than solid: it reads as a slot waiting to be filled,
+         which is exactly what it is. */
+      .deck-soon {
+        border: 1px dashed var(--color-line-control);
+        border-radius: 14px;
+        padding: 1.4rem;
+        margin-block: 2rem;
+        color: var(--color-ink-soft);
+      }
+      .deck-soon h2 {
+        font-size: 1.15rem;
+        margin: 0 0 0.3rem;
+        color: var(--color-ink);
+      }
+      .deck-soon p {
+        margin: 0;
+        font-size: 0.85rem;
+        max-inline-size: 46ch;
+      }
+
       .flash.ok {
         border-color: var(--color-success);
         background: color-mix(in srgb, var(--color-success) 12%, transparent);

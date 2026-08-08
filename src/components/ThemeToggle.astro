@@ -1,0 +1,222 @@
+---
+/**
+ * Light/dark switch.
+ *
+ * The button shows the theme it will switch *to*, which is the only labelling
+ * that survives being looked at without reading: a sun means "give me light",
+ * not "it is currently light".
+ *
+ * Which icon shows is decided in CSS, from the same two conditions the theme
+ * itself resolves from — `prefers-color-scheme` and the `data-theme`
+ * attribute. So the correct icon is painted with the first frame. Deriving it
+ * in JavaScript would mean rendering one icon on the server and swapping it on
+ * load, which is a visible flicker on exactly the control whose job is to say
+ * what the page currently looks like.
+ *
+ * The script's only job is the click.
+ */
+---
+
+<button
+  class="theme-toggle"
+  type="button"
+  data-theme-toggle
+  aria-label="Switch colour theme"
+  title="Switch colour theme"
+>
+  {/* Offered while the page is light */}
+  <svg class="t-icon t-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M20.7 14.6A8.5 8.5 0 0 1 9.4 3.3 8.5 8.5 0 1 0 20.7 14.6Z"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.7"
+      stroke-linejoin="round"></path>
+  </svg>
+
+  {/* Offered while the page is dark */}
+  <svg class="t-icon t-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"></circle>
+    <g stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+      <path d="M12 2.4v2.3M12 19.3v2.3M4.2 12H1.9M22.1 12h-2.3"></path>
+      <path d="M6.5 6.5 4.9 4.9M19.1 19.1l-1.6-1.6M17.5 6.5l1.6-1.6M4.9 19.1l1.6-1.6"></path>
+    </g>
+  </svg>
+</button>
+
+<script>
+  /**
+   * Persisting the choice is the whole feature — a toggle that forgets is a
+   * toggle nobody uses twice. Reading the *resolved* theme rather than the
+   * stored one means the first click always does what the icon promised, even
+   * when nothing is stored yet and the page is following the system.
+   */
+  const KEY = 'xs-theme';
+  const root = document.documentElement;
+
+  const resolved = () =>
+    root.dataset.theme === 'light' || root.dataset.theme === 'dark'
+      ? root.dataset.theme
+      : matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
+
+  /**
+   * The browser paints its own chrome — address bar, gesture bars — from this,
+   * and a light page under a black status bar looks broken on a phone. Read
+   * the value back off the page rather than hardcoding it, so the two cannot
+   * drift when a token changes.
+   */
+  function syncBrowserChrome() {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) return;
+    // Read the painted background, not `--color-paper`.
+    //
+    // A custom property computes to its token stream, so asking for
+    // --color-paper hands back the literal text "light-dark(#fbfbfa, #09090b)"
+    // — which is a valid custom property and a meaningless theme-color. Only a
+    // real colour property resolves light-dark() to an actual rgb().
+    const painted = getComputedStyle(document.body).backgroundColor;
+    // A transparent body means the colour is on the root instead.
+    const colour =
+      painted && painted !== 'rgba(0, 0, 0, 0)' ? painted : getComputedStyle(root).backgroundColor;
+    if (colour && colour !== 'rgba(0, 0, 0, 0)') meta.setAttribute('content', colour);
+  }
+
+  function label(next: string) {
+    const text = `Switch to ${next} theme`;
+    for (const el of document.querySelectorAll('[data-theme-toggle]')) {
+      el.setAttribute('aria-label', text);
+      el.setAttribute('title', text);
+    }
+  }
+
+  function apply(theme: string) {
+    root.dataset.theme = theme;
+    try {
+      localStorage.setItem(KEY, theme);
+    } catch {
+      // Private browsing, or storage disabled. The theme still applies for
+      // this page; it just will not be remembered. Not worth failing over.
+    }
+    // The chrome colour is read from computed styles, which only settle after
+    // the attribute change has been applied.
+    requestAnimationFrame(syncBrowserChrome);
+    label(theme === 'dark' ? 'light' : 'dark');
+  }
+
+  label(resolved() === 'dark' ? 'light' : 'dark');
+  syncBrowserChrome();
+
+  for (const el of document.querySelectorAll('[data-theme-toggle]')) {
+    el.addEventListener('click', () => apply(resolved() === 'dark' ? 'light' : 'dark'));
+  }
+
+  /**
+   * Follow the system while the visitor has never chosen. Someone whose OS
+   * flips to dark at sunset expects the page to come with it, and a stored
+   * preference from a different visit is not a reason to ignore that.
+   */
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    let stored = null;
+    try {
+      stored = localStorage.getItem(KEY);
+    } catch {
+      /* storage unavailable — treat as no stored preference */
+    }
+    if (stored === 'light' || stored === 'dark') return;
+    requestAnimationFrame(syncBrowserChrome);
+    label(resolved() === 'dark' ? 'light' : 'dark');
+  });
+</script>
+
+<style>
+  .theme-toggle {
+    display: inline-grid;
+    place-items: center;
+    /* Square on the control grid, so it lines up with the CTA beside it */
+    inline-size: var(--control-h);
+    block-size: var(--control-h);
+    padding: 0;
+    color: var(--color-ink-soft);
+    background: none;
+    border: 0;
+    border-radius: var(--radius-pill);
+    box-shadow: inset 0 0 0 1px var(--color-line-strong);
+    cursor: pointer;
+    transition:
+      color var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-out),
+      background-color var(--duration-fast) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .theme-toggle:hover {
+      color: var(--color-ink);
+      background: var(--color-accent-wash);
+      box-shadow: inset 0 0 0 1px var(--color-accent);
+    }
+  }
+
+  .theme-toggle:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* Both icons occupy the same cell so the swap cannot move the button */
+  .t-icon {
+    grid-area: 1 / 1;
+    inline-size: 1.15rem;
+    block-size: 1.15rem;
+    transition:
+      opacity var(--duration-base) var(--ease-out),
+      transform var(--duration-base) var(--ease-out);
+  }
+
+  /* Base state is a light page, so the button offers the moon. */
+  .t-sun {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+  }
+
+  .t-moon {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Dark by system preference, unless light was explicitly chosen. */
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .t-sun {
+      opacity: 1;
+      transform: none;
+    }
+
+    :global(:root:not([data-theme='light'])) .t-moon {
+      opacity: 0;
+      transform: rotate(90deg) scale(0.5);
+    }
+  }
+
+  /* Dark by explicit choice — wins over a light system preference. */
+  :global(:root[data-theme='dark']) .t-sun {
+    opacity: 1;
+    transform: none;
+  }
+
+  :global(:root[data-theme='dark']) .t-moon {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.5);
+  }
+
+  /* Without JavaScript the click does nothing, and a dead control is worse
+     than an absent one. The page still follows the system preference. */
+  :global(html:not(.js)) .theme-toggle {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .t-icon {
+      transition-duration: 1ms;
+    }
+  }
+</style>

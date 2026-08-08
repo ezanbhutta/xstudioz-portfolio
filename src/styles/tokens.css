@@ -19,34 +19,112 @@
      line-control   on paper       →  3.7:1  (WCAG 1.4.11, control borders)
 --------------------------------------------------------------------------- */
 :root {
+  /* --- Theme -------------------------------------------------------------- *
+     Dark is the brand. Light is the courtesy.
+
+     `color-scheme: light dark` makes the page follow the operating system,
+     and every colour below is written as `light-dark(light, dark)` — one
+     declaration carrying both themes, so a token can never be updated in one
+     mode and forgotten in the other.
+
+     Switching themes is then a single property: setting `color-scheme` on the
+     root re-resolves every `light-dark()` on the page at once. That is what
+     the header toggle writes, and it also fixes form controls, scrollbars and
+     the browser's own UI, which a class-based swap leaves behind.
+
+     Each colour is declared twice. The first declaration is the dark value on
+     its own; the second is the `light-dark()` pair. A browser too old for
+     `light-dark()` discards the second as invalid and keeps the first, so it
+     gets the obsidian site the studio designed rather than an unstyled one.
+     It cannot switch, which is the right thing to lose.                      */
+  color-scheme: light dark;
+
   /* --- Surfaces & ink ----------------------------------------------------- *
-     "paper" and "ink" keep their names through the inversion: paper is still
-     the page, ink is still the type on it. Renaming them would have meant
-     touching every component to say the same thing.                          */
+     "paper" and "ink" keep their names through both inversions: paper is
+     always the page, ink is always the type on it. Renaming them would have
+     meant touching every component to say the same thing.
+
+     Contrast in light mode, measured against the surface each is used on:
+       ink            on paper   → 16.4:1
+       ink-soft       on paper   →  7.5:1
+       ink-mute       on paper   →  6.1:1
+       accent         on paper   →  5.5:1
+       accent-bright  on paper   →  4.6:1
+       line-control   on paper   →  3.1:1  (WCAG 1.4.11, control borders)     */
   --color-paper: #09090b;
-  /* Raised cards and panels lift off the ground by a few points of lightness
-     plus a hairline, never by a shadow — shadows are invisible on obsidian. */
+  --color-paper: light-dark(#fbfbfa, #09090b);
+
+  /* Raised surfaces lift by lightness in both themes — brighter than the
+     ground on light, lighter than obsidian on dark. Never by a shadow on
+     dark, where shadows are invisible. */
   --color-paper-raised: #121215;
+  --color-paper-raised: light-dark(#ffffff, #121215);
   --color-paper-sunken: #050507;
+  --color-paper-sunken: light-dark(#f2f2f0, #050507);
   --color-ink: #f4f4f5;
+  --color-ink: light-dark(#1c1c1f, #f4f4f5);
   --color-ink-raised: #1c1c20;
+  --color-ink-raised: light-dark(#e8e8e6, #1c1c20);
   --color-ink-soft: #a1a1aa;
+  --color-ink-soft: light-dark(#52525b, #a1a1aa);
   --color-ink-mute: #8b8b95;
+  --color-ink-mute: light-dark(#5f5f6a, #8b8b95);
+
+  /* Hairlines invert: white at low alpha on obsidian, black at low alpha on
+     paper. Alphas rather than solids so they sit on any surface. */
   --color-line: rgb(255 255 255 / 8%);
+  --color-line: light-dark(rgb(0 0 0 / 10%), rgb(255 255 255 / 8%));
   --color-line-strong: rgb(255 255 255 / 16%);
+  --color-line-strong: light-dark(rgb(0 0 0 / 20%), rgb(255 255 255 / 16%));
   /* Borders that are the only thing identifying a control need 3:1 against
-     the ground to satisfy WCAG 1.4.11. Measured 3.7:1. */
+     the ground to satisfy WCAG 1.4.11. Measured 3.7:1 dark, 3.1:1 light. */
   --color-line-control: rgb(255 255 255 / 42%);
+  --color-line-control: light-dark(#8f8f99, rgb(255 255 255 / 42%));
 
   /* The accent is a gradient first and a flat colour second. Anything that
-     cannot take a gradient (a focus ring, an underline) uses --color-accent. */
+     cannot take a gradient (a focus ring, an underline) uses --color-accent.
+
+     The light values are two steps darker than the dark ones. The violet that
+     reads as luminous on obsidian falls to 2.1:1 on paper — a decorative
+     colour, not a legible one — so light mode uses violet-600 and
+     fuchsia-600 to clear 4.5:1 while staying recognisably the same accent. */
   --color-accent: #a78bfa;
+  --color-accent: light-dark(#7c3aed, #a78bfa);
   --color-accent-deep: #8b5cf6;
+  --color-accent-deep: light-dark(#6d28d9, #8b5cf6);
   --color-accent-bright: #d946ef;
+  --color-accent-bright: light-dark(#c026d3, #d946ef);
   --gradient-accent: linear-gradient(135deg, #8b5cf6, #d946ef);
-  /* The light a raised card sits in when the pointer is over it */
+  --gradient-accent: linear-gradient(
+    135deg,
+    light-dark(#7c3aed, #8b5cf6),
+    light-dark(#c026d3, #d946ef)
+  );
+  /* The light a raised card sits in when the pointer is over it. Barely there
+     on paper — an ambient violet glow on white reads as a printing error. */
   --color-glow: rgb(139 92 246 / 15%);
+  --color-glow: light-dark(rgb(124 58 237 / 12%), rgb(139 92 246 / 15%));
   --color-accent-wash: rgb(139 92 246 / 10%);
+  --color-accent-wash: light-dark(rgb(124 58 237 / 8%), rgb(139 92 246 / 10%));
+  /* --- Status ------------------------------------------------------------ *
+     Destructive and confirming, in both themes.
+
+     The admin used a hardcoded #d33 for every error, flash border and delete
+     button. It measures 4.35:1 on obsidian and 4.41:1 on paper — under 4.5:1
+     in both, so it was failing before light mode was ever a question.
+
+     Two reds, because they do different jobs. `--color-danger` is the red of
+     text and borders and needs contrast against the page. `--color-danger-fill`
+     is the red *behind* white text and needs contrast against white, which is
+     the opposite requirement — a red light enough to read as text on obsidian
+     (7.2:1) leaves white sitting on it at 2.4:1.                             */
+  --color-danger: #f87171;
+  --color-danger: light-dark(#dc2626, #f87171);
+  --color-danger-fill: #b91c1c;
+  --color-danger-fill: light-dark(#dc2626, #b91c1c);
+  --color-success: #34d399;
+  --color-success: light-dark(#047857, #34d399);
+
   /* Brand gradient (logo, og image) */
   --color-brand-violet: #5e17b8;
   --color-brand-purple: #a928d9;
@@ -54,8 +132,11 @@
   /* Legacy aliases: the footer and lightbox call themselves "on ink" from
      when the page was light and only they were dark. */
   --color-paper-mute: #a1a1aa;
+  --color-paper-mute: light-dark(#52525b, #a1a1aa);
   --color-line-on-ink: rgb(255 255 255 / 10%);
+  --color-line-on-ink: light-dark(rgb(0 0 0 / 12%), rgb(255 255 255 / 10%));
   --color-line-on-ink-strong: rgb(255 255 255 / 24%);
+  --color-line-on-ink-strong: light-dark(rgb(0 0 0 / 28%), rgb(255 255 255 / 24%));
 
   /* --- Typography --------------------------------------------------------- *
      Two faces, each doing one job.
@@ -138,10 +219,17 @@
   /* --- Elevation --------------------------------------------------------- *
      On obsidian a shadow barely registers, so depth comes from the hairline
      and the ambient accent glow instead. These stay for the few surfaces
-     that genuinely float above the page.                                     */
+     that genuinely float above the page.
+
+     Light mode is the opposite case: on paper a shadow is the *only* thing
+     that separates a white card from a white page, so these run as real
+     shadows there rather than the near-invisible ones obsidian needs.        */
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-sm: 0 1px 2px light-dark(rgb(0 0 0 / 8%), rgb(0 0 0 / 40%));
   --shadow-md: 0 0.5rem 1.5rem -0.75rem rgb(0 0 0 / 60%);
+  --shadow-md: 0 0.5rem 1.5rem -0.75rem light-dark(rgb(0 0 0 / 16%), rgb(0 0 0 / 60%));
   --shadow-lift: 0 1.5rem 3.5rem -1rem rgb(0 0 0 / 70%);
+  --shadow-lift: 0 1.5rem 3.5rem -1rem light-dark(rgb(0 0 0 / 20%), rgb(0 0 0 / 70%));
 
   /* --- Image treatment --------------------------------------------------- *
      Every portfolio image gets the same frame, so covers of wildly different
@@ -149,7 +237,11 @@
   --image-radius: var(--radius-xs);
   --image-frame: inset 0 0 0 1px var(--color-line);
   --image-frame-hover: inset 0 0 0 1px var(--color-line-strong);
-  --image-bg: var(--color-paper-raised);
+  /* Not --color-paper-raised, which is pure white in light mode: a deck page
+     is usually white too, so the frame would vanish and pages would bleed
+     into the page. A half-step of grey keeps every image's edge visible. */
+  --image-bg: #121215;
+  --image-bg: light-dark(#efefec, #121215);
   /* The ambient light a card sits in while the pointer is over it */
   --glow-card: 0 0 3rem -0.5rem var(--color-glow);
 
@@ -166,4 +258,23 @@
   --z-header: 50;
   --z-menu: 80;
   --z-skip-link: 100;
+}
+
+/* ---------------------------------------------------------------------------
+   Explicit theme choice.
+
+   With no `data-theme` the root keeps `color-scheme: light dark` and follows
+   the operating system. The header toggle writes `data-theme` to override it,
+   and these two rules are the entire switching mechanism: pinning
+   `color-scheme` re-resolves every `light-dark()` on the page in one repaint,
+   with no class to add to components and nothing to keep in sync.
+
+   Removing the attribute returns the visitor to their system preference.
+--------------------------------------------------------------------------- */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
 }

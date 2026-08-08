@@ -79,7 +79,16 @@ must never go there.
    DB_NAME=u666480115_XStudiozfolio
    ADMIN_PASSWORD=<a long random password for /admin/>
    SESSION_SECRET=<32+ random characters>
+   UPLOADS_DIR=/home/u666480115/domains/portfolio.xstudioz.com/public_html/uploads
    ```
+
+   `UPLOADS_DIR` is not optional in production, and leaving it out fails
+   quietly rather than loudly. Unset, it resolves to `public/uploads` relative
+   to whatever directory the process was started in — which is inside the
+   deployed app. Uploaded decks would then be written into the directory
+   Hostinger replaces on the next deploy, and every `/uploads/…` request would
+   404 in the meantime. `/health` prints the resolved path and whether it
+   exists, so check there first if images are missing.
 
 7. If the database did not survive step 3, recreate it (`db/README.md` steps
    1–3) and import your backup.

@@ -50,7 +50,7 @@
 }
 
 html {
-  color-scheme: dark;
+  /* Theme lives on :root in tokens.css — see the light-dark() note there. */
   scroll-behavior: smooth;
   /* Anything scrolled to (or focused) must clear the sticky header. Pages
      that stack a second sticky rail — the All Work filters — raise it. */

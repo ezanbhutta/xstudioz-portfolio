@@ -1,6 +1,7 @@
 ---
 import { SITE } from '@/config/site';
 import Logo from '@/components/Logo.astro';
+import ThemeToggle from '@/components/ThemeToggle.astro';
 
 /**
  * Wordmark and one call to action. Nothing else.
@@ -31,16 +32,21 @@ import Logo from '@/components/Logo.astro';
       >
     </a>
 
-    <a
-      class="button button--primary header-cta"
-      href={SITE.fiverrUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      <span class="header-cta-full">Hire on Fiverr</span><span class="header-cta-short">Fiverr</span
+    <div class="header-actions">
+      <ThemeToggle />
+
+      <a
+        class="button button--primary header-cta"
+        href={SITE.fiverrUrl}
+        target="_blank"
+        rel="noopener noreferrer"
       >
-      <span aria-hidden="true">↗</span>
-    </a>
+        <span class="header-cta-full">Hire on Fiverr</span><span class="header-cta-short"
+          >Fiverr</span
+        >
+        <span aria-hidden="true">↗</span>
+      </a>
+    </div>
   </div>
 </header>
 
@@ -92,6 +98,15 @@ import Logo from '@/components/Logo.astro';
     align-items: center;
     justify-content: space-between;
     gap: var(--space-md);
+  }
+
+  /* The theme switch and the call to action travel together at the end of the
+     bar. Gap is tighter than the header's own so they read as one cluster
+     rather than two competing destinations. */
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
   }
 
   .brand-mark {

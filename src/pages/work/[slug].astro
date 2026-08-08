@@ -18,8 +18,14 @@ import { lqipStyle } from '@/lib/lqip';
 /**
  * The case study.
  *
- *   hero → the story (only the parts that have been written) → what was
- *   delivered → every page of the deck, one size, in order → the action
+ *   the story (only the parts that have been written) → what was delivered →
+ *   the deck: cover at size, then every page, one width, in order → the action
+ *
+ * The overview reads before the first page of the deck, everywhere. A visitor
+ * who has scrolled past the title has not yet been told what they are looking
+ * at, and a 34-page brand book is a poor way to find out. Saying it first also
+ * leaves the deck contiguous — cover, then every page — instead of splitting
+ * page 1 from pages 2 onward with a column of text.
  *
  * Every narrative field is optional and its section is simply absent when
  * empty, so a project with nothing but a summary still produces a clean,
@@ -237,31 +243,6 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
       }
     </header>
 
-    {/* Hero: pairs with the grid card's view transition and loads with priority */}
-    <div class="container project-hero">
-      <button
-        type="button"
-        class="page-open media"
-        data-open-page="0"
-        style={`view-transition-name: work-${project.id}`}
-        aria-label={`Open the ${title} presentation, page 1 of ${images.length}`}
-      >
-        <img
-          src={hero.src}
-          srcset={hero.srcset}
-          sizes={heroSizes}
-          alt={hero.alt}
-          width={hero.width}
-          height={hero.height}
-          loading="eager"
-          fetchpriority="high"
-          decoding="async"
-          style={heroPlaceholder}
-        />
-        <span class="page-cue" aria-hidden="true">View full screen</span>
-      </button>
-    </div>
-
     <div class="container project-body">
       <div class="project-story">
         <section aria-labelledby="overview-heading">
@@ -337,6 +318,36 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
           )
         }
       </aside>
+    </div>
+
+    {
+      /* The deck opens here. Cover first, at size, then every page below it —
+        the overview above has already said what this is, so the images run
+        uninterrupted from this point down. Pairs with the grid card's view
+        transition and loads with priority. */
+    }
+    <div class="container project-hero">
+      <button
+        type="button"
+        class="page-open media"
+        data-open-page="0"
+        style={`view-transition-name: work-${project.id}`}
+        aria-label={`Open the ${title} presentation, page 1 of ${images.length}`}
+      >
+        <img
+          src={hero.src}
+          srcset={hero.srcset}
+          sizes={heroSizes}
+          alt={hero.alt}
+          width={hero.width}
+          height={hero.height}
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          style={heroPlaceholder}
+        />
+        <span class="page-cue" aria-hidden="true">View full screen</span>
+      </button>
     </div>
 
     {
@@ -607,6 +618,15 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
       opacity: 1;
       transform: none;
     }
+  }
+
+  /* --- The cover ---------------------------------------------------------- *
+     The hero carried no spacing of its own while it sat between the header and
+     the body, which both pad generously. Now that it lands between the body and
+     the gallery it has to hold its own bottom edge, or the cover butts straight
+     into the "Every page" heading with nothing between them.                  */
+  .project-hero {
+    padding-block-end: var(--space-2xl);
   }
 
   /* --- Story + spec ------------------------------------------------------- */

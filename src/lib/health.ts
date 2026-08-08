@@ -24,6 +24,7 @@
 import { existsSync } from 'node:fs';
 import { query } from './db';
 import { uploadsDir } from './uploads';
+import { getSortedProjects, databaseError } from './content';
 
 const shown = (name: string) => {
   const value = process.env[name];
@@ -87,6 +88,40 @@ export async function healthReport(): Promise<Response> {
       '  ER_BAD_DB_ERROR        → DB_NAME does not exist (check the capital X)',
       '  ECONNREFUSED           → nothing listening on DB_HOST:DB_PORT',
     );
+  }
+
+  /**
+   * What the site will actually render, not just what the tables contain.
+   *
+   * Counting rows says the database is reachable; it does not say a single
+   * project will appear. `getSortedProjects` drops any project whose cover or
+   * images fail to resolve, and it logs the reason to a console nobody reads.
+   * A portfolio can therefore report CONNECTED with 8 projects and 228 images
+   * and still render an empty grid — which is exactly what happened here.
+   *
+   * This runs the real read path and reports the gap between the two numbers,
+   * so "the database is fine" and "the site is fine" stop being the same
+   * sentence.
+   */
+  lines.push('', 'Rendered:');
+  try {
+    const projects = await getSortedProjects();
+    lines.push(`  displayable: ${projects.length}`);
+    if (projects.length === 0) {
+      lines.push(
+        '  NONE — every project was dropped before render.',
+        `  last query error: ${databaseError() ?? '(none — so this is image resolution, not SQL)'}`,
+        '  A project is dropped when its cover or its images fail to resolve.',
+        "  storage='upload' needs src, width and height on the row;",
+        "  storage='asset' needs a file matching src under src/content/projects/<slug>/.",
+      );
+    } else {
+      for (const p of projects) {
+        lines.push(`    ${p.id}: ${p.data.images.length} image(s)`);
+      }
+    }
+  } catch (error) {
+    lines.push(`  FAILED: ${error instanceof Error ? error.message : String(error)}`);
   }
 
   return new Response(lines.join('\n'), {

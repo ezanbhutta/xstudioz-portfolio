@@ -51,7 +51,13 @@ if (Astro.request.method === 'POST') {
 
   if (Object.keys(errors).length === 0) {
     await saveProject(form, slug);
-    return Astro.redirect(`/admin/?saved=${encodeURIComponent(String(form.get('title')))}`, 303);
+    // A new project goes to its own editor rather than back to the list. The
+    // deck is the next thing wanted every time, and it can only be uploaded
+    // once the project exists — bouncing to the list means finding the project
+    // again to do the half of the job that is actually left.
+    return isNew
+      ? Astro.redirect(`/admin/project/${slug}/?created=1`, 303)
+      : Astro.redirect(`/admin/?saved=${encodeURIComponent(String(form.get('title')))}`, 303);
   }
   submitted = form;
 }
@@ -101,6 +107,7 @@ const industries = [
   ...new Set((await getSortedProjects()).map((p) => p.data.industry).filter(Boolean)),
 ].sort() as string[];
 
+const justCreated = Astro.url.searchParams.get('created') !== null;
 const uploaded = Astro.url.searchParams.get('uploaded');
 const uploadError = Astro.url.searchParams.get('uploadError');
 
@@ -113,11 +120,18 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
   <p class="sub">
     {
       isNew
-        ? 'Text now, images after — a project without images stays off the site until it has them.'
+        ? 'Fill this in and save. The deck is uploaded on the next screen — a project stays off the site until it has one.'
         : `${images.length} page${images.length === 1 ? '' : 's'}. Saving publishes immediately.`
     }
   </p>
 
+  {
+    justCreated && (
+      <p class="flash ok">
+        Project created. Upload its deck below — it stays off the site until it has one.
+      </p>
+    )
+  }
   {uploaded && <p class="flash ok">{uploaded}</p>}
   {uploadError && <p class="flash bad">{uploadError}</p>}
 
@@ -132,7 +146,20 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
        here to change, and it was previously the last thing on a 4,000px page —
        below the save button, which is why it read as "there is no upload". It
        saves on its own, so it must not be inside the form either. */
-    !isNew && <DeckManager slug={routeSlug} pages={images} pdf={existing?.pdf} />
+    !isNew ? (
+      <DeckManager slug={routeSlug} pages={images} pdf={existing?.pdf} />
+    ) : (
+      /* Uploading needs a project to attach pages to, so it cannot happen
+         before the first save. Saying that here — in the place the upload will
+         appear — beats an empty space that reads as a missing feature. */
+      <section class="deck-soon">
+        <h2>The deck</h2>
+        <p>
+          Save this project first. The PDF upload appears right here, and every page becomes a page
+          of the case study.
+        </p>
+      </section>
+    )
   }
 
   <form method="POST">
@@ -402,7 +429,9 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
     </fieldset>
 
     <div class="row">
-      <button class="btn" type="submit">Save — publishes immediately</button>
+      <button class="btn" type="submit"
+        >{isNew ? 'Create project — then add the deck' : 'Save — publishes immediately'}</button
+      >
       <a class="btn ghost" href="/admin/">Cancel</a>
     </div>
   </form>

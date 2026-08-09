@@ -42,6 +42,13 @@ jobs:
       - name: Formatting
         run: npx prettier --check "src/**/*.{astro,ts,css}" "scripts/*.mjs" "*.mjs"
 
+      # `npm run build`, not `astro build`. Production runs the npm script,
+      # which is `node scripts/ingest.mjs && astro build && node
+      # scripts/prune-dist.mjs` — so building only the middle step here would
+      # leave the two ends untested and let a failure in either reach the host
+      # unnoticed. Neither needs a database: ingest renders from the PDFs in
+      # src/content, and the pruner only reads what the build just wrote.
+      #
       # Last, because it is the slowest and the two above catch more per second.
       - name: Build
-        run: npx astro build
+        run: npm run build

@@ -13,6 +13,7 @@
  */
 import AdminLayout from '@/layouts/AdminLayout.astro';
 import DeckManager from '@/components/admin/DeckManager.astro';
+import SaveBar from '@/components/admin/SaveBar.astro';
 import {
   getProject,
   saveProject,
@@ -162,7 +163,7 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
     )
   }
 
-  <form method="POST">
+  <form method="POST" data-editor>
     <fieldset>
       <legend>Basics</legend>
 
@@ -428,12 +429,10 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
       </label>
     </fieldset>
 
-    <div class="row">
-      <button class="btn" type="submit"
-        >{isNew ? 'Create project — then add the deck' : 'Save — publishes immediately'}</button
-      >
-      <a class="btn ghost" href="/admin/">Cancel</a>
-    </div>
+    <SaveBar
+      label={isNew ? 'Create project — then add the deck' : 'Save — publishes immediately'}
+      cancelHref="/admin/"
+    />
   </form>
 
   {

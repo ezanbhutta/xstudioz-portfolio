@@ -12,7 +12,7 @@
  * cookie riding along and delete a deck a page at a time.
  */
 import type { APIRoute } from 'astro';
-import { reorderPages, deletePage, setPageAlt, listPages } from '@/lib/deck';
+import { reorderPages, deletePage, setPageAlt, listPages, setCoverFromPage } from '@/lib/deck';
 import { getProject } from '@/lib/admin-data';
 
 const json = (body: unknown, status = 200) =>
@@ -49,7 +49,8 @@ export const POST: APIRoute = async ({ params, request }) => {
   }
 
   const slug = params.slug!;
-  if (!(await getProject(slug))) {
+  const project = await getProject(slug);
+  if (!project) {
     return json({ error: 'That project no longer exists.' }, 404);
   }
 
@@ -85,6 +86,13 @@ export const POST: APIRoute = async ({ params, request }) => {
         }
         const updated = await setPageAlt(slug, body.src, body.alt);
         if (!updated) return json({ error: 'That page is no longer in this deck.' }, 404);
+        return json({ ok: true });
+      }
+
+      case 'cover': {
+        if (typeof body.src !== 'string') return json({ error: 'Expected a page.' }, 400);
+        const result = await setCoverFromPage(slug, project.category, body.src);
+        if (!result.ok) return json({ error: result.reason }, 400);
         return json({ ok: true });
       }
 

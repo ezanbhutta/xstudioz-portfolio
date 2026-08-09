@@ -1,0 +1,47 @@
+# Checks that used to live only in my terminal.
+#
+# Nothing gated a merge before this: `astro check`, Prettier and the build were
+# run by hand, which means they were run when someone remembered. Every one of
+# them is fast and none needs a database — the content layer already falls back
+# to an empty portfolio when MySQL is unreachable, which is exactly the state a
+# CI runner is in.
+#
+# Deliberately not a deploy pipeline. Hostinger deploys on push to main by
+# itself; duplicating that here would give two things permission to publish.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push to the same PR makes the first run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `ci` not `install`: it installs exactly what the lockfile says and
+      # fails if package.json and the lockfile disagree, which is the point of
+      # running it on a build machine.
+      - run: npm ci
+
+      - name: Types
+        run: npx astro check
+
+      - name: Formatting
+        run: npx prettier --check "src/**/*.{astro,ts,css}" "scripts/*.mjs" "*.mjs"
+
+      # Last, because it is the slowest and the two above catch more per second.
+      - name: Build
+        run: npx astro build

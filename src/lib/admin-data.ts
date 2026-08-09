@@ -11,6 +11,7 @@
  * accepts an HTTP request and an HTTP request can say anything.
  */
 import { query, db, type Param } from './db';
+import { resolveImage } from '@/lib/content';
 import { CATEGORY_IDS } from '@/data/categories';
 import { LOGO_TYPES, GUIDELINE_TYPES } from '@/data/filters';
 
@@ -55,22 +56,42 @@ export type FieldErrors = Record<string, string>;
 
 /** Every project, newest edit first is useless here — editors think in grid order. */
 export async function listProjects() {
-  return query<{
+  const rows = await query<{
     slug: string;
     title: string;
     category: string;
     sort_order: number;
     pages: number;
     updated_at: Date;
+    industry: string | null;
+    cover: string | null;
+    cover_width: number | null;
+    cover_height: number | null;
+    cover_storage: string | null;
+    cover_alt: string | null;
   }>(
-    `SELECT p.slug, p.title, p.category, p.sort_order,
+    `SELECT p.slug, p.title, p.category, p.sort_order, p.industry,
+            p.cover, p.cover_width, p.cover_height, p.cover_storage, p.cover_alt,
             COUNT(i.src) AS pages, p.updated_at
        FROM projects p
        LEFT JOIN project_images i ON i.project_slug = p.slug
-      GROUP BY p.slug, p.title, p.category, p.sort_order, p.updated_at
+      GROUP BY p.slug, p.title, p.category, p.sort_order, p.industry,
+               p.cover, p.cover_width, p.cover_height, p.cover_storage,
+               p.cover_alt, p.updated_at
       ORDER BY p.sort_order ASC, p.title ASC`,
   );
+
+  // The list shows what each project looks like, so it needs the cover as a
+  // servable URL. Resolved the same way the public grid resolves it, because
+  // half these rows may still be on the original file-based storage and a
+  // path built by hand is a broken image for every one of them.
+  return rows.map((r) => ({
+    ...r,
+    thumb: resolveImage(r.slug, r.cover, r.cover_storage, r.cover_width, r.cover_height),
+  }));
 }
+
+export type AdminListProject = Awaited<ReturnType<typeof listProjects>>[number];
 
 export async function getProject(slug: string): Promise<AdminProject | undefined> {
   const rows = await query<AdminProject>(`SELECT * FROM projects WHERE slug = ?`, [slug]);

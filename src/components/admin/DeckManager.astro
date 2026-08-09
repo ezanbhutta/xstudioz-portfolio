@@ -137,7 +137,8 @@ const { slug, pages, pdf } = Astro.props;
       <>
         <p class="deck-help" id="deck-help">
           Drag a page to move it. With the keyboard: focus a page, press Space to pick it up, arrow
-          keys to move, Space to drop.
+          keys to move, Space to drop. The star makes a page the grid cover; the lines edit its
+          description.
         </p>
 
         <ol class="pages" data-pages aria-describedby="deck-help">
@@ -173,6 +174,23 @@ const { slug, pages, pdf } = Astro.props;
               )}
 
               <div class="page-tools">
+                <button
+                  class="page-btn"
+                  type="button"
+                  data-cover
+                  aria-label={`Make page ${i + 1} the grid cover`}
+                  title="Use as grid cover"
+                >
+                  <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                    <path
+                      d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8z"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.6"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
                 <button
                   class="page-btn"
                   type="button"
@@ -396,6 +414,28 @@ const { slug, pages, pdf } = Astro.props;
         if (left === 0) location.reload();
       } catch (error) {
         item.classList.remove('is-going');
+        say((error as Error).message);
+      }
+    });
+
+    // --- Use as the grid cover ---------------------------------------------
+    list?.addEventListener('click', async (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLElement>('[data-cover]');
+      if (!button) return;
+      const item = button.closest<HTMLElement>('[data-page]')!;
+      const number = item.querySelector('[data-no]')!.textContent;
+
+      button.setAttribute('aria-busy', 'true');
+      say(`Building a cover from page ${number}…`);
+      try {
+        await post({ action: 'cover', src: item.dataset.src });
+        // The old cover file is overwritten at the same path, so the browser
+        // still holds the previous bytes. Reloading is the only honest way to
+        // show what the grid will now display.
+        say(`Page ${number} is now the grid cover. Reloading…`);
+        location.reload();
+      } catch (error) {
+        button.removeAttribute('aria-busy');
         say((error as Error).message);
       }
     });
@@ -827,6 +867,11 @@ const { slug, pages, pdf } = Astro.props;
 
   .page-btn:hover {
     background: rgb(0 0 0 / 88%);
+  }
+
+  .page-btn[aria-busy='true'] {
+    opacity: 0.5;
+    pointer-events: none;
   }
 
   .page-btn--danger:hover {

@@ -1,0 +1,86 @@
+---
+/**
+ * The save button, and the promise that nothing typed gets lost.
+ *
+ * Two problems, one component, because they are the same problem:
+ *
+ *   - The project editor is long enough that Save spent most of its life
+ *     off-screen. Sticky keeps it reachable from wherever the operator is.
+ *   - Nothing warned before leaving a form with unsaved edits. Closing the
+ *     tab, hitting Back, or clicking through to the deck threw away everything
+ *     typed since the last save, silently, on a screen with no autosave and no
+ *     undo anywhere behind it.
+ *
+ * Shared rather than written twice: the settings form has exactly the same
+ * failure and deserves exactly the same guard, and a second copy is a second
+ * thing to forget to fix.
+ *
+ * The form this guards must carry `data-editor`.
+ */
+interface Props {
+  /** Button text. The action differs per screen; the guard does not. */
+  label: string;
+  /** Rendered when there is somewhere to abandon to. */
+  cancelHref?: string;
+}
+
+const { label, cancelHref } = Astro.props;
+---
+
+<div class="savebar" data-savebar>
+  <p class="savebar-state" data-dirty-note aria-live="polite"></p>
+  <div class="row">
+    <button class="btn" type="submit">{label}</button>
+    {
+      cancelHref && (
+        <a class="btn ghost" href={cancelHref}>
+          Cancel
+        </a>
+      )
+    }
+  </div>
+</div>
+
+<script>
+  /**
+   * Dirtiness is measured against a snapshot of the form as it was rendered,
+   * not a flag set on the first keystroke. Typing a character and deleting it
+   * again leaves the form identical, and warning about that is how people
+   * learn to dismiss the warning without reading it.
+   */
+  const form = document.querySelector<HTMLFormElement>('[data-editor]');
+  const note = document.querySelector<HTMLElement>('[data-dirty-note]');
+  const bar = document.querySelector<HTMLElement>('[data-savebar]');
+
+  if (form && note && bar) {
+    const snapshot = () => new URLSearchParams(new FormData(form) as never).toString();
+    const initial = snapshot();
+    let saving = false;
+
+    const isDirty = () => !saving && snapshot() !== initial;
+
+    const refresh = () => {
+      const dirty = isDirty();
+      bar.classList.toggle('is-dirty', dirty);
+      note.textContent = dirty ? 'Unsaved changes' : '';
+    };
+
+    form.addEventListener('input', refresh);
+    form.addEventListener('change', refresh);
+
+    // Submitting is the intended way out, so it must not warn on the way.
+    form.addEventListener('submit', () => {
+      saving = true;
+      refresh();
+    });
+
+    addEventListener('beforeunload', (event) => {
+      if (!isDirty()) return;
+      // No message: browsers stopped showing custom text years ago and supply
+      // their own wording, so there is nothing worth passing.
+      event.preventDefault();
+    });
+
+    refresh();
+  }
+</script>

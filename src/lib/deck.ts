@@ -15,7 +15,7 @@
  * moved.
  */
 import { db, query } from '@/lib/db';
-import { removeImage } from '@/lib/uploads';
+import { removeImage, readUpload, writeImage } from '@/lib/uploads';
 import { resolveImage } from '@/lib/content';
 
 export type DeckPage = {
@@ -184,4 +184,71 @@ export async function setPageAlt(slug: string, src: string, alt: string): Promis
     [alt.trim().slice(0, 400), slug, src],
   );
   return ((result as { affectedRows?: number }).affectedRows ?? 0) > 0;
+}
+
+/**
+ * Make an existing page the grid cover.
+ *
+ * The cover is not simply "the first page": it is page one *reframed* for the
+ * grid — a guidelines deck gets letterboxed to 16:9 so a portfolio of mixed
+ * page sizes tiles evenly. Pointing the cover column at a page's own webp
+ * would skip that and put a differently-shaped image in the grid.
+ *
+ * So this re-runs the same framing on the chosen page. It reads the page back
+ * off disk rather than keeping the original PNG around, which means it only
+ * works for uploaded pages — a project still on the original file-based
+ * storage has no file here to read, and the caller is told so rather than
+ * being handed a silent no-op.
+ */
+export async function setCoverFromPage(
+  slug: string,
+  category: string,
+  src: string,
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const match = /^\/uploads\/([^/]+)\/([^/]+\.webp)$/.exec(src);
+  if (!match) {
+    return {
+      ok: false,
+      reason: 'That page predates uploads, so there is no file to build a cover from.',
+    };
+  }
+
+  const bytes = await readUpload(match[1], match[2]);
+  if (!bytes) return { ok: false, reason: 'That page’s image file is missing.' };
+
+  const { makeCover } = await import('@/lib/ingest');
+  const cover = await writeImage(await makeCover(bytes, category), slug, 'cover');
+
+  await db().execute(
+    `UPDATE projects
+        SET cover = ?, cover_width = ?, cover_height = ?, cover_storage = 'upload'
+      WHERE slug = ?`,
+    [cover.src, cover.width, cover.height, slug],
+  );
+  return { ok: true };
+}
+
+/**
+ * Reorder the projects themselves.
+ *
+ * `sort_order` here is a plain column with no uniqueness constraint — unlike
+ * page order — so positions can be written straight out with no parking pass.
+ * One transaction still, because a half-applied grid order is visible on the
+ * public site immediately.
+ */
+export async function reorderProjects(order: string[]): Promise<number> {
+  const conn = await db().getConnection();
+  try {
+    await conn.beginTransaction();
+    for (const [i, slug] of order.entries()) {
+      await conn.execute(`UPDATE projects SET sort_order = ? WHERE slug = ?`, [i + 1, slug]);
+    }
+    await conn.commit();
+    return order.length;
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
+  }
 }

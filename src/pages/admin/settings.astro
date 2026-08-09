@@ -8,6 +8,7 @@
  * back to its own name, which is ugly but never hides a field.
  */
 import AdminLayout from '@/layouts/AdminLayout.astro';
+import SaveBar from '@/components/admin/SaveBar.astro';
 import { listSettings, saveSettings } from '@/lib/admin-data';
 
 const META: Record<string, { label: string; hint?: string; multiline?: boolean }> = {
@@ -55,7 +56,7 @@ const settings = await listSettings();
 
   {saved && <p class="flash ok">Saved. Live now.</p>}
 
-  <form method="POST">
+  <form method="POST" data-editor>
     {
       settings.map(({ setting_key, setting_value }) => {
         const meta = META[setting_key] ?? { label: setting_key };
@@ -72,6 +73,6 @@ const settings = await listSettings();
         );
       })
     }
-    <button class="btn" type="submit">Save</button>
+    <SaveBar label="Save — live immediately" />
   </form>
 </AdminLayout>

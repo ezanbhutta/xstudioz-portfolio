@@ -182,6 +182,9 @@ const { title, nav = true } = Astro.props;
       input[type='password'],
       input[type='number'],
       input[type='url'],
+      /* search was missing, so the project filter rendered as an unstyled
+         browser default sitting among styled fields */
+      input[type='search'],
       select,
       textarea {
         width: 100%;
@@ -322,6 +325,33 @@ const { title, nav = true } = Astro.props;
       /* Where the deck upload will be, on a project that does not exist yet.
          Dashed rather than solid: it reads as a slot waiting to be filled,
          which is exactly what it is. */
+      /* The save bar follows the form to the bottom of the viewport. Its
+         border only appears while it is stuck, so it does not draw a line
+         across the page when it is sitting in its natural position. */
+      .savebar {
+        position: sticky;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        padding: 0.9rem 0;
+        margin-top: 1rem;
+        background: var(--color-paper);
+        border-top: 1px solid transparent;
+        transition: border-color 150ms ease;
+      }
+      .savebar.is-dirty {
+        border-top-color: var(--color-line-strong);
+      }
+      .savebar-state {
+        margin: 0;
+        order: 1;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--color-danger);
+      }
+
       .deck-soon {
         border: 1px dashed var(--color-line-control);
         border-radius: 14px;

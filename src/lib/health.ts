@@ -21,7 +21,8 @@
  * `/health`, does not follow redirects, and fails the deployment on anything
  * that is not a 200. Six deployments failed on that redirect.
  */
-import { existsSync } from 'node:fs';
+import { mkdir, writeFile, rm } from 'node:fs/promises';
+import path from 'node:path';
 import { query } from './db';
 import { uploadsDir } from './uploads';
 import { getSortedProjects, databaseError } from './content';
@@ -36,6 +37,58 @@ const shown = (name: string) => {
   if (/^["']|["']$/.test(trimmed)) notes.push('WRAPPED IN QUOTES — remove them');
   return `${name}: set (${notes.join(', ')})`;
 };
+
+/**
+ * Can this deployment actually store an upload?
+ *
+ * "Does the directory exist" was the wrong question, and it read as an alarm
+ * on a perfectly healthy site: nothing has been uploaded yet, `writeImage`
+ * creates the directory on first write, and so a fresh deployment always
+ * reported failure for a thing that was going to work.
+ *
+ * The question worth answering is whether an upload will succeed, and the only
+ * honest way to answer it is to try. This creates the directory if it is
+ * missing, writes a small file, reads the size back and deletes it. That
+ * distinguishes the three states that matter — ready, not writable, and
+ * writable but pointing somewhere a deploy will erase — where existence
+ * confused the first two.
+ *
+ * Creating the directory is a side effect in a status endpoint, which is
+ * normally a bad idea. It is the right one here: the directory has to exist
+ * eventually, making it costs nothing, and doing it now means the first real
+ * upload is not also the first test of whether the path is writable at all.
+ */
+async function uploadsStatus(): Promise<string[]> {
+  const dir = uploadsDir();
+  const probe = path.join(dir, '.health-probe');
+
+  try {
+    await mkdir(dir, { recursive: true });
+    await writeFile(probe, 'ok');
+    await rm(probe);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return [
+      '  writable: NO — uploads will fail',
+      `  error:    ${message}`,
+      '  fix:      point UPLOADS_DIR at a directory this process can write to,',
+      '            outside the deploy target. See db/DEPLOY.md.',
+    ];
+  }
+
+  // Writable, but inside the directory the host replaces on every deploy: the
+  // first uploaded deck survives until the next push and then vanishes.
+  const inside = dir.startsWith(process.cwd());
+  return [
+    '  writable: yes',
+    ...(inside
+      ? [
+          '  WARNING:  this is inside the deployed app, so the next deploy',
+          '            erases every upload. Set UPLOADS_DIR outside it.',
+        ]
+      : []),
+  ];
+}
 
 export async function healthReport(): Promise<Response> {
   const lines: string[] = [
@@ -66,7 +119,7 @@ export async function healthReport(): Promise<Response> {
     // is there, is the only way to see that before it costs the portfolio.
     'Uploads:',
     `  resolved: ${uploadsDir()}`,
-    `  exists:   ${existsSync(uploadsDir()) ? 'yes' : 'NO — uploaded images will 404'}`,
+    ...(await uploadsStatus()),
     `  cwd:      ${process.cwd()}`,
     '',
     'Database:',

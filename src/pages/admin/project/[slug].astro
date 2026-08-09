@@ -212,19 +212,6 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
           </select>
           {errors.category && <span class="err">{errors.category}</span>}
         </label>
-
-        <label>
-          <span class="lab">Grid position</span>
-          <span class="hint">Lower appears earlier everywhere.</span>
-          <input
-            type="number"
-            name="sort_order"
-            min="0"
-            value={val('sort_order', existing?.sort_order ?? 99)}
-            aria-invalid={errors.sort_order ? 'true' : undefined}
-          />
-          {errors.sort_order && <span class="err">{errors.sort_order}</span>}
-        </label>
       </div>
 
       <div class="grid2">

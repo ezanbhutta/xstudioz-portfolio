@@ -179,6 +179,40 @@ function testimonialJson(form: FormData): string | null {
 }
 
 /** Insert or update, from a validated form. */
+/**
+ * Where this project sits on the grid.
+ *
+ * The editor no longer carries a position field — dragging the list is the one
+ * way to order projects, and two controls writing the same column meant they
+ * could disagree. But the save is an upsert that writes every column, so the
+ * value still has to come from somewhere, and the obvious `|| 99` would have
+ * been a trap: saving any project from its editor would silently fling it to
+ * position 99, undoing a drag the operator made a minute earlier.
+ *
+ * So: keep what the row already has, and give a genuinely new project the end
+ * of the list rather than a shared default. `99` for everything meant every
+ * new project tied with every other new project, and MySQL broke the tie by
+ * whatever it felt like.
+ *
+ * The form value is still honoured when present, so an older form post — or a
+ * future screen that wants to set it explicitly — keeps working.
+ */
+async function positionFor(form: FormData, slug: string): Promise<number> {
+  const submitted = str(form.get('sort_order'));
+  if (/^\d+$/.test(submitted)) return Number(submitted);
+
+  const [existing] = await query<{ sort_order: number }>(
+    `SELECT sort_order FROM projects WHERE slug = ?`,
+    [slug],
+  );
+  if (existing) return existing.sort_order;
+
+  const [last] = await query<{ next: number | null }>(
+    `SELECT MAX(sort_order) + 1 AS next FROM projects`,
+  );
+  return last?.next ?? 1;
+}
+
 export async function saveProject(form: FormData, slug: string): Promise<void> {
   const values: Param[] = [
     slug,
@@ -194,7 +228,7 @@ export async function saveProject(form: FormData, slug: string): Promise<void> {
     JSON.stringify(list(form, 'other_links')),
     JSON.stringify(form.getAll('extras').filter((v): v is string => typeof v === 'string')),
     JSON.stringify(list(form, 'extras_custom')),
-    Number(str(form.get('sort_order'))) || 99,
+    await positionFor(form, slug),
     str(form.get('summary')),
     nullIfEmpty(form.get('intent')),
     nullIfEmpty(form.get('context')),

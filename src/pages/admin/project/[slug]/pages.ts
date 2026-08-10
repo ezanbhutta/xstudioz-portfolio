@@ -91,7 +91,7 @@ export const POST: APIRoute = async ({ params, request }) => {
 
       case 'cover': {
         if (typeof body.src !== 'string') return json({ error: 'Expected a page.' }, 400);
-        const result = await setCoverFromPage(slug, project.category, body.src);
+        const result = await setCoverFromPage(slug, body.src);
         if (!result.ok) return json({ error: result.reason }, 400);
         return json({ ok: true });
       }

@@ -60,23 +60,33 @@ async function renderPdf(pdfPath, dir) {
   return names;
 }
 
+/** The colour to extend a cover with — its own top-left pixel, so the join is
+ *  exact. The dominant colour leaves a faint seam when the background is a
+ *  shade off the most common colour in the artwork. */
+async function edgeColour(sourcePath) {
+  const { data } = await sharp(sourcePath)
+    .extract({ left: 0, top: 0, width: 1, height: 1 })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  return { r: data[0], g: data[1], b: data[2] };
+}
+
 /**
- * Grid cover. Brand guidelines decks always preview as a full 1920×1080
- * frame (nothing cropped; letterboxed on white if the deck isn't 16:9).
- * Every other category shows the uploaded asset in full, keeping its own
- * proportions.
+ * Grid cover. Always a full 1920×1080 frame, nothing cropped, any shortfall
+ * filled with the artwork's own edge colour so the seam is invisible.
+ *
+ * Must stay in step with `makeCover` in src/lib/ingest.ts, which does the same
+ * job for decks uploaded through the admin. The duplication is because this is
+ * a plain .mjs build script and that is TypeScript; if one changes and the
+ * other does not, an uploaded cover and an ingested cover come out different
+ * shapes and the grid goes ragged.
  */
-async function makeCover(sourcePath, dir, category) {
+async function makeCover(sourcePath, dir) {
   const out = path.join(dir, 'cover.png');
-  const image = sharp(sourcePath);
-  if (category === 'brand-guidelines') {
-    await image
-      .resize({ width: 1920, height: 1080, fit: 'contain', background: '#ffffff' })
-      .png({ compressionLevel: 9 })
-      .toFile(out);
-  } else {
-    await image.resize({ width: PAGE_WIDTH }).png({ compressionLevel: 9 }).toFile(out);
-  }
+  await sharp(sourcePath)
+    .resize({ width: 1920, height: 1080, fit: 'contain', background: await edgeColour(sourcePath) })
+    .png({ compressionLevel: 9 })
+    .toFile(out);
 }
 
 async function readMeta(dir, slug) {
@@ -119,7 +129,7 @@ async function ingestProject(slug) {
       if (/^page-\d+\.png$/.test(f)) await rm(path.join(dir, f));
     }
     const pages = await renderPdf(pdfPath, dir);
-    await makeCover(path.join(dir, pages[0]), dir, meta.category);
+    await makeCover(path.join(dir, pages[0]), dir);
     meta.cover = './cover.png';
     meta.coverAlt = meta.coverAlt || `${title} presentation cover`;
     meta.images = pages.map((name, i) => ({
@@ -129,7 +139,7 @@ async function ingestProject(slug) {
     delete meta.download;
     console.log(`✓ ${slug} — ${pages.length} PDF pages rendered`);
   } else {
-    await makeCover(path.join(dir, sheetName), dir, meta.category);
+    await makeCover(path.join(dir, sheetName), dir);
     meta.cover = './cover.png';
     meta.coverAlt = meta.coverAlt || `${title} presentation cover`;
     meta.images = [{ src: `./${sheetName}`, alt: `${title} — full portfolio presentation` }];

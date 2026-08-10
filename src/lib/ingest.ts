@@ -89,20 +89,44 @@ export async function renderPdf(data: Buffer): Promise<RenderedPage[]> {
 }
 
 /**
- * The grid cover, from page one.
+ * The colour to extend a cover with, taken from its own top-left pixel.
  *
- * Guidelines decks are letterboxed to a full 1920×1080 frame so the grid reads
- * as a row of presentations rather than a ragged mix of shapes. Everything
- * else keeps its own proportions — a logo sheet cropped to 16:9 loses the mark.
+ * Not the dominant colour: on artwork whose background is a shade or two off
+ * its most common colour, filling with the dominant leaves a faint vertical
+ * seam where the fill meets the edge. The corner pixel *is* the edge, so for
+ * the usual case — a presentation page on a flat ground — the join is exact
+ * and the frame simply looks wider than it is.
  */
-export async function makeCover(pageOne: Buffer, category: string): Promise<Buffer> {
+async function edgeColour(input: Buffer): Promise<{ r: number; g: number; b: number }> {
   const { default: sharp } = await import('sharp');
-  const image = sharp(pageOne);
-  if (category === 'brand-guidelines') {
-    return image
-      .resize({ width: 1920, height: 1080, fit: 'contain', background: '#ffffff' })
-      .png({ compressionLevel: 9 })
-      .toBuffer();
-  }
-  return image.resize({ width: PAGE_WIDTH }).png({ compressionLevel: 9 }).toBuffer();
+  const { data } = await sharp(input)
+    .extract({ left: 0, top: 0, width: 1, height: 1 })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  return { r: data[0], g: data[1], b: data[2] };
+}
+
+/**
+ * The grid cover, from page one. Always a full 1920×1080 frame.
+ *
+ * It used to be 16:9 for guidelines decks only; everything else kept its own
+ * proportions, on the reasoning that "a logo sheet cropped to 16:9 loses the
+ * mark". True of cropping — but this letterboxes, so nothing was ever at risk
+ * of being cut. What actually happened is that the grid tile is 16:9 and uses
+ * `object-fit: contain`, so a cover of any other shape got pillarboxed inside
+ * it against the card background: a 1600×1077 logo sheet sat in a white frame
+ * with bars down both sides. The card's own comment claimed covers share the
+ * tile's ratio "so contain never letterboxes". This is what makes that true.
+ *
+ * The padding is filled with the artwork's own edge colour rather than white. A dark presentation letterboxed on white gets two bright bands the
+ * designer never drew; filled with its own colour, the frame simply extends
+ * and the seam is invisible. A cover that is already 16:9 is unaffected either
+ * way, since there is nothing to fill.
+ */
+export async function makeCover(pageOne: Buffer): Promise<Buffer> {
+  const { default: sharp } = await import('sharp');
+  return sharp(pageOne)
+    .resize({ width: 1920, height: 1080, fit: 'contain', background: await edgeColour(pageOne) })
+    .png({ compressionLevel: 9 })
+    .toBuffer();
 }

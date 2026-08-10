@@ -202,7 +202,6 @@ export async function setPageAlt(slug: string, src: string, alt: string): Promis
  */
 export async function setCoverFromPage(
   slug: string,
-  category: string,
   src: string,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   const match = /^\/uploads\/([^/]+)\/([^/]+\.webp)$/.exec(src);
@@ -217,7 +216,7 @@ export async function setCoverFromPage(
   if (!bytes) return { ok: false, reason: 'That page’s image file is missing.' };
 
   const { makeCover } = await import('@/lib/ingest');
-  const cover = await writeImage(await makeCover(bytes, category), slug, 'cover');
+  const cover = await writeImage(await makeCover(bytes), slug, 'cover');
 
   await db().execute(
     `UPDATE projects

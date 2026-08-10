@@ -125,9 +125,7 @@ export const POST: APIRoute = async ({ params, request }) => {
     }
     // Appending leaves the cover alone. The cover is page one of the deck, and
     // pages added to the end are not page one.
-    const cover = append
-      ? null
-      : await writeImage(await makeCover(pages[0].png, project.category), slug, 'cover');
+    const cover = append ? null : await writeImage(await makeCover(pages[0].png), slug, 'cover');
 
     // Then the database, in one transaction: a deck is all of its pages or
     // none of them, never the first twenty.

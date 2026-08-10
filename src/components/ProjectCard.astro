@@ -106,14 +106,13 @@ const placeholder = await lqipStyle(cover.src);
 
   .card-media {
     position: relative;
-    /* The covers' own ratio, so contain never letterboxes. */
+    /* The covers' own ratio — every cover is generated at 1920×1080 — so
+       `contain` fills the tile exactly and never letterboxes. */
     aspect-ratio: 16 / 9;
     overflow: hidden;
     border-radius: var(--radius-md);
     background: var(--color-paper-raised);
     box-shadow: inset 0 0 0 1px var(--color-line);
-    /* Breathing room so the artwork never touches the ring */
-    padding: clamp(0.5rem, 0.9vw, 1rem);
     transition:
       box-shadow var(--duration-base) var(--ease-out),
       transform var(--duration-base) var(--ease-out);

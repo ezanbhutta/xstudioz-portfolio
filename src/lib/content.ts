@@ -197,19 +197,42 @@ export async function getSortedProjects(): Promise<ReadyProject[]> {
       continue;
     }
 
-    const cover = resolveImage(
-      slug,
-      opt(row.cover),
-      row.cover_storage,
-      row.cover_width,
-      row.cover_height,
-    );
     const images = (bySlug.get(slug) ?? [])
       .map((img) => ({
         ...resolveImage(slug, img.src, img.storage, img.width, img.height),
         alt: img.alt,
       }))
       .filter((img): img is ProjectImage => Boolean(img.src));
+
+    /**
+     * The cover, with the old standalone `cover.webp` left behind.
+     *
+     * That file was a copy of page one, reframed for a grid tile that had a
+     * fixed 16:9 shape. Neither the reframing nor the fixed shape exists any
+     * more — a card takes its ratio from the cover, and the cover is simply a
+     * page — but a copy already written stays exactly as it was written. One
+     * generated while the framing cropped to 16:9 is still cropped, still
+     * 1600×900 beside its own untouched 1600×1077 page, and no amount of
+     * fixing the generator reaches it. Only re-running the operation does,
+     * which means the site stays visibly wrong until an operator happens to.
+     *
+     * So it is resolved past instead. A cover pointing at `/uploads/<slug>/
+     * cover.webp` can only be one of these: every cover set since points at a
+     * page's own file, so there is no ambiguity about what this pattern means.
+     * Page one is what such a cover was made from unless someone had chosen
+     * otherwise, and the old scheme wrote every choice to the same filename,
+     * so page one is also the only answer still recoverable.
+     *
+     * Read-time, not a migration: this has to be right on the next request,
+     * not on the next time someone remembers to run something. The row is left
+     * alone — an upload rewrites it correctly, and the stale file is deleted
+     * the next time its deck is replaced.
+     */
+    const legacyCover = /^\/uploads\/[^/]+\/cover\.webp$/.test(String(row.cover ?? ''));
+    const cover =
+      legacyCover && images[0]
+        ? images[0]
+        : resolveImage(slug, opt(row.cover), row.cover_storage, row.cover_width, row.cover_height);
 
     // Same rule the content-collection version applied: a project without
     // visuals is not displayable, and a warning beats a broken grid.

@@ -15,9 +15,10 @@
 import { mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-// sharp is imported inside writeImage: it is a native module, and keeping it
-// off the server's startup path means a runtime that cannot load it still
-// serves every page instead of failing to boot.
+// sharp comes through src/lib/sharp.ts, which loads it lazily and pins its
+// thread pool to one — a shared plan caps threads per account, and libvips
+// sized to the CPU count is what makes an upload fail with a glib error.
+import { loadSharp } from '@/lib/sharp';
 
 /** The widths the case study and the grid actually request. */
 export const WIDTHS = [640, 1024, 1600] as const;
@@ -76,7 +77,7 @@ export async function writeImage(
   const safeSlug = safeSegment(slug);
   const safeBase = safeSegment(basename);
   const safeSub = subdir ? safeSegment(subdir) : '';
-  const { default: sharp } = await import('sharp');
+  const sharp = await loadSharp();
   const dir = safeSub
     ? path.join(uploadsDir(), safeSlug, safeSub)
     : path.join(uploadsDir(), safeSlug);

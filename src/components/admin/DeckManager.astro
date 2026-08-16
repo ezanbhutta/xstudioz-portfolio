@@ -557,7 +557,16 @@ const { slug, pages, pdf } = Astro.props;
       );
     };
 
-    type Step = { ok?: boolean; error?: string; total?: number; done?: number; message?: string };
+    type Step = {
+      ok?: boolean;
+      error?: string;
+      total?: number;
+      done?: number;
+      message?: string;
+      /** Set by the server when the failure was the host being momentarily
+       *  out of room, rather than anything wrong with the deck. */
+      retryable?: boolean;
+    };
 
     /** Step one. XHR rather than fetch, purely for `upload.onprogress`. */
     const sendPdf = (data: FormData) =>
@@ -617,17 +626,32 @@ const { slug, pages, pdf } = Astro.props;
         error.retryable = res.status >= 500;
         throw error;
       }
-      if (!res.ok || !payload.ok) throw new Error(payload.error ?? 'That step failed.');
+      if (!res.ok || !payload.ok) {
+        const error = new Error(payload.error ?? 'That step failed.') as Error & {
+          retryable?: boolean;
+        };
+        // The server knows the difference between "this deck is wrong" and
+        // "the host was momentarily out of threads". Believe it.
+        error.retryable = payload.retryable === true;
+        throw error;
+      }
       return payload;
     };
 
     /**
-     * Render one page, forgiving a couple of stumbles.
+     * Render one page, forgiving a few stumbles.
      *
-     * One blip should not throw away a deck that is thirty pages in. A refusal
-     * that arrives as JSON — a page outside the deck, an upload that has since
-     * expired — is not retried: the same answer would come back, more slowly.
+     * One blip should not throw away a deck that is thirty pages in, and on a
+     * shared plan a blip is routine: the account hits its thread ceiling, the
+     * host says no, and the same page renders fine a second later. Backing off
+     * a little further each time is what lets it clear.
+     *
+     * A refusal the server calls deterministic — a page outside the deck, an
+     * upload that has since expired — is not retried. The same answer would
+     * come back, more slowly.
      */
+    const ATTEMPTS = 4;
+
     const renderPage = async (index: number): Promise<Step> => {
       for (let attempt = 1; ; attempt++) {
         try {
@@ -637,9 +661,9 @@ const { slug, pages, pdf } = Astro.props;
           // completed, which is the most retryable failure there is.
           const retryable =
             (error as { retryable?: boolean }).retryable ?? error instanceof TypeError;
-          if (!retryable || attempt === 3) throw error;
-          stat!.textContent = `Page ${index} did not come back — trying again…`;
-          await new Promise((wait) => setTimeout(wait, attempt * 800));
+          if (!retryable || attempt === ATTEMPTS) throw error;
+          stat!.textContent = `Page ${index} needs another go — waiting for the server (${attempt}/${ATTEMPTS - 1})…`;
+          await new Promise((wait) => setTimeout(wait, attempt * 1500));
         }
       }
     };

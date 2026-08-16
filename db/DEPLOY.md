@@ -82,6 +82,23 @@ must never go there.
    UPLOADS_DIR=/home/u666480115/domains/portfolio.xstudioz.com/public_html/uploads
    ```
 
+   Optionally also:
+
+   ```
+   UV_THREADPOOL_SIZE=2
+   ```
+
+   Not required, and the only one of the three thread caps that cannot be set
+   from inside the app. This machine reports **64 cores** — the whole shared
+   box, not the slice this plan may use — and every native library sizes its
+   thread pool from that number. libvips and the canvas runtime are both capped
+   in code (`src/lib/sharp.ts`, `src/lib/canvas.ts`), which is what stopped
+   uploads failing with `glib: Error creating thread: Resource temporarily
+   unavailable`. libuv cannot be: it sizes its pool the first time anything
+   uses it, during module loading, long before any of our code runs. Setting it
+   here saves a further two or three threads per render. `/health?render=1`
+   prints all three, the core count, and the account's process ceiling.
+
    `UPLOADS_DIR` is not optional in production, and leaving it out fails
    quietly rather than loudly. Unset, it resolves to `public/uploads` relative
    to whatever directory the process was started in — which is inside the

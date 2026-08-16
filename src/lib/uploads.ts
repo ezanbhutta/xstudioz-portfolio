@@ -62,11 +62,24 @@ export async function writeImage(
   input: Buffer,
   slug: string,
   basename: string,
+  /**
+   * Optional subdirectory under the project.
+   *
+   * A deck being rendered page by page cannot write to the live filenames:
+   * the database still points at the previous deck, and overwriting
+   * `page-01.webp` would corrupt what visitors are looking at right up until
+   * the moment the new deck is committed. Pages are staged in a subdirectory
+   * and promoted in one step when every page has rendered.
+   */
+  subdir?: string,
 ): Promise<WrittenImage> {
   const safeSlug = safeSegment(slug);
   const safeBase = safeSegment(basename);
+  const safeSub = subdir ? safeSegment(subdir) : '';
   const { default: sharp } = await import('sharp');
-  const dir = path.join(uploadsDir(), safeSlug);
+  const dir = safeSub
+    ? path.join(uploadsDir(), safeSlug, safeSub)
+    : path.join(uploadsDir(), safeSlug);
   await mkdir(dir, { recursive: true });
 
   const image = sharp(input, { limitInputPixels: 268402689 });
@@ -87,7 +100,7 @@ export async function writeImage(
   }
 
   return {
-    src: publicPath(safeSlug, `${safeBase}.webp`),
+    src: publicPath(safeSub ? `${safeSlug}/${safeSub}` : safeSlug, `${safeBase}.webp`),
     width: fullMeta.width ?? widest,
     height: fullMeta.height ?? 0,
   };

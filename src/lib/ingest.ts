@@ -89,6 +89,77 @@ export async function renderPdf(data: Buffer): Promise<RenderedPage[]> {
 }
 
 /**
+ * How many pages, without rendering any of them.
+ *
+ * Opening a document and reading numPages is cheap; rasterising is not. The
+ * upload needs the count up front so the browser knows how many render
+ * requests to make, and asking for it must not cost the time the whole
+ * problem is about.
+ */
+export async function countPdfPages(data: Buffer): Promise<number> {
+  const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const task = getDocument({
+    data: new Uint8Array(data),
+    isEvalSupported: false,
+  } as Parameters<typeof getDocument>[0]);
+  const doc = await task.promise;
+  try {
+    return doc.numPages;
+  } finally {
+    await task.destroy();
+  }
+}
+
+/**
+ * Rasterise one page.
+ *
+ * The whole-deck version renders every page in a single call, which is what
+ * put the work inside one HTTP request and made a large deck impossible to
+ * upload — the host's proxy gave up with a 504, and a big enough deck took the
+ * process down for a 503. One page per request keeps every request short.
+ *
+ * The document is reopened per page rather than held between requests. That is
+ * genuinely wasted parsing, and it is the right trade: a shared host recycles
+ * processes whenever it likes, so anything kept in memory between two requests
+ * is a deck that fails halfway through for reasons nobody can reproduce.
+ */
+export async function renderPdfPage(data: Buffer, index: number): Promise<Buffer> {
+  const [{ createCanvas }, { getDocument }] = await Promise.all([
+    import('@napi-rs/canvas'),
+    import('pdfjs-dist/legacy/build/pdf.mjs'),
+  ]);
+  const task = getDocument({
+    data: new Uint8Array(data),
+    isEvalSupported: false,
+  } as Parameters<typeof getDocument>[0]);
+  const doc = await task.promise;
+
+  try {
+    if (index < 1 || index > doc.numPages) {
+      throw new Error(`Page ${index} is outside this PDF's ${doc.numPages} pages.`);
+    }
+    const page = await doc.getPage(index);
+    const base = page.getViewport({ scale: 1 });
+    const viewport = page.getViewport({ scale: PAGE_WIDTH / base.width });
+    const canvas = createCanvas(Math.round(viewport.width), Math.round(viewport.height));
+    const ctx = canvas.getContext('2d');
+    // PDF pages may be transparent; without this they composite onto black.
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({
+      canvasContext: ctx as unknown as CanvasRenderingContext2D,
+      canvas: canvas as unknown as HTMLCanvasElement,
+      viewport,
+    }).promise;
+    const png = await canvas.encode('png');
+    page.cleanup();
+    return png;
+  } finally {
+    await task.destroy();
+  }
+}
+
+/**
  * Remove a uniform border the artwork was exported with.
  *
  * A page exported from a design tool often carries a margin of flat colour

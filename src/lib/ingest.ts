@@ -16,6 +16,7 @@
 // it; only rendering an upload does. sharp is the same, which is why it comes
 // through the lazy loader below rather than a top-level import.
 import { loadSharp } from '@/lib/sharp';
+import { loadCanvas } from '@/lib/canvas';
 
 /** Matches the build: wide enough for a 2× retina read at display size. */
 const PAGE_WIDTH = 1600;
@@ -40,7 +41,7 @@ export type RenderedPage = { index: number; png: Buffer };
  */
 export async function renderPdf(data: Buffer): Promise<RenderedPage[]> {
   const [{ createCanvas }, { getDocument }] = await Promise.all([
-    import('@napi-rs/canvas'),
+    loadCanvas(),
     import('pdfjs-dist/legacy/build/pdf.mjs'),
   ]);
   const task = getDocument({
@@ -127,7 +128,7 @@ export async function countPdfPages(data: Buffer): Promise<number> {
  */
 export async function renderPdfPage(data: Buffer, index: number): Promise<Buffer> {
   const [{ createCanvas }, { getDocument }] = await Promise.all([
-    import('@napi-rs/canvas'),
+    loadCanvas(),
     import('pdfjs-dist/legacy/build/pdf.mjs'),
   ]);
   const task = getDocument({
@@ -186,8 +187,13 @@ export async function trimBorder(input: Buffer): Promise<Buffer> {
   if (!before.width || !before.height) return input;
 
   try {
-    const out = await sharp(input).trim({ threshold: 1 }).toBuffer();
-    const after = await sharp(out).metadata();
+    // The trimmed size comes back with the buffer rather than from a second
+    // pass over it. Every sharp pipeline asks the kernel for threads, and on
+    // this host that request is the thing that fails — so the ones that can be
+    // avoided are worth avoiding.
+    const { data: out, info: after } = await sharp(input)
+      .trim({ threshold: 1 })
+      .toBuffer({ resolveWithObject: true });
     if (!after.width || !after.height) return input;
 
     const lostW = 1 - after.width / before.width;

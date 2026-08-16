@@ -26,7 +26,14 @@ type Sharp = typeof sharpModule;
 let loading: Promise<Sharp> | null = null;
 
 export function loadSharp(): Promise<Sharp> {
-  loading ??= import('sharp').then(({ default: sharp }) => {
+  loading ??= (async () => {
+    // Set before the import, not after: libvips reads VIPS_CONCURRENCY when it
+    // initialises, and `sharp.concurrency()` can only change it afterwards.
+    // Belt and braces — one of the two applies whichever way this build of
+    // libvips was compiled, and getting it wrong costs an upload that cannot
+    // run at all. Only possible because the import below is lazy.
+    process.env.VIPS_CONCURRENCY ??= '1';
+    const { default: sharp } = await import('sharp');
     // One thread per operation instead of one per core.
     sharp.concurrency(1);
     // Keep the operation cache from holding file descriptors open between
@@ -34,6 +41,6 @@ export function loadSharp(): Promise<Sharp> {
     // buys nothing here and costs handles the account is also capped on.
     sharp.cache({ files: 0 });
     return sharp;
-  });
+  })();
   return loading;
 }

@@ -22,10 +22,14 @@
  * that is not a 200. Six deployments failed on that redirect.
  */
 import { mkdir, writeFile, rm } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { query } from './db';
 import { uploadsDir } from './uploads';
 import { getSortedProjects, databaseError } from './content';
+import { loadSharp } from './sharp';
+import { loadCanvas } from './canvas';
 
 const shown = (name: string) => {
   const value = process.env[name];
@@ -90,14 +94,41 @@ async function uploadsStatus(): Promise<string[]> {
   ];
 }
 
+/** How many threads this process is currently running. Linux only; null elsewhere. */
+function threadCount(): number | null {
+  try {
+    const status = readFileSync('/proc/self/status', 'utf8');
+    return Number(/^Threads:\s*(\d+)/m.exec(status)?.[1] ?? NaN) || null;
+  } catch {
+    return null;
+  }
+}
+
+/** The account's ceiling on processes and threads, if the kernel will say. */
+function processLimit(): string {
+  try {
+    const limits = readFileSync('/proc/self/limits', 'utf8');
+    const line = /^Max processes\s+(\S+)\s+(\S+)/m.exec(limits);
+    return line ? `soft ${line[1]}, hard ${line[2]}` : '(not reported)';
+  } catch {
+    return '(unreadable)';
+  }
+}
+
 /**
- * Can this deployment render a PDF at all?
+ * Can this deployment render a PDF at all — and if not, why not?
  *
- * The upload pipeline needs two native modules — @napi-rs/canvas to rasterise
- * and sharp to compress — and both need system libraries present. They are
+ * The upload pipeline needs two native modules, @napi-rs/canvas to rasterise
+ * and sharp to compress, and both need system libraries present. They are
  * imported lazily precisely so a missing library cannot stop the server
  * booting, which means the first time anyone finds out is when an upload
  * fails, in production, with no way to see why from outside.
+ *
+ * "It loads" turned out not to be the useful question. Both modules load here
+ * perfectly well and an upload still failed, because the failure happens when
+ * a library asks the kernel for a thread and is refused. So this now reports
+ * the numbers that decide that — cores, threads, the process ceiling, memory —
+ * and then does real work at the size a deck page actually is.
  *
  * Only run on request (`/health?render=1`), never on the routine check.
  * Hostinger polls /health to decide whether the deployment is alive; if
@@ -106,18 +137,92 @@ async function uploadsStatus(): Promise<string[]> {
  */
 async function rendererStatus(): Promise<string[]> {
   const out: string[] = ['', 'PDF renderer:'];
+
+  // The numbers that decide whether an upload can work at all.
+  //
+  // `glib: Error creating thread: Resource temporarily unavailable` is EAGAIN
+  // from pthread_create, which means one of two things: the account is at its
+  // thread ceiling, or there is not enough memory left to give a new thread its
+  // stack. Both are invisible from outside the box, and guessing between them
+  // has already cost one release — so measure.
+  //
+  // The CPU count matters because every native library here sizes its thread
+  // pool from it, and a shared host reports the whole machine's cores rather
+  // than the slice this plan may use.
+  const rss = process.memoryUsage().rss;
+  out.push(
+    `  cpus reported:   ${os.cpus().length}`,
+    `  threads now:     ${threadCount() ?? '(unknown)'}`,
+    `  max processes:   ${processLimit()}`,
+    `  rss:             ${(rss / 1024 / 1024).toFixed(0)} MB`,
+    '',
+  );
+
   for (const [label, load] of [
-    ['@napi-rs/canvas', () => import('@napi-rs/canvas')],
+    ['@napi-rs/canvas', () => loadCanvas()],
     ['pdfjs-dist', () => import('pdfjs-dist/legacy/build/pdf.mjs')],
-    ['sharp', () => import('sharp')],
+    ['sharp', () => loadSharp()],
   ] as const) {
+    const before = threadCount();
     try {
       await load();
-      out.push(`  ${label.padEnd(16)} loads`);
+      const after = threadCount();
+      const grew = before !== null && after !== null ? ` (+${after - before} threads)` : '';
+      out.push(`  ${label.padEnd(16)} loads${grew}`);
     } catch (error) {
       out.push(`  ${label.padEnd(16)} FAILED — ${error instanceof Error ? error.message : error}`);
     }
   }
+
+  // Loading a library proves nothing: the failure happens when it asks the
+  // kernel for a thread, which is only when real work runs. So do real work,
+  // at the size a deck page actually is.
+  out.push('', '  Live operations, at the size a real page uses:');
+
+  try {
+    const sharp = await loadSharp();
+    out.push(`    sharp concurrency: ${sharp.concurrency()}`);
+    const before = threadCount();
+    const canvasSized = await sharp({
+      create: { width: 1600, height: 1100, channels: 3, background: '#888888' },
+    })
+      .png()
+      .toBuffer();
+    await sharp(canvasSized).resize({ width: 1600 }).webp({ quality: 82 }).toBuffer();
+    const after = threadCount();
+    out.push(
+      `    sharp resize+webp: OK${before !== null && after !== null ? ` (threads ${before} -> ${after})` : ''}`,
+    );
+  } catch (error) {
+    out.push(`    sharp resize+webp: FAILED — ${error instanceof Error ? error.message : error}`);
+  }
+
+  try {
+    const { createCanvas } = await loadCanvas();
+    const before = threadCount();
+    const canvas = createCanvas(1600, 1100);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 1600, 1100);
+    await canvas.encode('png');
+    const after = threadCount();
+    out.push(
+      `    canvas render:     OK${before !== null && after !== null ? ` (threads ${before} -> ${after})` : ''}`,
+    );
+  } catch (error) {
+    out.push(`    canvas render:     FAILED — ${error instanceof Error ? error.message : error}`);
+  }
+
+  // Read after the loaders have run, so these are the values that were actually
+  // in force — the loaders set them immediately before their native import, so
+  // reading them earlier reports "(unset)" and means nothing.
+  out.push(
+    '',
+    `  threads after all of that: ${threadCount() ?? '(unknown)'}`,
+    `  VIPS_CONCURRENCY:   ${process.env.VIPS_CONCURRENCY ?? '(unset)'}`,
+    `  RAYON_NUM_THREADS:  ${process.env.RAYON_NUM_THREADS ?? '(unset)'}`,
+    `  UV_THREADPOOL_SIZE: ${process.env.UV_THREADPOOL_SIZE ?? '(unset, Node default 4)'}`,
+  );
   return out;
 }
 

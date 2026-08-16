@@ -219,9 +219,13 @@ async function rendererStatus(): Promise<string[]> {
   out.push(
     '',
     `  threads after all of that: ${threadCount() ?? '(unknown)'}`,
-    `  VIPS_CONCURRENCY:   ${process.env.VIPS_CONCURRENCY ?? '(unset)'}`,
-    `  RAYON_NUM_THREADS:  ${process.env.RAYON_NUM_THREADS ?? '(unset)'}`,
-    `  UV_THREADPOOL_SIZE: ${process.env.UV_THREADPOOL_SIZE ?? '(unset, Node default 4)'}`,
+    `  VIPS_CONCURRENCY:     ${process.env.VIPS_CONCURRENCY ?? '(unset)'}`,
+    `  TOKIO_WORKER_THREADS: ${process.env.TOKIO_WORKER_THREADS ?? '(unset — canvas will open one thread per core)'}`,
+    // The only one of the three that cannot be set from inside the process:
+    // libuv sizes its pool the first time anything uses it, which is during
+    // module loading, long before this code runs. It has to come from the
+    // host's environment configuration or not at all.
+    `  UV_THREADPOOL_SIZE:   ${process.env.UV_THREADPOOL_SIZE ?? '(unset, Node default 4)'}`,
   );
   return out;
 }

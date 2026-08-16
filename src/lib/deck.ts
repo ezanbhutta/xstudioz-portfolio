@@ -15,7 +15,7 @@
  * moved.
  */
 import { db, query } from '@/lib/db';
-import { removeImage, readUpload, writeImage } from '@/lib/uploads';
+import { removeImage } from '@/lib/uploads';
 import { resolveImage } from '@/lib/content';
 
 export type DeckPage = {
@@ -189,40 +189,50 @@ export async function setPageAlt(slug: string, src: string, alt: string): Promis
 /**
  * Make an existing page the grid cover.
  *
- * The cover is not simply "the first page": it is page one *reframed* for the
- * grid — a guidelines deck gets letterboxed to 16:9 so a portfolio of mixed
- * page sizes tiles evenly. Pointing the cover column at a page's own webp
- * would skip that and put a differently-shaped image in the grid.
+ * This used to build a second image: it read the page back off disk, reframed
+ * it to 16:9 and wrote a separate `cover.webp`. That was for a grid tile with
+ * a fixed shape, and the tile no longer has one — a card now takes its ratio
+ * from the cover itself, so there is nothing left to reframe.
  *
- * So this re-runs the same framing on the chosen page. It reads the page back
- * off disk rather than keeping the original PNG around, which means it only
- * works for uploaded pages — a project still on the original file-based
- * storage has no file here to read, and the caller is told so rather than
- * being handed a silent no-op.
+ * What the copy did leave behind was a way to be wrong. A derived file is only
+ * correct until the code that derived it changes, and this one went stale
+ * exactly that way: a cover built while the framing cropped to 16:9 stayed
+ * cropped after the cropping was removed, because nothing re-ran. The page it
+ * came from was right there on disk the whole time, unmodified.
+ *
+ * So the cover is a *reference* to a page now, not a copy of one. Setting it
+ * is a single UPDATE — instant, exact, and impossible to leave out of date,
+ * because there is no second artefact to keep in step. It also works for a
+ * project still on the original file-based storage, which the old version had
+ * to refuse for want of a file to read.
  */
 export async function setCoverFromPage(
   slug: string,
   src: string,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const match = /^\/uploads\/([^/]+)\/([^/]+\.webp)$/.exec(src);
-  if (!match) {
+  const [page] = await query<{
+    src: string;
+    width: number | null;
+    height: number | null;
+    storage: string;
+  }>(`SELECT src, width, height, storage FROM project_images WHERE project_slug = ? AND src = ?`, [
+    slug,
+    src,
+  ]);
+
+  if (!page) return { ok: false, reason: 'That page is no longer in this deck.' };
+  if (!page.width || !page.height) {
     return {
       ok: false,
-      reason: 'That page predates uploads, so there is no file to build a cover from.',
+      reason: 'That page has no recorded size, so the grid could not reserve space for it.',
     };
   }
 
-  const bytes = await readUpload(match[1], match[2]);
-  if (!bytes) return { ok: false, reason: 'That page’s image file is missing.' };
-
-  const { makeCover } = await import('@/lib/ingest');
-  const cover = await writeImage(await makeCover(bytes), slug, 'cover');
-
   await db().execute(
     `UPDATE projects
-        SET cover = ?, cover_width = ?, cover_height = ?, cover_storage = 'upload'
+        SET cover = ?, cover_width = ?, cover_height = ?, cover_storage = ?
       WHERE slug = ?`,
-    [cover.src, cover.width, cover.height, slug],
+    [page.src, page.width, page.height, page.storage, slug],
   );
   return { ok: true };
 }

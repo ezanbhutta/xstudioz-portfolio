@@ -23,8 +23,8 @@
  * client to drive the loop; a long one will fail there exactly as it did.
  */
 import type { APIRoute } from 'astro';
-import { renderPdf, makeCover, trimBorder } from '@/lib/ingest';
-import { writeImage, readUpload, removeImage } from '@/lib/uploads';
+import { renderPdf, trimBorder } from '@/lib/ingest';
+import { writeImage, removeImage } from '@/lib/uploads';
 import { db, query } from '@/lib/db';
 import { getProject } from '@/lib/admin-data';
 import { startJob, renderJobPage, promoteJob, clearJob, readManifest } from '@/lib/deck-job';
@@ -198,18 +198,20 @@ async function finish(slug: string, title: string): Promise<Response> {
   const total = manifest.existing + pages.length;
   const written = new Set(pages.map((p) => pageSrc(slug, p.number)));
 
-  // The cover is page one, reframed. Read back the page just promoted rather
-  // than keeping a buffer across requests — there is no across-requests here.
+  // The cover is page one — the page itself, not a copy of it.
+  //
+  // This used to build a second image, reframed to the grid tile's fixed 16:9.
+  // The tile has no fixed shape any more, so there is nothing to reframe, and
+  // a derived file is only correct until the code that derived it changes. One
+  // built while the framing cropped stayed cropped long after the cropping was
+  // removed, because nothing re-ran it. A reference cannot go stale.
   const cover = manifest.append
     ? null
-    : await (async () => {
-        const first = await readUpload(
-          slug,
-          `page-${String(pages[0].number).padStart(2, '0')}.webp`,
-        );
-        if (!first) return null;
-        return writeImage(await makeCover(first), slug, 'cover');
-      })();
+    : {
+        src: pageSrc(slug, pages[0].number),
+        width: pages[0].width,
+        height: pages[0].height,
+      };
 
   const conn = await db().getConnection();
   try {
@@ -279,7 +281,11 @@ async function finish(slug: string, title: string): Promise<Response> {
   // a fixed allowance, replacing a 45-page deck a handful of times is how that
   // allowance runs out. Pages the new deck reuses by name are excluded: those
   // files are the new deck.
-  await Promise.all(previous.filter((src) => !written.has(src)).map(removeImage));
+  // The old standalone cover.webp goes too. Nothing can reference it any more
+  // — the cover is a page now — so on a replace it is dead weight left behind
+  // by the scheme this replaced.
+  const dead = manifest.append ? [] : [`/uploads/${slug}/cover.webp`];
+  await Promise.all([...previous.filter((src) => !written.has(src)), ...dead].map(removeImage));
 
   return json({
     ok: true,
@@ -318,7 +324,8 @@ async function synchronousFallback(
       await writeImage(trimmed[i], slug, `page-${String(firstNumber + i).padStart(2, '0')}`),
     );
   }
-  const cover = append ? null : await writeImage(await makeCover(trimmed[0]), slug, 'cover');
+  // Page one itself, as above — a reference, not a second copy of it.
+  const cover = append ? null : written[0];
 
   const conn = await db().getConnection();
   try {
@@ -358,9 +365,11 @@ async function synchronousFallback(
     conn.release();
   }
 
-  // As above: the replaced deck's files, minus the names the new deck reuses.
+  // As above: the replaced deck's files, minus the names the new deck reuses,
+  // plus the standalone cover nothing references any more.
   const keep = new Set(written.map((image) => image.src));
-  await Promise.all(previous.filter((src) => !keep.has(src)).map(removeImage));
+  const dead = append ? [] : [`/uploads/${slug}/cover.webp`];
+  await Promise.all([...previous.filter((src) => !keep.has(src)), ...dead].map(removeImage));
 
   return redirectBack(slug, `${pages.length} pages published.`, true);
 }

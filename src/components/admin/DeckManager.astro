@@ -544,7 +544,22 @@ const { slug, pages, pdf } = Astro.props;
         try {
           payload = JSON.parse(request.responseText);
         } catch {
-          payload = { error: 'The server sent something unexpected.' };
+          // Not JSON — so the reply did not come from the upload route at all.
+          // Usually the proxy in front of it: a gateway error, or a timeout on
+          // a long render. Say which, and show the first line of what came
+          // back, because "something unexpected" is not something anyone can
+          // act on.
+          const first = request.responseText
+            .replace(/<[^>]*>/g, ' ')
+            .trim()
+            .split(/\s{2,}|\n/)[0];
+          payload = {
+            error:
+              `The server replied ${request.status || 'nothing'}` +
+              (request.statusText ? ` (${request.statusText})` : '') +
+              '. The deck was not changed.' +
+              (first ? ` Server said: ${first.slice(0, 120)}` : ''),
+          };
         }
         if (request.status === 200 && payload.ok) {
           bar!.style.inlineSize = '100%';

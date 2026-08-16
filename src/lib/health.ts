@@ -90,7 +90,38 @@ async function uploadsStatus(): Promise<string[]> {
   ];
 }
 
-export async function healthReport(): Promise<Response> {
+/**
+ * Can this deployment render a PDF at all?
+ *
+ * The upload pipeline needs two native modules — @napi-rs/canvas to rasterise
+ * and sharp to compress — and both need system libraries present. They are
+ * imported lazily precisely so a missing library cannot stop the server
+ * booting, which means the first time anyone finds out is when an upload
+ * fails, in production, with no way to see why from outside.
+ *
+ * Only run on request (`/health?render=1`), never on the routine check.
+ * Hostinger polls /health to decide whether the deployment is alive; if
+ * loading a broken native module aborts the process, doing it here would turn
+ * a diagnostic into an outage.
+ */
+async function rendererStatus(): Promise<string[]> {
+  const out: string[] = ['', 'PDF renderer:'];
+  for (const [label, load] of [
+    ['@napi-rs/canvas', () => import('@napi-rs/canvas')],
+    ['pdfjs-dist', () => import('pdfjs-dist/legacy/build/pdf.mjs')],
+    ['sharp', () => import('sharp')],
+  ] as const) {
+    try {
+      await load();
+      out.push(`  ${label.padEnd(16)} loads`);
+    } catch (error) {
+      out.push(`  ${label.padEnd(16)} FAILED — ${error instanceof Error ? error.message : error}`);
+    }
+  }
+  return out;
+}
+
+export async function healthReport(url?: URL): Promise<Response> {
   const lines: string[] = [
     'XStudioz portfolio — status',
     `time: ${new Date().toISOString()}`,
@@ -175,6 +206,10 @@ export async function healthReport(): Promise<Response> {
     }
   } catch (error) {
     lines.push(`  FAILED: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  // Opt-in: /health?render=1
+  if (url?.searchParams.get('render') !== null && url?.searchParams.get('render') !== undefined) {
+    lines.push(...(await rendererStatus()));
   }
 
   return new Response(lines.join('\n'), {

@@ -10,7 +10,7 @@
  * rather than a project pointing at files that were never finished.
  */
 import type { APIRoute } from 'astro';
-import { renderPdf, makeCover } from '@/lib/ingest';
+import { renderPdf, makeCover, trimBorder } from '@/lib/ingest';
 import { writeImage } from '@/lib/uploads';
 import { db, query } from '@/lib/db';
 import { getProject } from '@/lib/admin-data';
@@ -136,10 +136,15 @@ async function handleUpload(
     // deck overwrites its own pages rather than accumulating orphans.
     const total = existing.length + pages.length;
     const written = [];
-    for (const [i, page] of pages.entries()) {
+    // Trimmed before anything is written, so the page and the cover built from
+    // it agree — a cover framed from an untrimmed page would sit differently
+    // from the page it is supposed to represent.
+    const trimmed = await Promise.all(pages.map((p) => trimBorder(p.png)));
+
+    for (const [i] of pages.entries()) {
       const number = firstNumber + i;
       const name = `page-${String(number).padStart(2, '0')}`;
-      const out = await writeImage(page.png, slug, name);
+      const out = await writeImage(trimmed[i], slug, name);
       written.push({
         ...out,
         // Counted against the finished deck, not this batch — an appended page
@@ -150,7 +155,7 @@ async function handleUpload(
     }
     // Appending leaves the cover alone. The cover is page one of the deck, and
     // pages added to the end are not page one.
-    const cover = append ? null : await writeImage(await makeCover(pages[0].png), slug, 'cover');
+    const cover = append ? null : await writeImage(await makeCover(trimmed[0]), slug, 'cover');
 
     // Then the database, in one transaction: a deck is all of its pages or
     // none of them, never the first twenty.

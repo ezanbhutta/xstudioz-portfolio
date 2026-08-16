@@ -67,6 +67,24 @@ function nextPageNumber(srcs: string[]): number {
   return highest + 1;
 }
 
+/**
+ * Failures worth trying again, rather than reporting.
+ *
+ * A shared plan caps threads and memory per account, and refuses over it with
+ * EAGAIN — which surfaces from libvips as `glib: Error creating thread:
+ * Resource temporarily unavailable`. Nothing is wrong with the deck or the
+ * request: the account was momentarily at its ceiling, and the same page
+ * usually renders a second later. Reporting that to the operator as a failed
+ * upload puts them in the position of guessing whether to try again, which is
+ * the machine's job.
+ *
+ * Deliberately narrow. Every other failure here is deterministic, and retrying
+ * a deterministic failure only makes the operator wait longer for the same
+ * answer.
+ */
+const TRANSIENT =
+  /resource temporarily unavailable|EAGAIN|error creating thread|cannot allocate memory|ENOMEM|pthread/i;
+
 export const POST: APIRoute = async ({ params, request }) => {
   const slug = params.slug!;
 
@@ -77,12 +95,16 @@ export const POST: APIRoute = async ({ params, request }) => {
     return await route(slug, request);
   } catch (error) {
     console.error('[upload:fatal]', error);
-    const message =
-      error instanceof Error ? `The upload failed: ${error.message}` : 'The upload failed.';
+    const transient = error instanceof Error && TRANSIENT.test(error.message);
+    const message = !(error instanceof Error)
+      ? 'The upload failed.'
+      : transient
+        ? `The server ran out of room to render that page (${error.message}).`
+        : `The upload failed: ${error.message}`;
     return (request.headers.get('content-type') ?? '').includes('multipart/form-data') &&
       !(request.headers.get('accept') ?? '').includes('application/json')
       ? redirectBack(slug, message, false)
-      : json({ error: message }, 400);
+      : json({ error: message, retryable: transient }, transient ? 503 : 400);
   }
 };
 

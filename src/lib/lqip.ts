@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { uploadsDir } from './uploads';
+import { loadSharp } from './sharp';
 
 /**
  * Blur placeholders: a ~200-byte, 16px-wide WebP inlined as a data URI and
@@ -33,13 +34,13 @@ export function lqip(src: string): Promise<string | null> {
   if (!hit) {
     // Native module, loaded on demand — a placeholder is a nicety, and it must
     // never be the reason the server cannot start.
-    hit = import('sharp')
-      .then(({ default: sharp }) =>
+    hit = loadSharp()
+      .then((sharp) =>
         sharp(file)
           .resize(16)
           .webp({ quality: 30 })
           .toBuffer()
-          .then((buffer) => `data:image/webp;base64,${buffer.toString('base64')}`),
+          .then((buffer: Buffer) => `data:image/webp;base64,${buffer.toString('base64')}`),
       )
       // A missing file, or a sharp that will not load, costs one placeholder.
       .catch(() => null);

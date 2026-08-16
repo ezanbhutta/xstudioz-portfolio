@@ -7,13 +7,15 @@
  * a buffer and returns buffers, because an HTTP upload has no folder yet and
  * nothing should touch disk until the pages have actually rendered.
  */
-// Imported inside the functions, not at the top.
+// `@napi-rs/canvas` is imported inside the functions, not at the top.
 //
-// `@napi-rs/canvas` and `sharp` are native modules that need system libraries
-// present at load time. Importing them here puts them on the server's startup
-// path, so a runtime missing one of those libraries kills the process before
-// any of this code runs — no page, no log, no error anyone can read. Nothing
-// about serving a page needs them; only rendering an upload does.
+// It is a native module that needs system libraries present at load time.
+// Importing it here puts it on the server's startup path, so a runtime missing
+// one of those libraries kills the process before any of this code runs — no
+// page, no log, no error anyone can read. Nothing about serving a page needs
+// it; only rendering an upload does. sharp is the same, which is why it comes
+// through the lazy loader below rather than a top-level import.
+import { loadSharp } from '@/lib/sharp';
 
 /** Matches the build: wide enough for a 2× retina read at display size. */
 const PAGE_WIDTH = 1600;
@@ -179,7 +181,7 @@ export async function renderPdfPage(data: Buffer, index: number): Promise<Buffer
 const MAX_TRIM = 1 / 6;
 
 export async function trimBorder(input: Buffer): Promise<Buffer> {
-  const { default: sharp } = await import('sharp');
+  const sharp = await loadSharp();
   const before = await sharp(input).metadata();
   if (!before.width || !before.height) return input;
 
@@ -200,44 +202,39 @@ export async function trimBorder(input: Buffer): Promise<Buffer> {
 }
 
 /**
- * The colour to extend a cover with, taken from its own top-left pixel.
+ * The grid cover, from page one: a full 1920×1080 frame, filled.
  *
- * Not the dominant colour: on artwork whose background is a shade or two off
- * its most common colour, filling with the dominant leaves a faint vertical
- * seam where the fill meets the edge. The corner pixel *is* the edge, so for
- * the usual case — a presentation page on a flat ground — the join is exact
- * and the frame simply looks wider than it is.
- */
-async function edgeColour(input: Buffer): Promise<{ r: number; g: number; b: number }> {
-  const { default: sharp } = await import('sharp');
-  const { data } = await sharp(input)
-    .extract({ left: 0, top: 0, width: 1, height: 1 })
-    .raw()
-    .toBuffer({ resolveWithObject: true });
-  return { r: data[0], g: data[1], b: data[2] };
-}
-
-/**
- * The grid cover, from page one. Always a full 1920×1080 frame.
+ * This has now been all three things it could be, and the reasoning matters
+ * because the obvious answer is wrong twice over.
  *
- * It used to be 16:9 for guidelines decks only; everything else kept its own
- * proportions, on the reasoning that "a logo sheet cropped to 16:9 loses the
- * mark". True of cropping — but this letterboxes, so nothing was ever at risk
- * of being cut. What actually happened is that the grid tile is 16:9 and uses
- * `object-fit: contain`, so a cover of any other shape got pillarboxed inside
- * it against the card background: a 1600×1077 logo sheet sat in a white frame
- * with bars down both sides. The card's own comment claimed covers share the
- * tile's ratio "so contain never letterboxes". This is what makes that true.
+ * It began as "keep the page's own proportions", which put a 1600×1077 logo
+ * sheet inside a 16:9 tile and left the card's background showing down both
+ * sides. Then it letterboxed to 16:9 in the artwork's own edge colour, which
+ * made the bars match the artwork instead of the card — but a 3:2 board still
+ * arrived with 9.5% of flat colour on the left and right and 2% on the top,
+ * and a frame that lopsided reads as a mistake however well the colour joins.
  *
- * The padding is filled with the artwork's own edge colour rather than white. A dark presentation letterboxed on white gets two bright bands the
- * designer never drew; filled with its own colour, the frame simply extends
- * and the seam is invisible. A cover that is already 16:9 is unaffected either
- * way, since there is nothing to fill.
+ * So it fills. The page is scaled until it covers the frame and the overflow
+ * is cropped from the centre. For the four decks already exported at 16:9 that
+ * is a no-op. For a 3:2 board it costs about a sixth of the height, which is
+ * real: a crop can clip the top of a mockup or the foot of a type specimen.
+ *
+ * That cost is acceptable here specifically because the cover is a thumbnail
+ * and nothing else. The page it came from is published untouched as page one
+ * of the case study, so a visitor who is interested sees the whole board a
+ * click later. Cropping the thumbnail loses a glimpse; padding it loses the
+ * grid.
+ *
+ * The border trim runs first so the crop spends its budget on the artwork's
+ * dead margin before it starts eating the artwork. On an uploaded deck the
+ * page has already been trimmed and this finds nothing left to take, which is
+ * exactly right — it is here for the covers rebuilt from pages that predate
+ * the trim.
  */
 export async function makeCover(pageOne: Buffer): Promise<Buffer> {
-  const { default: sharp } = await import('sharp');
-  return sharp(pageOne)
-    .resize({ width: 1920, height: 1080, fit: 'contain', background: await edgeColour(pageOne) })
+  const sharp = await loadSharp();
+  return sharp(await trimBorder(pageOne))
+    .resize({ width: 1920, height: 1080, fit: 'cover', position: 'centre' })
     .png({ compressionLevel: 9 })
     .toBuffer();
 }

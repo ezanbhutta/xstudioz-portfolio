@@ -80,20 +80,17 @@ async function trimBorder(buf) {
   }
 }
 
-/** The colour to extend a cover with — its own top-left pixel, so the join is
- *  exact. The dominant colour leaves a faint seam when the background is a
- *  shade off the most common colour in the artwork. */
-async function edgeColour(sourcePath) {
-  const { data } = await sharp(sourcePath)
-    .extract({ left: 0, top: 0, width: 1, height: 1 })
-    .raw()
-    .toBuffer({ resolveWithObject: true });
-  return { r: data[0], g: data[1], b: data[2] };
-}
-
 /**
- * Grid cover. Always a full 1920×1080 frame, nothing cropped, any shortfall
- * filled with the artwork's own edge colour so the seam is invisible.
+ * Grid cover: a full 1920×1080 frame, filled, overflow cropped from the centre.
+ *
+ * Letterboxing instead left a 3:2 board with 9.5% of flat colour down each
+ * side and 2% along the top — a frame that lopsided reads as a mistake however
+ * well the fill colour joins. Filling costs about a sixth of the height on
+ * such a board, which is affordable only because the cover is a thumbnail: the
+ * page it came from is published untouched as page one of the case study.
+ *
+ * The trim runs first so the crop spends its budget on the exported margin
+ * before it starts on the artwork.
  *
  * Must stay in step with `makeCover` in src/lib/ingest.ts, which does the same
  * job for decks uploaded through the admin. The duplication is because this is
@@ -103,8 +100,8 @@ async function edgeColour(sourcePath) {
  */
 async function makeCover(sourcePath, dir) {
   const out = path.join(dir, 'cover.png');
-  await sharp(sourcePath)
-    .resize({ width: 1920, height: 1080, fit: 'contain', background: await edgeColour(sourcePath) })
+  await sharp(await trimBorder(await readFile(sourcePath)))
+    .resize({ width: 1920, height: 1080, fit: 'cover', position: 'centre' })
     .png({ compressionLevel: 9 })
     .toFile(out);
 }

@@ -90,8 +90,13 @@ export async function writeImage(
   // Never upscale. Enlarging a 900px source to 1600 costs bytes and adds no
   // detail — it just makes a soft image bigger.
   const widest = Math.min(sourceWidth, WIDTHS[WIDTHS.length - 1]);
-  const full = await sharp(input).resize({ width: widest }).webp({ quality: 82 }).toBuffer();
-  const fullMeta = await sharp(full).metadata();
+  // The written size comes back with the buffer rather than from a second pass
+  // over it. Every sharp pipeline asks the kernel for threads, and on this host
+  // that request is what fails — so the avoidable ones are worth avoiding.
+  const { data: full, info: fullMeta } = await sharp(input)
+    .resize({ width: widest })
+    .webp({ quality: 82 })
+    .toBuffer({ resolveWithObject: true });
   await writeFile(path.join(dir, `${safeBase}.webp`), full);
 
   for (const w of WIDTHS) {

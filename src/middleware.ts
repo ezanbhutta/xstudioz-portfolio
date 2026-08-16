@@ -66,7 +66,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
    * Both spellings answer here, ahead of the redirect that caused it.
    */
   if (path === '/health' || path === '/health/') {
-    return healthReport();
+    return healthReport(context.url);
   }
 
   /**

@@ -62,6 +62,31 @@ export const POST: APIRoute = async ({ params, request }) => {
   const wantsJson = (request.headers.get('accept') ?? '').includes('application/json');
   const back = (message: string, ok = false) => respond(slug, message, ok, wantsJson);
 
+  // Everything below is wrapped, not just the rendering.
+  //
+  // The inner try only covered rendering and saving; a failure anywhere else —
+  // the project lookup, reading the body, a native module refusing to load —
+  // escaped as Astro's HTML error page. The uploader parses the reply as JSON,
+  // so all the operator saw was "the server sent something unexpected", which
+  // says nothing and cannot be acted on. Any throw now comes back as JSON
+  // carrying the real message.
+  try {
+    return await handleUpload(slug, request, back);
+  } catch (error) {
+    console.error('[upload:fatal]', error);
+    return back(
+      error instanceof Error
+        ? `The upload failed: ${error.message}`
+        : 'The upload failed for an unknown reason.',
+    );
+  }
+};
+
+async function handleUpload(
+  slug: string,
+  request: Request,
+  back: (message: string, ok?: boolean) => Response,
+): Promise<Response> {
   const project = await getProject(slug);
   if (!project) return back('That project no longer exists.');
 
@@ -181,4 +206,4 @@ export const POST: APIRoute = async ({ params, request }) => {
     console.error('[upload]', error);
     return back('The pages rendered but could not be saved. The old deck is unchanged.');
   }
-};
+}

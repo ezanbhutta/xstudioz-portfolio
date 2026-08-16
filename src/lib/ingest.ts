@@ -208,39 +208,41 @@ export async function trimBorder(input: Buffer): Promise<Buffer> {
 }
 
 /**
- * The grid cover, from page one: a full 1920×1080 frame, filled.
+ * The grid cover: page one, at its own proportions, trimmed and bounded.
  *
- * This has now been all three things it could be, and the reasoning matters
- * because the obvious answer is wrong twice over.
+ * Forcing this into 16:9 was tried in both directions and both were wrong.
+ * Letterboxing a 3:2 board left 9.4% of flat colour down each side — a frame
+ * lopsided enough to read as a mistake, however exactly the fill matched the
+ * artwork. Cropping to fill took a sixth of the height instead, which
+ * decapitated the mockups on that same board. There is no third way to fit
+ * one ratio inside another: something is added or something is lost.
  *
- * It began as "keep the page's own proportions", which put a 1600×1077 logo
- * sheet inside a 16:9 tile and left the card's background showing down both
- * sides. Then it letterboxed to 16:9 in the artwork's own edge colour, which
- * made the bars match the artwork instead of the card — but a 3:2 board still
- * arrived with 9.5% of flat colour on the left and right and 2% on the top,
- * and a frame that lopsided reads as a mistake however well the colour joins.
+ * So nothing is forced. The card takes the cover's shape rather than the
+ * cover taking the card's — see `.card-media` in ProjectCard.astro, which
+ * reads the ratio off the image's own dimensions. Every cover in this
+ * portfolio falls between 3:2 and 16:9, so the grid varies like a shelf of
+ * differently-proportioned books rather than going ragged.
  *
- * So it fills. The page is scaled until it covers the frame and the overflow
- * is cropped from the centre. For the four decks already exported at 16:9 that
- * is a no-op. For a 3:2 board it costs about a sixth of the height, which is
- * real: a crop can clip the top of a mockup or the foot of a type specimen.
+ * All that is left to do here is cap the width, so a cover is never larger
+ * than the grid can use. A page already narrower than the cap keeps its own
+ * size: enlarging it would cost bytes and add no detail.
  *
- * That cost is acceptable here specifically because the cover is a thumbnail
- * and nothing else. The page it came from is published untouched as page one
- * of the case study, so a visitor who is interested sees the whole board a
- * click later. Cropping the thumbnail loses a glimpse; padding it loses the
- * grid.
- *
- * The border trim runs first so the crop spends its budget on the artwork's
- * dead margin before it starts eating the artwork. On an uploaded deck the
- * page has already been trimmed and this finds nothing left to take, which is
- * exactly right — it is here for the covers rebuilt from pages that predate
- * the trim.
+ * Notably it does *not* trim. Every path into this function passes a page
+ * that `trimBorder` has already been over — the upload trims before writing,
+ * and so does the build script — and trimming a second time does not find
+ * nothing. It finds slightly different edges in the resampled, lossily
+ * encoded copy, and because the guard that refuses an over-large trim can
+ * trip on one pass and not the other, the cover came out a different shape
+ * from the very page it was made from: 1600×900 page, 1536×769 cover. The
+ * card reads its ratio off the cover, so that discrepancy is exactly the
+ * letterboxing this was all meant to remove.
  */
+const COVER_MAX_WIDTH = 1920;
+
 export async function makeCover(pageOne: Buffer): Promise<Buffer> {
   const sharp = await loadSharp();
-  return sharp(await trimBorder(pageOne))
-    .resize({ width: 1920, height: 1080, fit: 'cover', position: 'centre' })
+  return sharp(pageOne)
+    .resize({ width: COVER_MAX_WIDTH, fit: 'inside', withoutEnlargement: true })
     .png({ compressionLevel: 9 })
     .toBuffer();
 }

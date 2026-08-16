@@ -81,16 +81,19 @@ async function trimBorder(buf) {
 }
 
 /**
- * Grid cover: a full 1920×1080 frame, filled, overflow cropped from the centre.
+ * Grid cover: page one at its own proportions, trimmed and bounded.
  *
- * Letterboxing instead left a 3:2 board with 9.5% of flat colour down each
- * side and 2% along the top — a frame that lopsided reads as a mistake however
- * well the fill colour joins. Filling costs about a sixth of the height on
- * such a board, which is affordable only because the cover is a thumbnail: the
- * page it came from is published untouched as page one of the case study.
+ * Forcing 16:9 was tried both ways and both were wrong. Letterboxing a 3:2
+ * board left 9.4% of flat colour down each side; cropping to fill took a sixth
+ * of the height and decapitated the mockups on it. Nothing is forced now — the
+ * card takes the cover's shape instead, reading the ratio off the image's own
+ * dimensions. All that happens here is the width gets capped so a cover is
+ * never bigger than the grid can use.
  *
- * The trim runs first so the crop spends its budget on the exported margin
- * before it starts on the artwork.
+ * No trim: the page this reads was already trimmed when it was rendered, and
+ * trimming twice does not find nothing — it finds slightly different edges the
+ * second time and can leave the cover a different shape from the page it came
+ * from, which is the letterboxing all over again.
  *
  * Must stay in step with `makeCover` in src/lib/ingest.ts, which does the same
  * job for decks uploaded through the admin. The duplication is because this is
@@ -100,8 +103,8 @@ async function trimBorder(buf) {
  */
 async function makeCover(sourcePath, dir) {
   const out = path.join(dir, 'cover.png');
-  await sharp(await trimBorder(await readFile(sourcePath)))
-    .resize({ width: 1920, height: 1080, fit: 'cover', position: 'centre' })
+  await sharp(sourcePath)
+    .resize({ width: 1920, fit: 'inside', withoutEnlargement: true })
     .png({ compressionLevel: 9 })
     .toFile(out);
 }

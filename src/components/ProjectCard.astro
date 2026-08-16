@@ -58,7 +58,34 @@ const placeholder = await lqipStyle(cover.src);
     data-reveal={lead ? undefined : ''}
     style={lead ? undefined : `--reveal-delay:${delay}ms`}
   >
-    <div class="card-media" data-vt={`work-${project.id}`}>
+    {
+      /* The tile takes the artwork's shape, rather than the artwork being
+        made to take the tile's.
+
+        This was a hardcoded 16:9, and forcing every cover into it went wrong
+        in both directions. Letterboxing a 3:2 board left 9.4% of flat colour
+        down each side — a frame lopsided enough to read as a mistake, however
+        exactly the fill matched the artwork. Cropping to fill instead took a
+        sixth of the height, which decapitated the mockups on that same board.
+        There is no third way to fit one ratio inside another; the only escape
+        is to stop insisting on the ratio.
+
+        So the tile is the cover's own ratio. Nothing is padded and nothing is
+        cut. The grid already sets `align-items: start`, so a row of slightly
+        different heights sits naturally instead of stretching. Every cover
+        here falls between 3:2 and 16:9, so the variation is a shelf of
+        differently-proportioned books rather than a ragged edge.
+
+        Falls back to 16:9 when a cover has no recorded size, which is the
+        shape most of them are anyway. */
+    }
+    <div
+      class="card-media"
+      data-vt={`work-${project.id}`}
+      style={cover.width && cover.height
+        ? `--card-ratio:${cover.width} / ${cover.height}`
+        : undefined}
+    >
       <img
         src={cover.src}
         srcset={cover.srcset}
@@ -106,9 +133,10 @@ const placeholder = await lqipStyle(cover.src);
 
   .card-media {
     position: relative;
-    /* The covers' own ratio — every cover is generated at 1920×1080 — so
-       `contain` fills the tile exactly and never letterboxes. */
-    aspect-ratio: 16 / 9;
+    /* Written per card from the cover's intrinsic size — see the note above
+       the element. `contain` below then fits it exactly, with nothing to
+       letterbox, because the box and the artwork are the same shape. */
+    aspect-ratio: var(--card-ratio, 16 / 9);
     overflow: hidden;
     border-radius: var(--radius-md);
     background: var(--color-paper-raised);

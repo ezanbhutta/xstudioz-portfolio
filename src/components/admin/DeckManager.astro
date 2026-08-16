@@ -516,72 +516,189 @@ const { slug, pages, pdf } = Astro.props;
       showName();
     });
 
-    form?.addEventListener('submit', (event) => {
-      if (!file?.files?.length) return; // let the browser's own validation speak
-      event.preventDefault();
+    // --- Uploading, in three steps -----------------------------------------
+    //
+    // The deck used to render inside the upload request. On this host that is
+    // not survivable: a 3.2 MB deck came back 504 from the proxy, then 503 on
+    // retry — the render outlived the gateway, and a big enough one took the
+    // process with it. Nothing about a single request can be tuned out of that
+    // shape, so the browser drives it instead.
+    //
+    //   1. POST the PDF     → how many pages it has
+    //   2. POST per page    → rasterise that one page
+    //   3. POST finish      → promote the pages, write the database
+    //
+    // Every request is short whatever the deck's size, and the bar moves on a
+    // count the server reports rather than filling and then hanging on silence.
 
-      const request = new XMLHttpRequest();
-      const data = new FormData(form);
+    const endpoint = form?.action ?? `/admin/project/${slug}/upload/`;
+
+    const setBar = (percent: number) => {
+      bar!.style.inlineSize = `${percent}%`;
+    };
+
+    /**
+     * What came back, when it was not JSON.
+     *
+     * A gateway error is an HTML page, and it never reached this route. "The
+     * server sent something unexpected" is not a sentence anyone can act on;
+     * the status and the first line of the body are.
+     */
+    const describe = (status: number, statusText: string, text: string) => {
+      const first = text
+        .replace(/<[^>]*>/g, ' ')
+        .trim()
+        .split(/\s{2,}|\n/)[0];
+      return (
+        `The server replied ${status || 'nothing'}` +
+        (statusText ? ` (${statusText})` : '') +
+        '.' +
+        (first ? ` Server said: ${first.slice(0, 120)}` : '')
+      );
+    };
+
+    type Step = { ok?: boolean; error?: string; total?: number; done?: number; message?: string };
+
+    /** Step one. XHR rather than fetch, purely for `upload.onprogress`. */
+    const sendPdf = (data: FormData) =>
+      new Promise<number>((resolve, reject) => {
+        const request = new XMLHttpRequest();
+
+        request.upload.addEventListener('progress', (e) => {
+          if (!e.lengthComputable) return;
+          const percent = Math.round((e.loaded / e.total) * 100);
+          setBar(percent);
+          stat!.textContent =
+            percent < 100 ? `Uploading — ${percent}%` : 'Uploaded. Reading the deck…';
+        });
+
+        request.addEventListener('load', () => {
+          let payload: Step;
+          try {
+            payload = JSON.parse(request.responseText) as Step;
+          } catch {
+            reject(new Error(describe(request.status, request.statusText, request.responseText)));
+            return;
+          }
+          if (request.status === 200 && payload.ok && typeof payload.total === 'number') {
+            resolve(payload.total);
+          } else {
+            reject(new Error(payload.error ?? 'The upload failed.'));
+          }
+        });
+
+        request.addEventListener('error', () =>
+          reject(new Error('The connection dropped before the file finished.')),
+        );
+
+        request.open('POST', endpoint);
+        request.setRequestHeader('accept', 'application/json');
+        request.send(data);
+      });
+
+    /** Steps two and three, which are both small JSON calls. */
+    const act = async (body: Record<string, unknown>): Promise<Step> => {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const text = await res.text();
+      let payload: Step;
+      try {
+        payload = JSON.parse(text) as Step;
+      } catch {
+        // Not from this route — a proxy answered instead. Worth another go if
+        // it was a server-side failure; a 4xx page means the request itself is
+        // wrong and repeating it changes nothing.
+        const error = new Error(describe(res.status, res.statusText, text)) as Error & {
+          retryable?: boolean;
+        };
+        error.retryable = res.status >= 500;
+        throw error;
+      }
+      if (!res.ok || !payload.ok) throw new Error(payload.error ?? 'That step failed.');
+      return payload;
+    };
+
+    /**
+     * Render one page, forgiving a couple of stumbles.
+     *
+     * One blip should not throw away a deck that is thirty pages in. A refusal
+     * that arrives as JSON — a page outside the deck, an upload that has since
+     * expired — is not retried: the same answer would come back, more slowly.
+     */
+    const renderPage = async (index: number): Promise<Step> => {
+      for (let attempt = 1; ; attempt++) {
+        try {
+          return await act({ action: 'render', index });
+        } catch (error) {
+          // A rejected fetch is a TypeError and means the request never
+          // completed, which is the most retryable failure there is.
+          const retryable =
+            (error as { retryable?: boolean }).retryable ?? error instanceof TypeError;
+          if (!retryable || attempt === 3) throw error;
+          stat!.textContent = `Page ${index} did not come back — trying again…`;
+          await new Promise((wait) => setTimeout(wait, attempt * 800));
+        }
+      }
+    };
+
+    /** Closing the tab mid-deck abandons it halfway. Worth a prompt. */
+    const holdTab = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+
+    const run = async (data: FormData) => {
+      // Where it got to, so a failure can say honestly whether the deck on the
+      // site was touched. Everything before 'finish' is staged and invisible.
+      let stage: 'send' | 'render' | 'finish' = 'send';
 
       submit!.disabled = true;
       submit!.textContent = 'Uploading…';
       prog!.hidden = false;
+      setBar(0);
+      window.addEventListener('beforeunload', holdTab);
 
-      request.upload.addEventListener('progress', (e) => {
-        if (!e.lengthComputable) return;
-        const percent = Math.round((e.loaded / e.total) * 100);
-        bar!.style.inlineSize = `${percent}%`;
+      try {
+        const total = await sendPdf(data);
+        stage = 'render';
+        setBar(0);
+
+        for (let index = 1; index <= total; index++) {
+          stat!.textContent = `Rendering — page ${index} of ${total}`;
+          // One page at a time. Two at once would halve the wall clock and
+          // double the memory and CPU on a two-core shared box, which is the
+          // thing that took the process down to begin with.
+          const step = await renderPage(index);
+          setBar(Math.round(((step.done ?? index) / total) * 100));
+        }
+
+        stage = 'finish';
+        stat!.textContent = `Publishing ${total} page${total === 1 ? '' : 's'}…`;
+        const finished = await act({ action: 'finish' });
+
+        setBar(100);
+        stat!.textContent = `${finished.message ?? 'Published.'} Reloading…`;
+        window.removeEventListener('beforeunload', holdTab);
+        location.reload();
+      } catch (error) {
+        window.removeEventListener('beforeunload', holdTab);
+        setBar(0);
+        // Not cancelled on purpose. Whatever rendered stays staged out of
+        // sight, and the next upload clears the staging area before it starts —
+        // so a retry costs nothing and an abandoned attempt costs disk.
         stat!.textContent =
-          percent < 100
-            ? `Uploading — ${percent}%`
-            : // The bytes are up; the server is now rendering every page, which
-              // is the slow half and reports nothing until it is done.
-              'Uploaded. Rendering pages — this is the slow part.';
-      });
-
-      request.addEventListener('load', () => {
-        let payload: { ok?: boolean; message?: string; error?: string } = {};
-        try {
-          payload = JSON.parse(request.responseText);
-        } catch {
-          // Not JSON — so the reply did not come from the upload route at all.
-          // Usually the proxy in front of it: a gateway error, or a timeout on
-          // a long render. Say which, and show the first line of what came
-          // back, because "something unexpected" is not something anyone can
-          // act on.
-          const first = request.responseText
-            .replace(/<[^>]*>/g, ' ')
-            .trim()
-            .split(/\s{2,}|\n/)[0];
-          payload = {
-            error:
-              `The server replied ${request.status || 'nothing'}` +
-              (request.statusText ? ` (${request.statusText})` : '') +
-              '. The deck was not changed.' +
-              (first ? ` Server said: ${first.slice(0, 120)}` : ''),
-          };
-        }
-        if (request.status === 200 && payload.ok) {
-          bar!.style.inlineSize = '100%';
-          stat!.textContent = `${payload.message} Reloading…`;
-          location.reload();
-        } else {
-          bar!.style.inlineSize = '0%';
-          stat!.textContent = payload.error ?? 'The upload failed.';
-          submit!.disabled = false;
-          submit!.textContent = 'Upload';
-        }
-      });
-
-      request.addEventListener('error', () => {
-        stat!.textContent = 'The connection dropped. Nothing was changed.';
+          (error as Error).message + (stage === 'finish' ? '' : ' The deck was not changed.');
         submit!.disabled = false;
         submit!.textContent = 'Upload';
-      });
+      }
+    };
 
-      request.open('POST', form.action);
-      request.setRequestHeader('accept', 'application/json');
-      request.send(data);
+    form?.addEventListener('submit', (event) => {
+      if (!file?.files?.length) return; // let the browser's own validation speak
+      event.preventDefault();
+      void run(new FormData(form));
     });
   }
 </script>

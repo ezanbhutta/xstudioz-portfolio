@@ -161,21 +161,36 @@ export function validateProject(form: FormData, isNew: boolean): FieldErrors {
   const order = str(form.get('sort_order'));
   if (order && !/^\d+$/.test(order)) errors.sort_order = 'Whole numbers only.';
 
-  // A testimonial with a name but no quote renders an attribution attached to
-  // nothing. Either it is a quote or it is absent.
-  const quote = str(form.get('testimonial_quote'));
-  const who = str(form.get('testimonial_name'));
-  if (!quote && who) errors.testimonial_quote = 'Add the quote, or clear the name.';
-
   return errors;
 }
 
-function testimonialJson(form: FormData): string | null {
+/**
+ * The client quote, which the editor no longer collects.
+ *
+ * The fields are gone from the form, so nothing new can be entered. This still
+ * has to run, because the save is an upsert that writes every column: reading
+ * an absent field as "empty" would set testimonial = NULL and quietly delete a
+ * quote that a project already carries — the same trap the grid position had.
+ * Whatever is stored stays stored until something deliberately clears it.
+ *
+ * The form value is still honoured if one is ever posted, so restoring the
+ * fields is a template change and nothing more.
+ */
+async function testimonialJson(form: FormData, slug: string): Promise<string | null> {
   const quote = str(form.get('testimonial_quote'));
-  if (!quote) return null;
-  const name = str(form.get('testimonial_name'));
-  const role = str(form.get('testimonial_role'));
-  return JSON.stringify({ quote, ...(name && { name }), ...(role && { role }) });
+  if (quote) {
+    const name = str(form.get('testimonial_name'));
+    const role = str(form.get('testimonial_role'));
+    return JSON.stringify({ quote, ...(name && { name }), ...(role && { role }) });
+  }
+
+  // No quote in the form: keep the row's own value rather than erasing it.
+  if (form.has('testimonial_quote')) return null; // present but emptied — a real clear
+  const [row] = await query<{ testimonial: string | null }>(
+    `SELECT testimonial FROM projects WHERE slug = ?`,
+    [slug],
+  );
+  return row?.testimonial ?? null;
 }
 
 /** Insert or update, from a validated form. */
@@ -236,7 +251,7 @@ export async function saveProject(form: FormData, slug: string): Promise<void> {
     nullIfEmpty(form.get('direction')),
     JSON.stringify(list(form, 'delivered')),
     nullIfEmpty(form.get('outcome')),
-    testimonialJson(form),
+    await testimonialJson(form, slug),
     nullIfEmpty(form.get('cover_alt')),
   ];
 

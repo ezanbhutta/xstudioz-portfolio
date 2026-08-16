@@ -8,8 +8,13 @@
  * section rather than printing an empty heading.
  *
  * The one rule worth repeating in the UI: nothing here may be filled in with a
- * guess. `context`, `challenge`, `outcome` and the testimonial are statements
- * about a real client's business.
+ * guess. `context`, `challenge` and `outcome` are statements about a real
+ * client's business.
+ *
+ * The client quote is deliberately not collected here. The column and the
+ * case study's rendering of it both remain, so anything already stored keeps
+ * showing and restoring the fields is a template change — but there is no way
+ * to type one in, which is the point.
  */
 import AdminLayout from '@/layouts/AdminLayout.astro';
 import DeckManager from '@/components/admin/DeckManager.astro';
@@ -93,14 +98,6 @@ const listVal = (name: string, raw: unknown): string =>
 const checkedExtras = submitted
   ? submitted.getAll('extras').map(String)
   : jsonArr(existing?.extras);
-
-const testimonial = (() => {
-  try {
-    return JSON.parse(String(existing?.testimonial ?? 'null')) ?? {};
-  } catch {
-    return {};
-  }
-})();
 
 // Industries already in use, so a new project joins an existing group rather
 // than starting a category of one.
@@ -342,38 +339,6 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
         </span>
         <textarea name="outcome">{val('outcome', existing?.outcome)}</textarea>
       </label>
-    </fieldset>
-
-    <fieldset>
-      <legend>Client quote</legend>
-      <p class="legend-note">Only their own words, only with their permission.</p>
-      <label>
-        <span class="lab">Quote</span>
-        <textarea
-          name="testimonial_quote"
-          aria-invalid={errors.testimonial_quote ? 'true' : undefined}
-          >{val('testimonial_quote', testimonial.quote)}</textarea
-        >
-        {errors.testimonial_quote && <span class="err">{errors.testimonial_quote}</span>}
-      </label>
-      <div class="grid2">
-        <label>
-          <span class="lab">Name</span>
-          <input
-            type="text"
-            name="testimonial_name"
-            value={val('testimonial_name', testimonial.name)}
-          />
-        </label>
-        <label>
-          <span class="lab">Role / company</span>
-          <input
-            type="text"
-            name="testimonial_role"
-            value={val('testimonial_role', testimonial.role)}
-          />
-        </label>
-      </div>
     </fieldset>
 
     <fieldset>

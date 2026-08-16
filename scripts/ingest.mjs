@@ -53,11 +53,31 @@ async function renderPdf(pdfPath, dir) {
     const name = `page-${String(n).padStart(2, '0')}.png`;
     const png = await canvas.encode('png');
     // Re-compress through sharp for a smaller, palette-friendly master.
-    await sharp(png).png({ compressionLevel: 9 }).toFile(path.join(dir, name));
+    await sharp(await trimBorder(png))
+      .png({ compressionLevel: 9 })
+      .toFile(path.join(dir, name));
     names.push(name);
   }
   await loadingTask.destroy();
   return names;
+}
+
+/** Remove a uniform exported border. Guarded: anything removing more than a
+ *  sixth of a dimension is not a margin, so the original is kept. Must stay in
+ *  step with trimBorder in src/lib/ingest.ts. */
+async function trimBorder(buf) {
+  const before = await sharp(buf).metadata();
+  if (!before.width || !before.height) return buf;
+  try {
+    const out = await sharp(buf).trim({ threshold: 1 }).toBuffer();
+    const after = await sharp(out).metadata();
+    if (!after.width || !after.height) return buf;
+    if (1 - after.width / before.width > 1 / 6) return buf;
+    if (1 - after.height / before.height > 1 / 6) return buf;
+    return out;
+  } catch {
+    return buf;
+  }
 }
 
 /** The colour to extend a cover with — its own top-left pixel, so the join is

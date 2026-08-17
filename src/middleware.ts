@@ -109,7 +109,21 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (UNSAFE_METHODS.has(context.request.method) && isCrossSite(context.request, context.url)) {
     return new Response('Cross-site form submissions are forbidden.', { status: 403 });
   }
-  if (PUBLIC_ADMIN_PATHS.has(path)) return next();
+  if (PUBLIC_ADMIN_PATHS.has(path)) {
+    // The login page is the one admin route that answers 200 to anyone, and
+    // this early return used to skip the headers set at the end of this
+    // function — so it was the only admin page shipping without a noindex.
+    //
+    // robots.txt disallows /admin/, which stops the crawl but not the
+    // indexing: a disallowed URL can still be listed from external links
+    // alone, and a crawler forbidden to fetch the page can never read the
+    // header telling it not to. The two controls cover different halves of
+    // the problem, so this page needs both.
+    const response = await next();
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    response.headers.set('Cache-Control', 'no-store, must-revalidate');
+    return response;
+  }
 
   if (!isSignedIn(context.cookies.get(COOKIE_NAME)?.value)) {
     // Remember where they were headed so signing in lands them there rather

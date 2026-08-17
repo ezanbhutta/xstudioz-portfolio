@@ -148,9 +148,16 @@ const specs = [
   ['Pages', `${images.length}`],
 ].filter((row): row is [string, string] => Boolean(row[1]));
 
-// Social card and structured data point at the cover. It is already a served
-// WebP at a known size, so there is nothing to derive — an absolute URL is all
-// the crawlers need, and they crop to their own ratio anyway.
+// Social card and structured data point at the cover. It is already served at
+// a known size, so there is nothing to derive — an absolute URL is all the
+// crawlers need, and they crop to their own ratio anyway.
+//
+// Its size is passed to the layout rather than left to the default. That
+// default is 1200×630, which is true of /og.png and of nothing else, so every
+// case study was declaring dimensions its image did not have — 1200×630
+// against files that are 1600×900, 1517×900 or 1600×1077. A scraper that
+// trusts the declaration instead of measuring the file lays the card out
+// wrongly.
 const socialUrl = new URL(cover.src, SITE.url).href;
 
 const jsonLd = {
@@ -171,7 +178,11 @@ const jsonLd = {
     {
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Work', item: `${SITE.url}/work/` },
+        // The site root, not /work/. There is no All Work index — the site was
+        // trimmed to the portfolio itself — so this pointed at a 404 on all
+        // eight case studies, which is a breadcrumb error Search Console
+        // reports. Category pages already root their trail here.
+        { '@type': 'ListItem', position: 1, name: SITE.name, item: `${SITE.url}/` },
         {
           '@type': 'ListItem',
           position: 2,
@@ -194,6 +205,8 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
   title={`${title} | ${categoryInfo.title}`}
   description={metaDescription(intent, summary)}
   ogImage={socialUrl}
+  ogImageWidth={cover.width}
+  ogImageHeight={cover.height}
   ogImageAlt={coverAlt || `${title} presentation cover`}
   ogType="article"
   jsonLd={jsonLd}

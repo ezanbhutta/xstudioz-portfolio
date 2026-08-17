@@ -1,6 +1,5 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import sitemap from '@astrojs/sitemap';
 import node from '@astrojs/node';
 import { SITE } from './src/config/site';
 
@@ -57,7 +56,19 @@ export default defineConfig({
     // the same cross-site form posts and can actually be tested.
     checkOrigin: false,
   },
-  integrations: [sitemap()],
+  // No sitemap integration. It cannot see this site.
+  //
+  // @astrojs/sitemap enumerates routes at build time, and under `output:
+  // 'server'` the only routes it can enumerate are the ones with no dynamic
+  // segment. Every public page here is dynamic — categories come from
+  // src/data/categories.json, case studies from MySQL — so the sitemap it
+  // produced contained exactly the four static routes: `/` and the three
+  // /admin/ pages. One public URL out of fourteen, and three that should
+  // never be in a public sitemap at all.
+  //
+  // src/pages/sitemap-0.xml.ts answers the same URL from the database
+  // instead, which is also the only way a case study published through the
+  // admin appears without a rebuild.
   image: {
     // Portfolio images are the product — allow generous responsive widths.
     responsiveStyles: true,

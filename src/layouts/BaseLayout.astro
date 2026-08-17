@@ -40,7 +40,25 @@ const {
 } = Astro.props;
 
 const fullTitle = title.includes(SITE.name) ? title : `${title} | ${SITE.name}`;
-const canonical = new URL(Astro.url.pathname, SITE.url);
+/**
+ * The canonical always carries a trailing slash.
+ *
+ * `trailingSlash: 'ignore'` means both /brand-guidelines and
+ * /brand-guidelines/ answer 200, and this used to build the canonical from
+ * whichever the visitor happened to request — so each variant declared itself
+ * canonical and the same page had two indexable URLs. The sitemap, every
+ * internal link and every og:url use the slashed form, so that is the one
+ * version this normalises to.
+ *
+ * The config stays as it is: 'always' makes Astro answer `/health` with a 301
+ * before routing, which the platform's deploy check reads as a failure.
+ *
+ * Only pages using this layout emit a canonical, and every one of them is a
+ * directory-style route, so appending a slash can never touch a file path.
+ * `/` already ends in one and is left alone.
+ */
+const path = Astro.url.pathname;
+const canonical = new URL(path.endsWith('/') ? path : `${path}/`, SITE.url);
 const ogImageUrl = ogImage ?? new URL('/og.png', SITE.url).href;
 ---
 

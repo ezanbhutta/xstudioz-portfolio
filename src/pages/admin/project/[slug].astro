@@ -236,6 +236,24 @@ const extrasCount =
 const anyError = Object.keys(errors).length > 0;
 
 /**
+ * Three sections a set has no answers for.
+ *
+ * Story, Links and Extra elements all describe one client engagement: the
+ * brief, the brand's own accounts, the extras bundled into the job. A set is
+ * not that. It is marks collected because they share an industry or a kind,
+ * drawn for whoever, and asking it for "the challenge" or a brand website is
+ * asking a question with no answer — which is worse than not asking, because
+ * an empty field on a form reads as work outstanding.
+ *
+ * Hidden, never emptied. A hidden input still submits its value, so a deck
+ * with a full story that is switched to a set and back finds the story exactly
+ * as it was. And a section that already holds something stays visible whatever
+ * the layout: hiding filled fields would mean text on the live case study that
+ * the editor cannot see, let alone remove.
+ */
+const setHides = (count: number) => currentLayout === 'icons' && count === 0;
+
+/**
  * What is still missing, said out loud.
  *
  * Each of these is a fact the editor already had and never mentioned. The
@@ -553,7 +571,7 @@ const readiness = isNew
           </label>
         </section>
 
-        <details class="fold" open={extrasCount > 0}>
+        <details class="fold" data-engagement hidden={setHides(extrasCount)} open={extrasCount > 0}>
           <summary>
             <span class="fold-title">Extra elements</span>
             <span class="fold-count">{extrasCount === 0 ? 'none' : `${extrasCount} ticked`}</span>
@@ -614,7 +632,12 @@ const readiness = isNew
           </label>
         </section>
 
-        <details class="fold" open={storyCount > 0 || anyError}>
+        <details
+          class="fold"
+          data-engagement
+          hidden={setHides(storyCount)}
+          open={storyCount > 0 || anyError}
+        >
           <summary>
             <span class="fold-title">Story</span>
             <span class="fold-count">
@@ -655,7 +678,7 @@ const readiness = isNew
           </label>
         </details>
 
-        <details class="fold" open={linkCount > 0}>
+        <details class="fold" data-engagement hidden={setHides(linkCount)} open={linkCount > 0}>
           <summary>
             <span class="fold-title">Links</span>
             <span class="fold-count">{linkCount === 0 ? 'none' : `${linkCount} set`}</span>
@@ -684,6 +707,19 @@ const readiness = isNew
             <textarea name="other_links">{listVal('other_links', existing?.other_links)}</textarea>
           </label>
         </details>
+
+        {/* Said, rather than left as a gap. Three named sections vanishing
+             between Copy and Grid cover reads as a form that failed to load
+             unless something explains it. */}
+        <p
+          class="set-note"
+          data-set-note
+          hidden={!(setHides(storyCount) && setHides(linkCount) && setHides(extrasCount))}
+        >
+          A set is a collection, not a client engagement: no single brief, no one brand's accounts,
+          no bundle of extras. So Story, Links and Extra elements are not asked for here. Anything
+          already written into them is kept, and shown.
+        </p>
 
         <section class="panel">
           <div class="panel-head">
@@ -804,6 +840,29 @@ const readiness = isNew
         sub.textContent = `${n} ${noun}${n === 1 ? '' : 's'}. Saving publishes immediately.`;
       }
 
+      /**
+       * Story, Links and Extra elements are questions about one client's
+       * engagement, and a set is not one. They go — unless they already hold
+       * something, in which case hiding them would put text on the live case
+       * study that the editor can no longer see or remove.
+       *
+       * Emptiness is read off the fields themselves rather than the counts the
+       * server rendered, because the operator may have typed into a section
+       * since the page loaded and flipping the layout must not swallow it.
+       */
+      const holds = (section: HTMLElement) =>
+        [...section.querySelectorAll<HTMLInputElement>('input, textarea, select')].some((f) =>
+          f.type === 'checkbox' ? f.checked : f.value.trim() !== '',
+        );
+
+      let allGone = true;
+      for (const section of form.querySelectorAll<HTMLElement>('[data-engagement]')) {
+        section.hidden = icons && !holds(section);
+        if (!section.hidden) allGone = false;
+      }
+      const setNote = form.querySelector<HTMLElement>('[data-set-note]');
+      if (setNote) setNote.hidden = !(icons && allGone);
+
       // The readiness strip counts the same images by the same name. Leaving
       // it saying "pages" while everything else says "sheets" reads as two
       // parts of the screen disagreeing about what is on it.
@@ -918,6 +977,17 @@ const readiness = isNew
     background: var(--color-paper-sunken);
     font-size: 0.78rem;
     color: var(--color-ink-mute);
+  }
+
+  /* Why three named sections are not here. A gap explains nothing. */
+  .set-note {
+    margin-block: 0 1.1rem;
+    padding: 0.85rem 1.1rem;
+    border: 1px dashed var(--color-line-control);
+    border-radius: 12px;
+    font-size: 0.83rem;
+    color: var(--color-ink-mute);
+    max-inline-size: 68ch;
   }
 
   /* --- Readiness ----------------------------------------------------------

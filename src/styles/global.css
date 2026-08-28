@@ -542,6 +542,14 @@ p {
   box-shadow: inset 0 0 0 1px var(--color-line-strong);
 }
 
+/* A <picture> is a wrapper for format choice, not a box.
+   `display: contents` takes it out of the layout entirely, so every image
+   inside one lays out against the parent exactly as a bare <img> did — which
+   is what every rule written before AVIF existed assumes. */
+picture {
+  display: contents;
+}
+
 /* Consistent frame for every portfolio image on the site */
 .media {
   overflow: hidden;

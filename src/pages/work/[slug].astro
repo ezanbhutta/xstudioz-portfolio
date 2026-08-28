@@ -365,18 +365,25 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
           ? `Open sheet 1 of ${images.length} of the ${title} full screen`
           : `Open the ${title} presentation, page 1 of ${images.length}`}
       >
-        <img
-          src={hero.src}
-          srcset={hero.srcset}
-          sizes={heroSizes}
-          alt={hero.alt}
-          width={hero.width}
-          height={hero.height}
-          loading="eager"
-          fetchpriority="high"
-          decoding="async"
-          style={heroPlaceholder}
-        />
+        <picture>
+          {
+            hero.avifSrcset && (
+              <source type="image/avif" srcset={hero.avifSrcset} sizes={heroSizes} />
+            )
+          }
+          <img
+            src={hero.src}
+            srcset={hero.srcset}
+            sizes={heroSizes}
+            alt={hero.alt}
+            width={hero.width}
+            height={hero.height}
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+            style={heroPlaceholder}
+          />
+        </picture>
         <span class="page-cue" aria-hidden="true">View full screen</span>
       </button>
       {
@@ -419,17 +426,22 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
                   data-open-page={at}
                   aria-label={`Open page ${at + 1} of ${images.length} full screen`}
                 >
-                  <img
-                    src={img.src}
-                    srcset={img.srcset}
-                    sizes={heroSizes}
-                    alt={img.alt}
-                    width={img.width}
-                    height={img.height}
-                    loading="lazy"
-                    decoding="async"
-                    style={placeholder}
-                  />
+                  <picture>
+                    {img.avifSrcset && (
+                      <source type="image/avif" srcset={img.avifSrcset} sizes={heroSizes} />
+                    )}
+                    <img
+                      src={img.src}
+                      srcset={img.srcset}
+                      sizes={heroSizes}
+                      alt={img.alt}
+                      width={img.width}
+                      height={img.height}
+                      loading="lazy"
+                      decoding="async"
+                      style={placeholder}
+                    />
+                  </picture>
                   {!isIconSet && (
                     <span class="page-num" aria-hidden="true">
                       {String(at + 1).padStart(2, '0')}
@@ -467,16 +479,25 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
                 <li>
                   <a class="project-nav-link" href={`/work/${p.id}/`} data-astro-prefetch>
                     <span class="project-nav-media media">
-                      <img
-                        src={p.data.cover.src}
-                        srcset={p.data.cover.srcset}
-                        sizes="(min-width: 760px) 40vw, 92vw"
-                        alt=""
-                        width={p.data.cover.width}
-                        height={p.data.cover.height}
-                        loading="lazy"
-                        decoding="async"
-                      />
+                      <picture>
+                        {p.data.cover.avifSrcset && (
+                          <source
+                            type="image/avif"
+                            srcset={p.data.cover.avifSrcset}
+                            sizes="(min-width: 760px) 40vw, 92vw"
+                          />
+                        )}
+                        <img
+                          src={p.data.cover.src}
+                          srcset={p.data.cover.srcset}
+                          sizes="(min-width: 760px) 40vw, 92vw"
+                          alt=""
+                          width={p.data.cover.width}
+                          height={p.data.cover.height}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </picture>
                     </span>
                     <span class="project-nav-title">{p.data.title}</span>
                     {p.data.intent && <span class="project-nav-intent">{p.data.intent}</span>}

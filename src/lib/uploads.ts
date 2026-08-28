@@ -20,8 +20,44 @@ import path from 'node:path';
 // sized to the CPU count is what makes an upload fail with a glib error.
 import { loadSharp } from '@/lib/sharp';
 
-/** The widths the case study and the grid actually request. */
-export const WIDTHS = [640, 1024, 1600] as const;
+/**
+ * The widths the case study and the grid actually request.
+ *
+ * 1280 was the missing rung. A brand guidelines page is portrait — around
+ * 1540×2200 — and the case study asks for `92vw` of it on a phone. At 3x that
+ * is a shade over 1000 CSS pixels of image, so the browser skipped 1024 and
+ * took the full-width file: 445 KB where 216 KB would have been
+ * indistinguishable. The gap between 1024 and 1600 was exactly where phones
+ * landed.
+ */
+export const WIDTHS = [640, 1024, 1280, 1600] as const;
+
+/**
+ * AVIF beside every WebP.
+ *
+ * Measured on the two heaviest images the site actually serves, re-encoded
+ * from the WebP already on disk — so this is the pessimistic number, with one
+ * lossy pass already spent:
+ *
+ *   repartu page 1     445 KB webp  →  295 KB avif   (-34%)
+ *   parallelstudio 1   148 KB webp  →   87 KB avif   (-41%)
+ *
+ * `effort: 2` is the whole reason this is affordable. At effort 4 the same
+ * image takes 13 seconds instead of 1.7 for about 10% more compression, and
+ * this host has already proved it will refuse work when asked for too much at
+ * once.
+ *
+ * Quality 55 rather than the 50 that measured smaller: a judgement, not a
+ * measurement. Large flats of a single brand colour are what AVIF gives up
+ * first, and banding across a logo lockup is the one artefact a portfolio of
+ * identity work cannot ship. 55 keeps a margin; it can come down later with
+ * an eye on the actual pages.
+ *
+ * Best-effort, never required. A failure here writes no AVIF and records none,
+ * and the page is served exactly as it is today — the alternative is an upload
+ * that fails outright over an optimisation.
+ */
+const AVIF = { quality: 55, effort: 2 } as const;
 
 /**
  * Where uploads are written.
@@ -46,7 +82,18 @@ export function safeSegment(value: string): string {
   return clean;
 }
 
-export type WrittenImage = { src: string; width: number; height: number };
+export type WrittenImage = {
+  src: string;
+  width: number;
+  height: number;
+  /**
+   * Which formats were actually written, widest first in preference order —
+   * 'avif,webp' or 'webp'. Recorded rather than assumed: a <source> pointing
+   * at an AVIF that was never written is a broken image, and a browser does
+   * not fall back from a <source> that 404s.
+   */
+  formats: string;
+};
 
 /**
  * Write one image and its narrower variants.
@@ -105,11 +152,54 @@ export async function writeImage(
     await writeFile(path.join(dir, `${safeBase}-${w}.webp`), variant);
   }
 
+  const avif = await writeAvif(input, dir, safeBase, widest);
+
   return {
     src: publicPath(safeSub ? `${safeSlug}/${safeSub}` : safeSlug, `${safeBase}.webp`),
     width: fullMeta.width ?? widest,
     height: fullMeta.height ?? 0,
+    formats: avif ? 'avif,webp' : 'webp',
   };
+}
+
+/**
+ * The AVIF rungs, beside the WebP ones and matching them width for width.
+ *
+ * Matching matters. A <source> with a shorter ladder than the <img> beside it
+ * makes a phone pick a 1024-wide AVIF where it would have taken a 640-wide
+ * WebP — a smaller file in a better format, replaced by a bigger one. Either
+ * every rung exists in both, or the AVIF source is not offered at all.
+ *
+ * Returns false rather than throwing. Every caller treats AVIF as an
+ * enhancement and records what was actually written, so a host that refuses
+ * the extra work serves the site exactly as it does today.
+ */
+export async function writeAvif(
+  input: Buffer,
+  dir: string,
+  basename: string,
+  widest: number,
+): Promise<boolean> {
+  const sharp = await loadSharp();
+  const written: string[] = [];
+  try {
+    for (const w of WIDTHS) {
+      if (w >= widest) continue;
+      const file = path.join(dir, `${basename}-${w}.avif`);
+      await writeFile(file, await sharp(input).resize({ width: w }).avif(AVIF).toBuffer());
+      written.push(file);
+    }
+    const file = path.join(dir, `${basename}.avif`);
+    await writeFile(file, await sharp(input).resize({ width: widest }).avif(AVIF).toBuffer());
+    written.push(file);
+    return true;
+  } catch (error) {
+    console.warn(`[uploads] AVIF skipped for ${basename}: ${(error as Error).message}`);
+    // A half-written ladder is worse than none: it is exactly the mismatch
+    // described above, and nothing records that it happened.
+    await Promise.all(written.map((f) => rm(f).catch(() => {})));
+    return false;
+  }
 }
 
 /**
@@ -119,10 +209,10 @@ export async function writeImage(
  * only wrote those — advertising a width that returns 404 would leave the
  * browser with no image at all at that breakpoint.
  */
-export function srcsetFor(src: string, width: number): string {
+export function srcsetFor(src: string, width: number, ext: 'webp' | 'avif' = 'webp'): string {
   const base = src.replace(/\.webp$/, '');
-  const entries = WIDTHS.filter((w) => w < width).map((w) => `${base}-${w}.webp ${w}w`);
-  entries.push(`${src} ${width}w`);
+  const entries = WIDTHS.filter((w) => w < width).map((w) => `${base}-${w}.${ext} ${w}w`);
+  entries.push(`${base}.${ext} ${width}w`);
   return entries.join(', ');
 }
 
@@ -157,7 +247,10 @@ export async function removeImage(src: string): Promise<void> {
 
   const dir = path.join(uploadsDir(), safeSegment(match[1]));
   const base = safeSegment(match[2]);
-  const names = [`${base}.webp`, ...WIDTHS.map((w) => `${base}-${w}.webp`)];
+  const names = (['webp', 'avif'] as const).flatMap((ext) => [
+    `${base}.${ext}`,
+    ...WIDTHS.map((w) => `${base}-${w}.${ext}`),
+  ]);
 
   await Promise.all(
     names.map(async (name) => {

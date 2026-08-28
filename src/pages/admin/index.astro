@@ -15,6 +15,12 @@
  *
  * Ordered the way the grid orders them, because that is the order the editor
  * is thinking in when they come here to move something.
+ *
+ * The counts across the top are the one thing this screen knows that nobody
+ * could work out by looking: a project with no pages is dropped by
+ * `getSortedProjects`, so it is not on the site at all. That used to be
+ * findable only by reading every row's metadata, or by noticing the work grid
+ * was one short.
  */
 import AdminLayout from '@/layouts/AdminLayout.astro';
 import { listProjects } from '@/lib/admin-data';
@@ -24,46 +30,106 @@ const projects = await listProjects();
 const titleOf = (id: string) => CATEGORIES.find((c) => c.id === id)?.title ?? id;
 const saved = Astro.url.searchParams.get('saved');
 const deleted = Astro.url.searchParams.get('deleted');
+
+/**
+ * "2 sheet s".
+ *
+ * Built here rather than in the template because JSX puts a space between two
+ * adjacent expressions, so a count, a noun and its plural written as three
+ * neighbouring braces come out with gaps in the middle of the word.
+ */
+const countOf = (n: number, layout: string) =>
+  `${n} ${layout === 'icons' ? 'sheet' : 'page'}${n === 1 ? '' : 's'}`;
+
+/** No pages means no cover and no gallery, which means it never renders. */
+const hidden = projects.filter((p) => p.pages === 0);
+const live = projects.length - hidden.length;
 ---
 
-<AdminLayout title="Projects">
-  <h1>Projects</h1>
-  <p class="sub">
-    {projects.length} project{projects.length === 1 ? '' : 's'}. Changes are live on the site
-    immediately — there is no publish step and no undo.
-  </p>
+<AdminLayout title="Projects" eyebrow="Portfolio" heading="Projects">
+  <p slot="lede">Everything here is the live site. There is no publish step and no undo.</p>
 
-  {saved && <p class="flash ok">Saved “{saved}”. It is live now.</p>}
-  {deleted && <p class="flash ok">Deleted “{deleted}”. Its image files were left on disk.</p>}
+  <a class="btn" slot="actions" href="/admin/project/new/">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"
+      ><path d="M12 5v14M5 12h14"></path></svg
+    >
+    New project
+  </a>
 
-  <div class="list-top">
-    <a class="btn" href="/admin/project/new/">New project</a>
+  {saved && <p class="flash ok">Saved &ldquo;{saved}&rdquo;. It is live now.</p>}
+  {
+    deleted && (
+      <p class="flash ok">Deleted &ldquo;{deleted}&rdquo;. Its image files were left on disk.</p>
+    )
+  }
 
-    {
-      projects.length > 1 && (
-        <div class="find">
-          <label class="find-label" for="project-search">
-            Search
-          </label>
-          {/* type=search for the browser's own clear button and history */}
-          <input
-            id="project-search"
-            class="find-input"
-            type="search"
-            placeholder="Filter by name, service or industry"
-            autocomplete="off"
-            data-search
-          />
+  {
+    projects.length > 0 && (
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-n">{projects.length}</span>
+          <span class="stat-l">In the admin</span>
         </div>
-      )
-    }
-  </div>
+        <div class="stat">
+          <span class="stat-n">{live}</span>
+          <span class="stat-l">Live on the site</span>
+        </div>
+        <div class:list={['stat', hidden.length > 0 && 'is-warn']}>
+          <span class="stat-n">{hidden.length}</span>
+          <span class="stat-l">Hidden — no pages</span>
+        </div>
+      </div>
+    )
+  }
+
+  {
+    /* Naming them is the whole value. "1 hidden" tells an operator something
+       is wrong; this tells them which project and takes them to it. */
+    hidden.length > 0 && (
+      <p class="flash bad">
+        <span>
+          {hidden.length === 1 ? 'One project has' : `${hidden.length} projects have`} no pages
+          uploaded, so {hidden.length === 1 ? 'it does' : 'they do'} not appear on the site at all:{' '}
+          {hidden.map((p, i) => (
+            <>
+              {i > 0 && ', '}
+              <a href={`/admin/project/${p.slug}/`}>{p.title}</a>
+            </>
+          ))}
+          .
+        </span>
+      </p>
+    )
+  }
+
+  {
+    projects.length > 1 && (
+      <div class="find">
+        <label class="vh" for="project-search">
+          Search projects
+        </label>
+        <svg class="find-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="11" cy="11" r="6.5" />
+          <path d="m16 16 4.5 4.5" stroke-linecap="round" />
+        </svg>
+        {/* type=search for the browser's own clear button and history */}
+        <input
+          id="project-search"
+          class="find-input"
+          type="search"
+          placeholder="Filter by name, service or industry"
+          autocomplete="off"
+          data-search
+        />
+      </div>
+    )
+  }
 
   {
     projects.length > 0 && (
       <p class="list-help" id="list-help">
-        Drag a project to change where it sits on the site. With the keyboard: focus a row, press
-        Space to pick it up, arrow keys to move, Space to drop.
+        <strong>Drag a row</strong> to change where it sits on the site. With the keyboard: focus a
+        row, Space to pick it up, arrows to move, Space to drop.
       </p>
     )
   }
@@ -81,8 +147,18 @@ const deleted = Astro.url.searchParams.get('deleted');
           data-find={`${p.title} ${titleOf(p.category)} ${p.industry ?? ''} ${p.slug}`.toLowerCase()}
           aria-label={`${p.title}, position ${i + 1}`}
         >
-          <span class="prow-pos" data-pos aria-hidden="true">
-            {i + 1}
+          <span class="prow-handle" aria-hidden="true">
+            <svg viewBox="0 0 10 16" focusable="false">
+              <circle cx="2.5" cy="3" r="1.15" />
+              <circle cx="7.5" cy="3" r="1.15" />
+              <circle cx="2.5" cy="8" r="1.15" />
+              <circle cx="7.5" cy="8" r="1.15" />
+              <circle cx="2.5" cy="13" r="1.15" />
+              <circle cx="7.5" cy="13" r="1.15" />
+            </svg>
+            <span class="prow-pos" data-pos>
+              {i + 1}
+            </span>
           </span>
 
           <span class="prow-thumb">
@@ -90,7 +166,7 @@ const deleted = Astro.url.searchParams.get('deleted');
               <img
                 src={p.thumb.src}
                 srcset={p.thumb.srcset}
-                sizes="112px"
+                sizes="128px"
                 width={p.thumb.width}
                 height={p.thumb.height}
                 alt=""
@@ -111,21 +187,26 @@ const deleted = Astro.url.searchParams.get('deleted');
             <span class="prow-meta">
               {titleOf(p.category)}
               {p.industry && <> · {p.industry}</>}
-              <> · </>
+            </span>
+            <span class="prow-tags">
               {p.pages === 0 ? (
-                <strong class="prow-warn">no pages — hidden from the site</strong>
+                <span class="chip warn">Hidden — no pages</span>
               ) : (
-                <>
-                  {p.pages} page{p.pages === 1 ? '' : 's'}
-                </>
+                <span class="chip live">Live · {countOf(p.pages, p.layout)}</span>
               )}
+              {p.layout === 'icons' && <span class="chip accent">Icon set</span>}
             </span>
           </span>
 
           <span class="prow-go">
-            <a href={`/work/${p.slug}/`} target="_blank" rel="noopener">
-              View ↗
+            <a class="prow-edit" href={`/admin/project/${p.slug}/`}>
+              Edit
             </a>
+            {p.pages > 0 && (
+              <a href={`/work/${p.slug}/`} target="_blank" rel="noopener">
+                View ↗
+              </a>
+            )}
           </span>
         </li>
       ))
@@ -139,9 +220,13 @@ const deleted = Astro.url.searchParams.get('deleted');
 
   {
     projects.length === 0 && (
-      <p class="sub" style="margin-top:2rem">
-        No projects yet. “New project” adds one.
-      </p>
+      <div class="deck-soon">
+        <h2>Nothing here yet</h2>
+        <p>
+          &ldquo;New project&rdquo; adds one. It stays off the site until its deck is uploaded on
+          the screen after.
+        </p>
+      </div>
     )
   }
 </AdminLayout>
@@ -306,56 +391,117 @@ const deleted = Astro.url.searchParams.get('deleted');
 </script>
 
 <style>
-  .list-top {
-    display: flex;
-    gap: 1rem;
-    align-items: end;
-    flex-wrap: wrap;
-    margin-bottom: 1.4rem;
+  /* --- The counts ---------------------------------------------------------
+     Three facts, sized so the numbers are read before the words. The third is
+     the only one that matters on a bad day, so it is the only one that can
+     change colour. */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: 0.7rem;
+    margin-block-end: 1.5rem;
   }
 
-  .find {
-    flex: 1 1 16rem;
-    min-inline-size: 0;
+  .stat {
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    background: var(--color-paper-raised);
+    box-shadow: var(--shadow-sm);
   }
 
-  .find-label {
+  .stat-n {
     display: block;
-    font-size: 0.78rem;
+    font-family: var(--font-display);
+    font-size: 1.65rem;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-l {
+    display: block;
+    margin-block-start: 0.15rem;
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
     color: var(--color-ink-mute);
-    margin-bottom: 0.3rem;
+  }
+
+  .stat.is-warn {
+    border-color: color-mix(in srgb, var(--color-danger) 45%, transparent);
+    background: color-mix(in srgb, var(--color-danger) 8%, var(--color-paper-raised));
+  }
+
+  .stat.is-warn .stat-n,
+  .stat.is-warn .stat-l {
+    color: var(--color-danger);
+  }
+
+  /* --- Search ------------------------------------------------------------- */
+  .find {
+    position: relative;
+    margin-block-end: 1.1rem;
+  }
+
+  .find-icon {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 0.8rem;
+    transform: translateY(-50%);
+    inline-size: 1rem;
+    block-size: 1rem;
+    fill: none;
+    stroke: var(--color-ink-mute);
+    stroke-width: 1.7;
+    pointer-events: none;
   }
 
   .find-input {
     inline-size: 100%;
+    padding-inline-start: 2.35rem;
   }
 
   .list-help {
     font-size: 0.8rem;
     color: var(--color-ink-mute);
-    margin: 0 0 0.7rem;
+    margin: 0 0 0.6rem;
   }
 
+  .list-help strong {
+    color: var(--color-ink-soft);
+  }
+
+  /* --- Rows ---------------------------------------------------------------- */
   .plist {
     list-style: none;
     margin: 0;
     padding: 0;
     display: grid;
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
 
   .prow {
     display: grid;
-    grid-template-columns: 1.6rem 112px minmax(0, 1fr) auto;
+    grid-template-columns: 1.5rem 128px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 0.9rem;
-    padding: 0.55rem 0.8rem 0.55rem 0.4rem;
+    gap: 1rem;
+    padding: 0.6rem 1rem 0.6rem 0.5rem;
     border: 1px solid var(--color-line);
-    border-radius: 12px;
+    border-radius: 13px;
     background: var(--color-paper-raised);
+    box-shadow: var(--shadow-sm);
     cursor: grab;
+    transition:
+      border-color var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-out);
+  }
+
+  .prow:hover {
+    border-color: var(--color-line-strong);
+    box-shadow: var(--glow-card), var(--shadow-sm);
   }
 
   .prow:focus-visible {
@@ -379,20 +525,43 @@ const deleted = Astro.url.searchParams.get('deleted');
     cursor: default;
   }
 
+  .plist.is-filtered .prow-handle svg {
+    opacity: 0.2;
+  }
+
+  /* The row has always been draggable; nothing said so except the cursor,
+     which is invisible until you are already on it. */
+  .prow-handle {
+    display: grid;
+    justify-items: center;
+    gap: 0.3rem;
+  }
+
+  .prow-handle svg {
+    inline-size: 0.62rem;
+    block-size: 1rem;
+    fill: var(--color-ink-mute);
+    opacity: 0.55;
+  }
+
+  .prow:hover .prow-handle svg {
+    opacity: 1;
+  }
+
   .prow-pos {
-    text-align: center;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     font-variant-numeric: tabular-nums;
     color: var(--color-ink-mute);
   }
 
   .prow-thumb {
     display: block;
-    inline-size: 112px;
+    inline-size: 128px;
     aspect-ratio: 16 / 10;
-    border-radius: 7px;
+    border-radius: 8px;
     overflow: hidden;
     background: var(--image-bg);
+    box-shadow: var(--image-frame);
   }
 
   .prow-thumb img {
@@ -412,35 +581,45 @@ const deleted = Astro.url.searchParams.get('deleted');
 
   .prow-main {
     min-inline-size: 0;
+    display: grid;
+    gap: 0.2rem;
   }
 
   .prow-title {
-    display: block;
-    font-weight: 600;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     color: var(--color-ink);
     text-decoration: none;
   }
 
   .prow-title:hover {
     color: var(--color-accent);
-    text-decoration: underline;
   }
 
   .prow-meta {
-    display: block;
     font-size: 0.8rem;
     color: var(--color-ink-mute);
   }
 
-  /* A project with no pages does not render at all. That is worth shouting. */
-  .prow-warn {
-    color: var(--color-danger);
-    font-weight: 600;
+  .prow-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-block-start: 0.15rem;
   }
 
-  .prow-go a {
-    font-size: 0.85rem;
+  .prow-go {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    font-size: 0.83rem;
     white-space: nowrap;
+  }
+
+  .prow-edit {
+    color: var(--color-ink-mute);
   }
 
   .list-live {
@@ -456,14 +635,14 @@ const deleted = Astro.url.searchParams.get('deleted');
   }
 
   /* On a phone the thumbnail and the drag handle compete for the same row */
-  @media (max-width: 560px) {
+  @media (max-width: 640px) {
     .prow {
-      grid-template-columns: 1.6rem 72px minmax(0, 1fr);
-      row-gap: 0.4rem;
+      grid-template-columns: 1.5rem 84px minmax(0, 1fr);
+      row-gap: 0.5rem;
     }
 
     .prow-thumb {
-      inline-size: 72px;
+      inline-size: 84px;
     }
 
     .prow-go {

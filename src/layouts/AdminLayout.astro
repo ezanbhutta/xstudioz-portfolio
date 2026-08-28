@@ -7,6 +7,23 @@
  * a page that only one person ever sees and that search engines must never
  * index. It borrows the design tokens so the admin still looks like this
  * studio's tool rather than a generic form.
+ *
+ * The shell is a rail and a canvas.
+ *
+ * It was a text link bar across the top of a 900px column, which is what a
+ * page looks like, not what a tool looks like: navigation and content shared
+ * one vertical stack, so the further down the editor you scrolled the less
+ * anything told you where you were. A fixed rail is a place. It holds the
+ * navigation still, gives every screen the same left edge, and leaves the
+ * canvas free to be as long as the work needs.
+ *
+ * The rail is dark in both themes, and that is the point of it. The token file
+ * puts it plainly — "dark is the brand, light is the courtesy" — so the studio
+ * frame stays obsidian while the surface being worked on follows whatever the
+ * operator asked for. It is done by redeclaring the dark side of the theme
+ * tokens on `.rail`: custom properties inherit, so everything inside it,
+ * including the theme toggle's own scoped styles, resolves dark without one
+ * component knowing about it.
  */
 // tokens.css for the colour, type and control variables; global.css because
 // the @font-face rules live there and the admin should render in the studio's
@@ -14,14 +31,38 @@
 import '@/styles/tokens.css';
 import '@/styles/global.css';
 import ThemeToggle from '@/components/ThemeToggle.astro';
+import Logo from '@/components/Logo.astro';
 
 interface Props {
   title: string;
   /** Hidden on the login screen, which has nothing to navigate to yet. */
   nav?: boolean;
+  /**
+   * The page's own heading. Given here rather than written into each page so
+   * every screen opens the same way — eyebrow, title, one line of context, and
+   * whatever actions belong to the page as a whole, on one line with it.
+   */
+  heading?: string;
+  eyebrow?: string;
 }
 
-const { title, nav = true } = Astro.props;
+const { title, nav = true, heading, eyebrow } = Astro.props;
+
+// A slot, not a prop, because the project editor's line carries a data
+// attribute its own script reads to re-count pages when the layout changes.
+const hasLede = Astro.slots.has('lede');
+const hasActions = Astro.slots.has('actions');
+
+/**
+ * Which rail item is lit.
+ *
+ * Projects covers the editor too: /admin/project/zion/ is somewhere inside
+ * Projects, and a rail with nothing lit on it is a rail that has stopped
+ * saying where you are.
+ */
+const path = Astro.url.pathname;
+const onSettings = path.startsWith('/admin/settings');
+const onProjects = !onSettings;
 ---
 
 <!doctype html>
@@ -48,31 +89,98 @@ const { title, nav = true } = Astro.props;
       }
     </script>
   </head>
-  <body>
+  <body class:list={[nav ? 'shell' : 'solo']}>
     {
       nav && (
-        <header class="bar">
-          <a class="brand" href="/admin/">
-            XStudioz admin
+        <aside class="rail">
+          <a class="rail-brand" href="/admin/">
+            {/* The studio's own mark, not a letter set in the display face:
+                this is the one place the tool says whose tool it is. */}
+            <Logo size={34} class="rail-logo" />
+            <span class="rail-name">
+              XStudioz
+              <small>Admin console</small>
+            </span>
           </a>
-          <nav>
-            <a href="/admin/">Projects</a>
-            <a href="/admin/settings/">Settings</a>
-            <a href="/" target="_blank" rel="noopener">
-              View site ↗
+
+          <nav class="rail-nav" aria-label="Admin sections">
+            <a
+              class:list={['rail-link', onProjects && 'is-on']}
+              href="/admin/"
+              aria-current={onProjects ? 'page' : undefined}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect x="3" y="3" width="7.5" height="7.5" rx="1.6" />
+                <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6" />
+                <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6" />
+                <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6" />
+              </svg>
+              Projects
             </a>
-            <ThemeToggle />
-            <form method="POST" action="/admin/logout/">
-              <button type="submit" class="link">
-                Sign out
-              </button>
-            </form>
+
+            <a
+              class:list={['rail-link', onSettings && 'is-on']}
+              href="/admin/settings/"
+              aria-current={onSettings ? 'page' : undefined}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M3 7h11M18.5 7H21M3 17h4.5M11.5 17H21" stroke-linecap="round" />
+                <circle cx="16" cy="7" r="2.5" />
+                <circle cx="9" cy="17" r="2.5" />
+              </svg>
+              Settings
+            </a>
           </nav>
-        </header>
+
+          <div class="rail-foot">
+            <a class="rail-link is-quiet" href="/" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M14 4h6v6M20 4l-8.5 8.5" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                  d="M18 14.5V19a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 19V8a1.5 1.5 0 0 1 1.5-1.5H10"
+                  stroke-linecap="round"
+                />
+              </svg>
+              View site
+            </a>
+
+            <div class="rail-tools">
+              <ThemeToggle />
+              <form method="POST" action="/admin/logout/">
+                <button type="submit" class="rail-signout">
+                  Sign out
+                </button>
+              </form>
+            </div>
+          </div>
+        </aside>
       )
     }
-    <main class:list={['wrap', !nav && 'centered']}>
-      <slot />
+
+    <main class:list={['canvas', !nav && 'centered']}>
+      <div class="canvas-in">
+        {
+          heading && (
+            <header class="phead">
+              <div class="phead-text">
+                {eyebrow && <p class="phead-eyebrow">{eyebrow}</p>}
+                <h1>{heading}</h1>
+                {hasLede && (
+                  <div class="phead-lede">
+                    <slot name="lede" />
+                  </div>
+                )}
+              </div>
+              {hasActions && (
+                <div class="phead-actions">
+                  <slot name="actions" />
+                </div>
+              )}
+            </header>
+          )
+        }
+        <slot />
+      </div>
     </main>
 
     <style is:global>
@@ -83,6 +191,7 @@ const { title, nav = true } = Astro.props;
       }
       body {
         margin: 0;
+        min-block-size: 100dvh;
         background: var(--color-paper);
         color: var(--color-ink);
         font-family: var(--font-sans);
@@ -94,89 +203,360 @@ const { title, nav = true } = Astro.props;
         color: var(--color-accent);
       }
 
-      .bar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.85rem 1.25rem;
-        border-bottom: 1px solid var(--color-line);
-        background: var(--color-paper-raised);
+      /* --- Shell ---------------------------------------------------------- */
+      .shell {
+        display: grid;
+        grid-template-columns: 15.5rem minmax(0, 1fr);
+        align-items: start;
+      }
+
+      /* --- Rail ----------------------------------------------------------- *
+         The dark half of every theme token, redeclared locally. Custom
+         properties inherit, so the theme toggle and anything else dropped in
+         here resolves against obsidian without being told to. */
+      .rail {
+        --color-ink: #f4f4f5;
+        --color-ink-soft: #a1a1aa;
+        --color-ink-mute: #8b8b95;
+        --color-line: rgb(255 255 255 / 8%);
+        --color-line-strong: rgb(255 255 255 / 16%);
+        --color-accent: #a78bfa;
+        --color-accent-wash: rgb(139 92 246 / 12%);
+
         position: sticky;
         top: 0;
+        block-size: 100dvh;
+        display: flex;
+        flex-direction: column;
+        gap: 1.75rem;
+        padding: 1.35rem 0.85rem 1.1rem;
+        color: var(--color-ink-soft);
+        background:
+          radial-gradient(22rem 16rem at 0% 0%, rgb(139 92 246 / 13%), transparent 70%), #0a0a0d;
+        border-inline-end: 1px solid rgb(255 255 255 / 8%);
         z-index: 10;
       }
-      .brand {
-        font-family: var(--font-display);
-        font-weight: 600;
-        letter-spacing: 0.02em;
+
+      .rail-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding-inline: 0.5rem;
         text-decoration: none;
         color: var(--color-ink);
       }
-      .bar nav {
-        display: flex;
-        gap: 1.1rem;
-        align-items: center;
-        flex-wrap: wrap;
+      .rail-logo {
+        flex: none;
+        border-radius: 8px;
       }
-      .bar nav a,
-      .bar .link {
+      .rail-name {
+        display: flex;
+        flex-direction: column;
+        font-family: var(--font-display);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        line-height: 1.15;
+      }
+      .rail-name small {
+        font-family: var(--font-sans);
+        font-weight: 500;
+        font-size: 0.68rem;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--color-ink-mute);
+      }
+
+      .rail-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+      }
+
+      .rail-link {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.55rem 0.6rem;
+        border-radius: 9px;
         color: var(--color-ink-soft);
         text-decoration: none;
         font-size: 0.9rem;
+        font-weight: 500;
+        transition:
+          background-color var(--duration-fast) var(--ease-out),
+          color var(--duration-fast) var(--ease-out);
       }
-      .bar nav a:hover,
-      .bar .link:hover {
+      .rail-link svg {
+        inline-size: 1.05rem;
+        block-size: 1.05rem;
+        flex: none;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.6;
+        opacity: 0.8;
+      }
+      .rail-link:hover {
+        background: rgb(255 255 255 / 5%);
         color: var(--color-ink);
       }
-      .bar form {
-        display: inline;
+      .rail-link.is-on {
+        background: rgb(255 255 255 / 7%);
+        color: var(--color-ink);
+        font-weight: 600;
       }
-      .link {
+      /* The lit item gets the accent as a bar, not a fill: the gradient is
+         rationed to one thing per view on the public site and there is no
+         reason for the tool to spend it more freely. */
+      .rail-link.is-on::before {
+        content: '';
+        position: absolute;
+        inset-block: 0.45rem;
+        inset-inline-start: -0.85rem;
+        inline-size: 2px;
+        border-radius: 0 2px 2px 0;
+        background: var(--gradient-accent);
+      }
+      .rail-link.is-on svg {
+        opacity: 1;
+        stroke: var(--color-accent);
+      }
+      .rail-link:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+      }
+
+      .rail-foot {
+        margin-block-start: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+      .rail-link.is-quiet {
+        font-size: 0.85rem;
+        color: var(--color-ink-mute);
+      }
+      .rail-tools {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.7rem 0.6rem 0;
+        border-block-start: 1px solid var(--color-line);
+      }
+      .rail-signout {
         background: none;
         border: 0;
         padding: 0;
         font: inherit;
+        font-size: 0.85rem;
+        color: var(--color-ink-mute);
         cursor: pointer;
       }
+      .rail-signout:hover {
+        color: var(--color-ink);
+      }
+      .rail-signout:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 3px;
+        border-radius: 4px;
+      }
 
-      .wrap {
-        max-width: 900px;
-        margin: 0 auto;
-        padding: 2rem 1.25rem 5rem;
+      /* On a narrow screen the rail lies down across the top. No drawer: a
+         hidden menu is one more thing to open, and there are two destinations. */
+      @media (max-width: 860px) {
+        .shell {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .rail {
+          block-size: auto;
+          flex-direction: row;
+          align-items: center;
+          gap: 1rem;
+          padding: 0.7rem 1rem;
+          border-inline-end: 0;
+          border-block-end: 1px solid rgb(255 255 255 / 8%);
+        }
+        .rail-name small {
+          display: none;
+        }
+        .rail-nav {
+          flex-direction: row;
+        }
+        .rail-link.is-on::before {
+          inset-block: auto 0;
+          inset-inline: 0.6rem;
+          inline-size: auto;
+          block-size: 2px;
+          border-radius: 2px 2px 0 0;
+        }
+        .rail-foot {
+          margin-block-start: 0;
+          margin-inline-start: auto;
+          flex-direction: row;
+          align-items: center;
+          gap: 0.75rem;
+        }
+        .rail-tools {
+          padding: 0 0 0 0.75rem;
+          border-block-start: 0;
+          border-inline-start: 1px solid var(--color-line);
+        }
+      }
+      /* Four things do not fit across a phone. Rather than shrink all of them
+         past legibility, the sections drop to their own line under the brand.
+         "View site" goes: it is the one destination that is not this tool. */
+      @media (max-width: 560px) {
+        .rail {
+          flex-wrap: wrap;
+          gap: 0.5rem 1rem;
+          padding-inline: 0.85rem;
+        }
+        .rail-link.is-quiet {
+          display: none;
+        }
+        .rail-nav {
+          order: 3;
+          flex-basis: 100%;
+        }
+        .rail-name {
+          font-size: 0.95rem;
+        }
+      }
+
+      /* --- Canvas --------------------------------------------------------- */
+      .canvas {
+        min-inline-size: 0;
+        padding: 2.5rem var(--canvas-gutter, 2.5rem) 6rem;
+      }
+      @media (max-width: 860px) {
+        .canvas {
+          --canvas-gutter: 1.25rem;
+          padding-block-start: 1.75rem;
+        }
+      }
+      .canvas-in {
+        max-inline-size: 64rem;
+        margin-inline: auto;
       }
       .centered {
-        max-width: 380px;
-        padding-top: 12vh;
+        display: grid;
+        place-items: center;
+        padding-block: 8vh 4rem;
+      }
+      .centered .canvas-in {
+        max-inline-size: 25rem;
+        inline-size: 100%;
+      }
+
+      /* --- Page header ---------------------------------------------------- */
+      .phead {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem 1.5rem;
+        align-items: flex-end;
+        justify-content: space-between;
+        padding-block-end: 1.35rem;
+        margin-block-end: 1.75rem;
+        border-block-end: 1px solid var(--color-line);
+      }
+      .phead-text {
+        min-inline-size: 0;
+      }
+      .phead-eyebrow {
+        margin: 0 0 0.35rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--color-ink-mute);
+      }
+      .phead-lede p,
+      .phead-lede {
+        margin: 0.5rem 0 0;
+        color: var(--color-ink-soft);
+        max-inline-size: 60ch;
+        font-size: 0.92rem;
+      }
+      .phead-actions {
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        flex-wrap: wrap;
       }
 
       h1 {
         font-family: var(--font-display);
-        font-size: 1.6rem;
-        margin: 0 0 0.35rem;
+        font-size: clamp(1.55rem, 1.3rem + 1vw, 2.05rem);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+        margin: 0;
+        overflow-wrap: anywhere;
       }
       .sub {
         color: var(--color-ink-mute);
         margin: 0 0 2rem;
       }
 
-      /* Forms. No precedent existed in the public site — it has no forms —
-         so this is the admin's own small system, built on the shared tokens. */
+      /* --- Panels --------------------------------------------------------- *
+         One card shape for everything that groups fields, whether it is always
+         open (a section) or folded (a details). The editor used to alternate
+         bordered fieldsets and bordered details that were nearly but not quite
+         the same object, which reads as an accident rather than a system. */
+      .panel,
+      .fold {
+        border: 1px solid var(--color-line);
+        border-radius: 14px;
+        background: var(--color-paper-raised);
+        box-shadow: var(--shadow-sm);
+        margin-block: 0 1.1rem;
+      }
+      .panel {
+        padding: 1.35rem 1.35rem 0.2rem;
+      }
+      .panel-head {
+        display: flex;
+        align-items: baseline;
+        gap: 0.6rem;
+        margin-block-end: 1.1rem;
+      }
+      .panel-title,
+      .fold-title {
+        font-family: var(--font-display);
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        margin: 0;
+      }
+      .panel-note,
+      .legend-note {
+        color: var(--color-ink-mute);
+        font-size: 0.83rem;
+        margin: -0.65rem 0 1.15rem;
+        max-inline-size: 68ch;
+      }
+
+      /* --- Forms ---------------------------------------------------------- *
+         No precedent existed in the public site — it has no forms — so this is
+         the admin's own small system, built on the shared tokens. */
       label {
         display: block;
-        margin-bottom: 1.2rem;
+        margin-bottom: 1.15rem;
       }
       .lab {
         display: block;
         font-weight: 600;
+        font-size: 0.86rem;
+        letter-spacing: 0.01em;
         margin-bottom: 0.3rem;
       }
       .hint {
         display: block;
         color: var(--color-ink-mute);
-        font-size: 0.83rem;
-        margin-bottom: 0.4rem;
+        font-size: 0.81rem;
+        line-height: 1.45;
+        margin-bottom: 0.45rem;
+        max-inline-size: 68ch;
       }
       input[type='text'],
       input[type='password'],
@@ -188,65 +568,164 @@ const { title, nav = true } = Astro.props;
       select,
       textarea {
         width: 100%;
-        padding: 0.55rem 0.7rem;
+        padding: 0.6rem 0.75rem;
         border: 1px solid var(--color-line-control);
-        border-radius: 8px;
-        background: var(--color-paper-raised);
+        border-radius: 9px;
+        /* Sunken against the panel it sits in, so a field reads as somewhere
+           to type rather than another card. */
+        background: var(--color-paper);
         color: var(--color-ink);
         font: inherit;
+        transition:
+          border-color var(--duration-fast) var(--ease-out),
+          box-shadow var(--duration-fast) var(--ease-out);
+      }
+      /* The native arrow is the one part of a select that cannot be made to
+         match anything, and it is the control this form uses most. */
+      select {
+        appearance: none;
+        padding-inline-end: 2.1rem;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%238b8b95' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.7rem center;
+        background-size: 0.75rem;
       }
       textarea {
         min-height: 5.5rem;
         resize: vertical;
+        line-height: 1.55;
+      }
+      input:hover,
+      select:hover,
+      textarea:hover {
+        border-color: var(--color-ink-mute);
       }
       input:focus-visible,
       select:focus-visible,
       textarea:focus-visible {
         outline: 2px solid var(--color-accent);
         outline-offset: 1px;
+        border-color: var(--color-accent);
       }
       .err {
+        display: block;
         color: var(--color-danger);
         font-size: 0.83rem;
-        margin-top: 0.3rem;
+        font-weight: 600;
+        margin-top: 0.35rem;
       }
       input[aria-invalid='true'],
       select[aria-invalid='true'],
       textarea[aria-invalid='true'] {
         border-color: var(--color-danger);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 14%, transparent);
       }
 
+      /* --- Actions -------------------------------------------------------- */
       .btn {
         display: inline-flex;
         align-items: center;
-        gap: 0.4rem;
+        justify-content: center;
+        gap: 0.45rem;
         height: var(--control-h);
-        padding: 0 1.1rem;
+        padding: 0 1.15rem;
         border: 0;
         border-radius: 999px;
-        background: var(--color-accent-deep);
+        /* The one rationed accent, spent on the thing to do next. */
+        background: var(--gradient-accent);
         color: #fff;
         font: inherit;
         font-weight: 600;
         cursor: pointer;
         text-decoration: none;
+        white-space: nowrap;
+        transition:
+          filter var(--duration-fast) var(--ease-out),
+          box-shadow var(--duration-fast) var(--ease-out),
+          transform var(--duration-fast) var(--ease-out);
       }
       .btn:hover {
-        background: color-mix(in srgb, var(--color-accent-deep) 82%, #000);
+        filter: brightness(1.08);
+        box-shadow: 0 0.4rem 1.4rem -0.5rem var(--color-accent-deep);
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+      }
+      .btn svg {
+        inline-size: 1rem;
+        block-size: 1rem;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
       }
       .btn.ghost {
         background: transparent;
         color: var(--color-ink);
-        border: 1px solid var(--color-line-strong);
+        box-shadow: inset 0 0 0 1px var(--color-line-strong);
+      }
+      .btn.ghost:hover {
+        filter: none;
+        background: var(--color-accent-wash);
+        box-shadow: inset 0 0 0 1px var(--color-accent);
       }
       .btn.danger {
         background: transparent;
         color: var(--color-danger);
-        border: 1px solid var(--color-danger);
+        box-shadow: inset 0 0 0 1px var(--color-danger);
       }
       .btn.danger:hover {
+        filter: none;
         background: var(--color-danger-fill);
         color: #fff;
+      }
+      .btn.sm {
+        height: 2.15rem;
+        padding: 0 0.85rem;
+        font-size: 0.85rem;
+      }
+      .link {
+        background: none;
+        border: 0;
+        padding: 0;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      /* --- Chips ---------------------------------------------------------- *
+         A short factual badge. Never colour alone: the state is written out. */
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.12rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        color: var(--color-ink-soft);
+        box-shadow: inset 0 0 0 1px var(--color-line-strong);
+      }
+      .chip.live {
+        color: var(--color-success);
+        background: color-mix(in srgb, var(--color-success) 12%, transparent);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-success) 40%, transparent);
+      }
+      .chip.warn {
+        color: var(--color-danger);
+        background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-danger) 40%, transparent);
+      }
+      .chip.accent {
+        color: var(--color-accent);
+        background: var(--color-accent-wash);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 35%, transparent);
       }
 
       .row {
@@ -258,41 +737,59 @@ const { title, nav = true } = Astro.props;
       .grid2 {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 0 1rem;
+        gap: 0 1.1rem;
+      }
+      /* Two fields side by side, one of them with a two-line hint, put their
+         controls at different heights — which reads as a misalignment rather
+         than as one field having more to explain. The auto margin drops every
+         control to the bottom of its column so they sit on one line. */
+      .grid2 > label {
+        display: flex;
+        flex-direction: column;
+      }
+      .grid2 > label > input,
+      .grid2 > label > select,
+      .grid2 > label > textarea {
+        margin-block-start: auto;
       }
 
-      fieldset {
-        border: 1px solid var(--color-line);
-        border-radius: 12px;
-        padding: 1.2rem 1.2rem 0.2rem;
-        margin: 0 0 1.6rem;
+      fieldset.bare {
+        border: 0;
+        margin: 0;
+        padding: 0;
+        min-inline-size: 0;
       }
-      legend {
-        font-family: var(--font-display);
-        font-weight: 600;
-        padding: 0 0.4rem;
-      }
-      .legend-note {
-        color: var(--color-ink-mute);
-        font-size: 0.83rem;
-        margin: -0.4rem 0 1.1rem;
+      .vh {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
       }
 
       .checks {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 0.4rem 1rem;
+        gap: 0.35rem 1rem;
         margin-bottom: 1.2rem;
       }
       .checks label {
         display: flex;
-        gap: 0.5rem;
+        gap: 0.55rem;
         align-items: center;
         margin: 0;
+        padding: 0.35rem 0.5rem;
+        border-radius: 8px;
         font-weight: 400;
+        cursor: pointer;
+      }
+      .checks label:hover {
+        background: var(--color-accent-wash);
       }
       .checks input {
         width: auto;
+        accent-color: var(--color-accent-deep);
       }
 
       table {
@@ -316,67 +813,160 @@ const { title, nav = true } = Astro.props;
         font-variant-numeric: tabular-nums;
       }
 
+      /* --- Flashes -------------------------------------------------------- */
       .flash {
-        padding: 0.7rem 0.9rem;
-        border-radius: 10px;
-        margin-bottom: 1.5rem;
+        display: flex;
+        gap: 0.55rem;
+        align-items: flex-start;
+        padding: 0.7rem 0.95rem;
+        border-radius: 11px;
+        margin-bottom: 1.35rem;
+        font-size: 0.9rem;
         border: 1px solid;
       }
-      /* Where the deck upload will be, on a project that does not exist yet.
-         Dashed rather than solid: it reads as a slot waiting to be filled,
-         which is exactly what it is. */
-      /* The save bar follows the form to the bottom of the viewport. Its
-         border only appears while it is stuck, so it does not draw a line
-         across the page when it is sitting in its natural position. */
+      .flash::before {
+        font-weight: 700;
+        line-height: 1.45;
+      }
+      .flash.ok {
+        border-color: color-mix(in srgb, var(--color-success) 45%, transparent);
+        background: color-mix(in srgb, var(--color-success) 12%, transparent);
+      }
+      .flash.ok::before {
+        content: '✓';
+        color: var(--color-success);
+      }
+      .flash.bad {
+        border-color: color-mix(in srgb, var(--color-danger) 50%, transparent);
+        background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+      }
+      .flash.bad::before {
+        content: '!';
+        color: var(--color-danger);
+      }
+
+      /* --- Folds ---------------------------------------------------------- *
+         Optional sections, folded away until they hold something. The editor
+         was six fieldsets and four thousand pixels of scroll, most of it empty
+         on most projects: an icon set fills three fields and was shown thirty.
+         A closed section still submits every field inside it — details only
+         hides — so nothing here changes what gets saved. */
+      .fold {
+        padding: 0 1.35rem;
+      }
+      .fold > summary {
+        display: flex;
+        align-items: baseline;
+        gap: 0.6rem;
+        padding: 1rem 0;
+        cursor: pointer;
+        list-style: none;
+        font-weight: 600;
+      }
+      .fold > summary::-webkit-details-marker {
+        display: none;
+      }
+      /* A disclosure needs an affordance that is not the word itself. */
+      .fold > summary::before {
+        content: '';
+        inline-size: 0.5rem;
+        block-size: 0.5rem;
+        border-inline-end: 2px solid var(--color-ink-mute);
+        border-block-end: 2px solid var(--color-ink-mute);
+        transform: rotate(-45deg);
+        transition: transform 140ms ease;
+        flex: none;
+        align-self: center;
+      }
+      .fold[open] > summary::before {
+        transform: rotate(45deg);
+      }
+      .fold[open] > summary {
+        border-block-end: 1px solid var(--color-line);
+        margin-block-end: 1.15rem;
+      }
+      .fold > summary:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 3px;
+        border-radius: 6px;
+      }
+      /* The count is what makes a closed section honest: "empty" is a fact,
+         where a bare heading is a place something might be hiding. */
+      .fold-count {
+        margin-inline-start: auto;
+        font-weight: 500;
+        font-size: 0.74rem;
+        letter-spacing: 0.02em;
+        color: var(--color-ink-mute);
+        padding: 0.12rem 0.5rem;
+        border-radius: 999px;
+        box-shadow: inset 0 0 0 1px var(--color-line);
+      }
+      .fold > :last-child {
+        margin-block-end: 1.15rem;
+      }
+
+      /* --- Save bar ------------------------------------------------------- *
+         Follows the form to the bottom of the viewport. It floats rather than
+         sitting flush, because an operator needs to see at a glance whether it
+         is the end of the page or a bar over it. */
       .savebar {
         position: sticky;
-        bottom: 0;
+        bottom: 1rem;
         display: flex;
         align-items: center;
         gap: 1rem;
         flex-wrap: wrap;
-        padding: 0.9rem 0;
-        margin-top: 1rem;
-        background: var(--color-paper);
-        border-top: 1px solid transparent;
-        transition: border-color 150ms ease;
+        justify-content: flex-end;
+        padding: 0.7rem 0.8rem;
+        margin-top: 1.5rem;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--color-paper-raised) 88%, transparent);
+        backdrop-filter: blur(14px);
+        border: 1px solid var(--color-line-strong);
+        box-shadow: var(--shadow-md);
+        transition:
+          border-color 150ms ease,
+          box-shadow 150ms ease;
       }
       .savebar.is-dirty {
-        border-top-color: var(--color-line-strong);
+        border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
+        box-shadow:
+          0 0 0 3px var(--color-accent-wash),
+          var(--shadow-md);
       }
       .savebar-state {
-        margin: 0;
+        margin: 0 auto 0 0.65rem;
         order: 1;
-        font-size: 0.85rem;
+        font-size: 0.83rem;
         font-weight: 600;
-        color: var(--color-danger);
+        color: var(--color-accent);
+      }
+      .savebar .row {
+        order: 2;
+        gap: 0.55rem;
       }
 
+      /* Where the deck upload will be, on a project that does not exist yet.
+         Dashed rather than solid: it reads as a slot waiting to be filled,
+         which is exactly what it is. */
       .deck-soon {
         border: 1px dashed var(--color-line-control);
         border-radius: 14px;
-        padding: 1.4rem;
-        margin-block: 2rem;
+        padding: 1.6rem;
+        margin-block: 0 1.75rem;
         color: var(--color-ink-soft);
       }
       .deck-soon h2 {
-        font-size: 1.15rem;
-        margin: 0 0 0.3rem;
+        font-family: var(--font-display);
+        font-size: 1.05rem;
+        margin: 0 0 0.35rem;
         color: var(--color-ink);
       }
       .deck-soon p {
         margin: 0;
-        font-size: 0.85rem;
+        font-size: 0.86rem;
         max-inline-size: 46ch;
-      }
-
-      .flash.ok {
-        border-color: var(--color-success);
-        background: color-mix(in srgb, var(--color-success) 12%, transparent);
-      }
-      .flash.bad {
-        border-color: var(--color-danger);
-        background: color-mix(in srgb, var(--color-danger) 12%, transparent);
       }
     </style>
   </body>

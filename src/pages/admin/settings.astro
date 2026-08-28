@@ -41,6 +41,32 @@ const META: Record<string, { label: string; hint?: string; multiline?: boolean }
   locale: { label: 'Locale' },
 };
 
+/**
+ * What belongs with what.
+ *
+ * The list was thirteen identical text fields in database order, which put the
+ * production URL — the one setting that can break every canonical on the site
+ * — between a tagline and a Fiverr link. Grouping does not change what is
+ * saved; it changes how long it takes to find the field you came for.
+ */
+const GROUPS: { title: string; note: string; keys: string[] }[] = [
+  {
+    title: 'Identity',
+    note: 'The studio\u2019s name and address, and the words search engines and social cards quote.',
+    keys: ['name', 'url', 'tagline', 'description', 'locale'],
+  },
+  {
+    title: 'Homepage',
+    note: 'The first two things a visitor reads, above everything else on the site.',
+    keys: ['headline', 'lede'],
+  },
+  {
+    title: 'Where to hire and follow',
+    note: 'An empty field hides its link everywhere rather than printing a dead one.',
+    keys: ['fiverrUrl', 'linkedinUrl', 'behanceUrl', 'instagramUrl'],
+  },
+];
+
 let saved = false;
 if (Astro.request.method === 'POST') {
   await saveSettings(await Astro.request.formData());
@@ -48,31 +74,75 @@ if (Astro.request.method === 'POST') {
 }
 
 const settings = await listSettings();
+
+const grouped = new Set(GROUPS.flatMap((g) => g.keys));
+const ungrouped = settings.filter((s) => !grouped.has(s.setting_key));
 ---
 
-<AdminLayout title="Settings">
-  <h1>Brand &amp; links</h1>
-  <p class="sub">Used across every page. Changes are live immediately.</p>
+<AdminLayout title="Settings" eyebrow="Site" heading="Brand & links">
+  <p slot="lede">
+    Used across every page of the public site. Changes are live the moment they are saved.
+  </p>
 
   {saved && <p class="flash ok">Saved. Live now.</p>}
 
   <form method="POST" data-editor>
     {
-      settings.map(({ setting_key, setting_value }) => {
-        const meta = META[setting_key] ?? { label: setting_key };
-        return (
-          <label>
-            <span class="lab">{meta.label}</span>
-            {meta.hint && <span class="hint">{meta.hint}</span>}
-            {meta.multiline ? (
-              <textarea name={setting_key}>{setting_value}</textarea>
-            ) : (
-              <input type="text" name={setting_key} value={setting_value} />
-            )}
-          </label>
+      GROUPS.map(({ title, note, keys }) => {
+        // In the group's order, not the database's: "Studio name" before
+        // "Locale" is the difference between a form and a dump of a table.
+        const fields = keys
+          .map((k) => settings.find((s) => s.setting_key === k))
+          .filter((s): s is (typeof settings)[number] => Boolean(s));
+        // A group with nothing in it is a heading over empty space. Settings
+        // are read from the rows that exist, so this is a real possibility.
+        return fields.length === 0 ? null : (
+          <section class="panel">
+            <div class="panel-head">
+              <h2 class="panel-title">{title}</h2>
+            </div>
+            <p class="panel-note">{note}</p>
+            {fields.map(({ setting_key, setting_value }) => {
+              const meta = META[setting_key] ?? { label: setting_key };
+              return (
+                <label>
+                  <span class="lab">{meta.label}</span>
+                  {meta.hint && <span class="hint">{meta.hint}</span>}
+                  {meta.multiline ? (
+                    <textarea name={setting_key}>{setting_value}</textarea>
+                  ) : (
+                    <input type="text" name={setting_key} value={setting_value} />
+                  )}
+                </label>
+              );
+            })}
+          </section>
         );
       })
     }
+
+    {
+      /* Anything the groups above do not name. A setting added to the database
+         has always appeared here without a code change, and grouping must not
+         be the thing that quietly stops that. */
+      ungrouped.length > 0 && (
+        <section class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Other</h2>
+          </div>
+          <p class="panel-note">
+            Settings in the database that this screen has no description for. They still save.
+          </p>
+          {ungrouped.map(({ setting_key, setting_value }) => (
+            <label>
+              <span class="lab">{META[setting_key]?.label ?? setting_key}</span>
+              <input type="text" name={setting_key} value={setting_value} />
+            </label>
+          ))}
+        </section>
+      )
+    }
+
     <SaveBar label="Save — live immediately" />
   </form>
 </AdminLayout>

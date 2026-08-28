@@ -28,12 +28,73 @@ import {
   type FieldErrors,
 } from '@/lib/admin-data';
 import { listPages } from '@/lib/deck';
-import { CATEGORIES, type CategoryId } from '@/data/categories';
+import { CATEGORIES, ACTIVE_CATEGORIES, type CategoryId } from '@/data/categories';
 import { LOGO_TYPES, GUIDELINE_TYPES, TYPE_FILTERS } from '@/data/filters';
 import { getSortedProjects } from '@/lib/content';
 
 const routeSlug = Astro.params.slug!;
 const isNew = routeSlug === 'new';
+
+/**
+ * What you can publish, as a question worth asking first.
+ *
+ * Service and Layout were two dropdowns in the middle of the Basics panel, and
+ * they are the two answers the rest of the form depends on — which type
+ * taxonomy applies, whether the images read as a document or a set, what the
+ * upload will be called. Asking for them last, from inside the thing they
+ * decide, is backwards: an operator filled in a form for a deck and then found
+ * out it was going to be a set.
+ *
+ * So a new project starts here. One card per service, built from the same
+ * table the public site is built from, so a service added to categories.json
+ * appears without touching this file. Plus the one combination a service alone
+ * cannot express: a set of marks is a Logo Design project whose images are not
+ * pages of anything.
+ *
+ * It picks a starting point, not a constraint. Both fields are still in the
+ * form and still change everything live, so a choice made here is never a
+ * choice to live with.
+ */
+type Kind = {
+  id: string;
+  category: CategoryId;
+  layout: 'deck' | 'icons';
+  title: string;
+  blurb: string;
+};
+
+const ICON_SET: Kind = {
+  id: 'icon-set',
+  category: 'logo-design',
+  layout: 'icons',
+  title: 'Icon Set',
+  blurb:
+    'A sheet of marks drawn for one client — one industry, many kinds. Each one gets its own name and kind underneath it.',
+};
+
+const KINDS: Kind[] = ACTIVE_CATEGORIES.flatMap((c) => [
+  { id: c.id, category: c.id, layout: 'deck' as const, title: c.title, blurb: c.description },
+  // The set sits next to the service it is a variant of, not at the end of a
+  // list where it reads as an afterthought.
+  ...(c.id === ICON_SET.category ? [ICON_SET] : []),
+]);
+
+/** What the form will ask for, said on the card rather than discovered later. */
+const kindAsks = (k: Kind): string =>
+  k.layout === 'icons'
+    ? 'One page, or a few. Every mark on it is named and typed separately.'
+    : TYPE_FILTERS[k.category]?.key === 'guidelineType'
+      ? 'A multi-page document. Asks how complete the guidelines are.'
+      : 'A multi-page document, read in order.';
+
+const chosen = KINDS.find((k) => k.id === Astro.url.searchParams.get('type'));
+
+/**
+ * The chooser stands in for the form only on a fresh GET. A POST always
+ * carries the type in its own URL, and a save that silently rendered a menu
+ * instead would look like the form had eaten it.
+ */
+const showChooser = isNew && Astro.request.method === 'GET' && !chosen;
 
 let errors: FieldErrors = {};
 let submitted: FormData | null = null;
@@ -110,7 +171,11 @@ const uploaded = Astro.url.searchParams.get('uploaded');
 const uploadError = Astro.url.searchParams.get('uploadError');
 
 const currentIndustry = val('industry', existing?.industry);
-const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
+const title = isNew
+  ? chosen
+    ? `New ${chosen.title}`
+    : 'New project'
+  : (existing?.title ?? routeSlug);
 
 /**
  * The two choices the rest of the form answers to.
@@ -119,8 +184,9 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
  * already correct on arrival and stays correct with JavaScript off. The script
  * at the bottom only keeps it correct while the operator changes its mind.
  */
-const currentCategory = val('category', existing?.category ?? CATEGORIES[0].id);
-const currentLayout = val('layout', existing?.layout ?? 'deck') === 'icons' ? 'icons' : 'deck';
+const currentCategory = val('category', existing?.category ?? chosen?.category ?? CATEGORIES[0].id);
+const currentLayout =
+  val('layout', existing?.layout ?? chosen?.layout ?? 'deck') === 'icons' ? 'icons' : 'deck';
 
 /**
  * Which type dropdown a service actually uses, read from the same table the
@@ -217,14 +283,31 @@ const readiness = isNew
     ];
 ---
 
-<AdminLayout title={title} eyebrow={isNew ? 'New project' : 'Editing'} heading={title}>
+<AdminLayout
+  title={showChooser ? 'New project' : title}
+  eyebrow={isNew ? 'New project' : 'Editing'}
+  heading={showChooser ? 'What are you publishing?' : title}
+>
   <p slot="lede" class="sub" data-sub-count={isNew ? undefined : String(images.length)}>
     {
-      isNew
-        ? 'Fill this in and save. The deck is uploaded on the next screen — a project stays off the site until it has one.'
-        : `${images.length} ${currentLayout === 'icons' ? 'sheet' : 'page'}${images.length === 1 ? '' : 's'}. Saving publishes immediately.`
+      showChooser
+        ? 'Pick the closest. It decides what this form asks for and how the images will read — and both are still fields you can change afterwards.'
+        : isNew
+          ? 'Fill this in and save. The upload appears on the next screen — a project stays off the site until it has one.'
+          : `${images.length} ${currentLayout === 'icons' ? 'sheet' : 'page'}${images.length === 1 ? '' : 's'}. Saving publishes immediately.`
     }
   </p>
+
+  {
+    /* Chosen a moment ago, on the screen before this one, and nothing has
+       been typed yet — so changing your mind should cost one click, not a
+       hunt for the two dropdowns the choice actually set. */
+    isNew && chosen && (
+      <a class="btn ghost sm" slot="actions" href="/admin/project/new/">
+        ← Change type
+      </a>
+    )
+  }
 
   {
     /* The live page, from the screen that changes it. Only once there is one:
@@ -269,7 +352,9 @@ const readiness = isNew
   {
     justCreated && (
       <p class="flash ok">
-        Project created. Upload its deck below — it stays off the site until it has one.
+        Project created. Upload
+        {currentLayout === 'icons' ? ' its sheets' : ' its deck'} below — it stays off the site
+        until it has {currentLayout === 'icons' ? 'them' : 'one'}.
       </p>
     )
   }
@@ -279,6 +364,43 @@ const readiness = isNew
   {
     Object.keys(errors).length > 0 && (
       <p class="flash bad">Nothing was saved — check the fields marked below.</p>
+    )
+  }
+
+  {
+    showChooser && (
+      <ul class="kinds">
+        {KINDS.map((k) => (
+          <li>
+            <a class="kind" href={`/admin/project/new/?type=${k.id}`}>
+              {/* Not decoration: the shape is the difference. A deck is
+                  pages in a column, a set is marks side by side, and that
+                  is the whole of what Layout decides. */}
+              <span class="kind-shape" aria-hidden="true">
+                {k.layout === 'icons' ? (
+                  <svg viewBox="0 0 34 26">
+                    <rect x="1" y="1" width="9.5" height="10" rx="2" />
+                    <rect x="12.25" y="1" width="9.5" height="10" rx="2" />
+                    <rect x="23.5" y="1" width="9.5" height="10" rx="2" />
+                    <rect x="1" y="14" width="9.5" height="10" rx="2" />
+                    <rect x="12.25" y="14" width="9.5" height="10" rx="2" />
+                    <rect x="23.5" y="14" width="9.5" height="10" rx="2" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 34 26">
+                    <rect x="1" y="1" width="32" height="6.5" rx="2" />
+                    <rect x="1" y="9.75" width="32" height="6.5" rx="2" />
+                    <rect x="1" y="18.5" width="32" height="6.5" rx="2" />
+                  </svg>
+                )}
+              </span>
+              <span class="kind-name">{k.title}</span>
+              <span class="kind-blurb">{k.blurb}</span>
+              <span class="kind-asks">{kindAsks(k)}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
     )
   }
 
@@ -298,300 +420,294 @@ const readiness = isNew
       /* Uploading needs a project to attach pages to, so it cannot happen
          before the first save. Saying that here — in the place the upload will
          appear — beats an empty space that reads as a missing feature. */
-      <section class="deck-soon">
-        <h2>The deck</h2>
-        <p>
-          Save this project first. The PDF upload appears right here, and every page becomes a page
-          of the case study.
-        </p>
-      </section>
+      !showChooser && (
+        <section class="deck-soon">
+          <h2>{currentLayout === 'icons' ? 'The set' : 'The deck'}</h2>
+          <p>
+            Save this project first. The PDF upload appears right here, and every page becomes
+            {currentLayout === 'icons' ? ' one sheet of the set.' : ' a page of the case study.'}
+          </p>
+        </section>
+      )
     )
   }
 
-  <form method="POST" data-editor>
-    <section class="panel">
-      <div class="panel-head">
-        <h2 class="panel-title">Basics</h2>
-      </div>
+  {
+    !showChooser && (
+      <form method="POST" data-editor>
+        <section class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Basics</h2>
+          </div>
 
-      {
-        isNew && (
+          {isNew && (
+            <label>
+              <span class="lab">URL slug</span>
+              <span class="hint">
+                Becomes /work/&lt;slug&gt;/. Lowercase, hyphens, no spaces. Cannot be changed later.
+              </span>
+              <input
+                type="text"
+                name="slug"
+                value={val('slug')}
+                aria-invalid={errors.slug ? 'true' : undefined}
+                required
+              />
+              {errors.slug && <span class="err">{errors.slug}</span>}
+            </label>
+          )}
+
           <label>
-            <span class="lab">URL slug</span>
-            <span class="hint">
-              Becomes /work/&lt;slug&gt;/. Lowercase, hyphens, no spaces. Cannot be changed later.
-            </span>
+            <span class="lab">Title</span>
             <input
               type="text"
-              name="slug"
-              value={val('slug')}
-              aria-invalid={errors.slug ? 'true' : undefined}
+              name="title"
+              value={val('title', existing?.title)}
+              aria-invalid={errors.title ? 'true' : undefined}
               required
             />
-            {errors.slug && <span class="err">{errors.slug}</span>}
+            {errors.title && <span class="err">{errors.title}</span>}
           </label>
-        )
-      }
 
-      <label>
-        <span class="lab">Title</span>
-        <input
-          type="text"
-          name="title"
-          value={val('title', existing?.title)}
-          aria-invalid={errors.title ? 'true' : undefined}
-          required
-        />
-        {errors.title && <span class="err">{errors.title}</span>}
-      </label>
+          <div class="grid2">
+            <label>
+              <span class="lab">Service</span>
+              <select name="category" aria-invalid={errors.category ? 'true' : undefined} required>
+                {CATEGORIES.map((c) => (
+                  <option value={c.id} selected={currentCategory === c.id}>
+                    {c.title}
+                  </option>
+                ))}
+              </select>
+              {errors.category && <span class="err">{errors.category}</span>}
+            </label>
 
-      <div class="grid2">
-        <label>
-          <span class="lab">Service</span>
-          <select name="category" aria-invalid={errors.category ? 'true' : undefined} required>
-            {
-              CATEGORIES.map((c) => (
-                <option value={c.id} selected={val('category', existing?.category) === c.id}>
-                  {c.title}
+            <label>
+              <span class="lab">Layout</span>
+              <span class="hint">
+                How the case study shows its images. A deck reads in one column, in order. A set
+                lays them out as a grid, each with its own name and kind.
+              </span>
+              <select name="layout">
+                <option value="deck" selected={currentLayout !== 'icons'}>
+                  Deck — pages of a document
                 </option>
-              ))
-            }
-          </select>
-          {errors.category && <span class="err">{errors.category}</span>}
-        </label>
-
-        <label>
-          <span class="lab">Layout</span>
-          <span class="hint">
-            How the case study shows its images. A deck reads in one column, in order. A set lays
-            them out as a grid, each with its own name and kind.
-          </span>
-          <select name="layout">
-            <option value="deck" selected={val('layout', existing?.layout ?? 'deck') !== 'icons'}>
-              Deck — pages of a document
-            </option>
-            <option value="icons" selected={val('layout', existing?.layout ?? 'deck') === 'icons'}>
-              Icon set — a grid of separate marks
-            </option>
-          </select>
-        </label>
-      </div>
-
-      <div class="grid2">
-        <label>
-          <span class="lab">Logo type</span>
-          <span class="hint" data-logo-hint>
-            {
-              currentCategory === 'logo-design'
-                ? 'The kind of mark this project is. Powers the Type filter on Logo Design.'
-                : 'The kind of mark this work was built around. Shown on the case study as “Mark”.'
-            }
-          </span>
-          <select name="logo_type">
-            <option value="">— none —</option>
-            {
-              LOGO_TYPES.map((t) => (
-                <option value={t} selected={val('logo_type', existing?.logo_type) === t}>
-                  {t}
+                <option value="icons" selected={currentLayout === 'icons'}>
+                  Icon set — a grid of separate marks
                 </option>
-              ))
-            }
-          </select>
-        </label>
+              </select>
+            </label>
+          </div>
 
-        {
-          /* Only Brand Guidelines uses this — TYPE_FILTERS says so, and the
+          <div class="grid2">
+            <label>
+              <span class="lab">Logo type</span>
+              <span class="hint" data-logo-hint>
+                {currentCategory === 'logo-design'
+                  ? 'The kind of mark this project is. Powers the Type filter on Logo Design.'
+                  : 'The kind of mark this work was built around. Shown on the case study as “Mark”.'}
+              </span>
+              <select name="logo_type">
+                <option value="">— none —</option>
+                {LOGO_TYPES.map((t) => (
+                  <option value={t} selected={val('logo_type', existing?.logo_type) === t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {/* Only Brand Guidelines uses this — TYPE_FILTERS says so, and the
             public Type filter reads the same table. Hidden rather than
             removed, so switching service away and back does not quietly drop
-            a value that was already saved. */
-        }
-        <label data-when-guidelines hidden={!guidelineTypeApplies(currentCategory)}>
-          <span class="lab">Guidelines type</span>
-          <span class="hint">How complete the guidelines document is.</span>
-          <select name="guideline_type">
-            <option value="">— none —</option>
-            {
-              GUIDELINE_TYPES.map((t) => (
-                <option value={t} selected={val('guideline_type', existing?.guideline_type) === t}>
-                  {t}
-                </option>
-              ))
-            }
-          </select>
-        </label>
-      </div>
+            a value that was already saved. */}
+            <label data-when-guidelines hidden={!guidelineTypeApplies(currentCategory)}>
+              <span class="lab">Guidelines type</span>
+              <span class="hint">How complete the guidelines document is.</span>
+              <select name="guideline_type">
+                <option value="">— none —</option>
+                {GUIDELINE_TYPES.map((t) => (
+                  <option
+                    value={t}
+                    selected={val('guideline_type', existing?.guideline_type) === t}
+                  >
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
 
-      <label>
-        <span class="lab">Industry</span>
-        <span class="hint">
-          Reuse an existing spelling where one fits — two projects sharing a spelling group
-          together, a typo makes a category of one. Type a new one to start a group.
-        </span>
-        <input type="text" name="industry" value={currentIndustry} list="industries" />
-        <datalist id="industries">
-          {industries.map((i) => <option value={i} />)}
-        </datalist>
-      </label>
-    </section>
+          <label>
+            <span class="lab">Industry</span>
+            <span class="hint">
+              Reuse an existing spelling where one fits — two projects sharing a spelling group
+              together, a typo makes a category of one. Type a new one to start a group.
+            </span>
+            <input type="text" name="industry" value={currentIndustry} list="industries" />
+            <datalist id="industries">
+              {industries.map((i) => (
+                <option value={i} />
+              ))}
+            </datalist>
+          </label>
+        </section>
 
-    <details class="fold" open={extrasCount > 0}>
-      <summary>
-        <span class="fold-title">Extra elements</span>
-        <span class="fold-count">{extrasCount === 0 ? 'none' : `${extrasCount} ticked`}</span>
-      </summary>
-      <p class="legend-note">
-        Anything included beyond the core sections. Listed on the case study, so tick them
-        accurately.
-      </p>
-      {
-        /* A real group, so a screen reader reads the question before the
-          twelve answers rather than twelve unrelated checkboxes. */
-      }
-      <fieldset class="bare">
-        <legend class="vh">Extra elements included in this project</legend>
-        <div class="checks">
-          {
-            EXTRA_OPTIONS.map((e) => (
-              <label>
-                <input
-                  type="checkbox"
-                  name="extras"
-                  value={e}
-                  checked={checkedExtras.includes(e)}
-                />
-                <span>{e}</span>
-              </label>
-            ))
-          }
-        </div>
-      </fieldset>
-      <label>
-        <span class="lab">Custom extras</span>
-        <span class="hint">Anything the list above does not cover, one per line.</span>
-        <textarea name="extras_custom">{listVal('extras_custom', existing?.extras_custom)}</textarea
-        >
-      </label>
-    </details>
+        <details class="fold" open={extrasCount > 0}>
+          <summary>
+            <span class="fold-title">Extra elements</span>
+            <span class="fold-count">{extrasCount === 0 ? 'none' : `${extrasCount} ticked`}</span>
+          </summary>
+          <p class="legend-note">
+            Anything included beyond the core sections. Listed on the case study, so tick them
+            accurately.
+          </p>
+          {/* A real group, so a screen reader reads the question before the
+          twelve answers rather than twelve unrelated checkboxes. */}
+          <fieldset class="bare">
+            <legend class="vh">Extra elements included in this project</legend>
+            <div class="checks">
+              {EXTRA_OPTIONS.map((e) => (
+                <label>
+                  <input
+                    type="checkbox"
+                    name="extras"
+                    value={e}
+                    checked={checkedExtras.includes(e)}
+                  />
+                  <span>{e}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <label>
+            <span class="lab">Custom extras</span>
+            <span class="hint">Anything the list above does not cover, one per line.</span>
+            <textarea name="extras_custom">
+              {listVal('extras_custom', existing?.extras_custom)}
+            </textarea>
+          </label>
+        </details>
 
-    <section class="panel">
-      <div class="panel-head">
-        <h2 class="panel-title">Copy</h2>
-      </div>
+        <section class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Copy</h2>
+          </div>
 
-      <label>
-        <span class="lab">Details</span>
-        <span class="hint">
-          A sentence or two. Shown on the case study and used as its meta description.
-        </span>
-        <textarea name="summary" aria-invalid={errors.summary ? 'true' : undefined} required
-          >{val('summary', existing?.summary)}</textarea
-        >
-        {errors.summary && <span class="err">{errors.summary}</span>}
-      </label>
+          <label>
+            <span class="lab">Details</span>
+            <span class="hint">
+              A sentence or two. Shown on the case study and used as its meta description.
+            </span>
+            <textarea name="summary" aria-invalid={errors.summary ? 'true' : undefined} required>
+              {val('summary', existing?.summary)}
+            </textarea>
+            {errors.summary && <span class="err">{errors.summary}</span>}
+          </label>
 
-      <label>
-        <span class="lab">One-line intent</span>
-        <span class="hint">
-          The strategic idea in about 70 characters. The standfirst on the case study.
-        </span>
-        <input type="text" name="intent" value={val('intent', existing?.intent)} />
-      </label>
-    </section>
+          <label>
+            <span class="lab">One-line intent</span>
+            <span class="hint">
+              The strategic idea in about 70 characters. The standfirst on the case study.
+            </span>
+            <input type="text" name="intent" value={val('intent', existing?.intent)} />
+          </label>
+        </section>
 
-    <details class="fold" open={storyCount > 0 || anyError}>
-      <summary>
-        <span class="fold-title">Story</span>
-        <span class="fold-count">
-          {storyCount === 0 ? 'empty' : `${storyCount} of ${storyFields.length} written`}
-        </span>
-      </summary>
-      <p class="legend-note">
-        Every field optional — an empty one hides its section. Never fill these with a guess: they
-        are statements about a real client's business.
-      </p>
+        <details class="fold" open={storyCount > 0 || anyError}>
+          <summary>
+            <span class="fold-title">Story</span>
+            <span class="fold-count">
+              {storyCount === 0 ? 'empty' : `${storyCount} of ${storyFields.length} written`}
+            </span>
+          </summary>
+          <p class="legend-note">
+            Every field optional — an empty one hides its section. Never fill these with a guess:
+            they are statements about a real client's business.
+          </p>
 
-      <label>
-        <span class="lab">Client &amp; context</span>
-        <textarea name="context">{val('context', existing?.context)}</textarea>
-      </label>
-      <label>
-        <span class="lab">The challenge</span>
-        <textarea name="challenge">{val('challenge', existing?.challenge)}</textarea>
-      </label>
-      <label>
-        <span class="lab">Creative direction</span>
-        <textarea name="direction">{val('direction', existing?.direction)}</textarea>
-      </label>
-      <label>
-        <span class="lab">What was delivered</span>
-        <span class="hint">
-          One per line. Leave empty and it is built from the project type plus its extras.
-        </span>
-        <textarea name="delivered">{listVal('delivered', existing?.delivered)}</textarea>
-      </label>
-      <label>
-        <span class="lab">Verified outcome</span>
-        <span class="hint">
-          ONLY a result the client actually reported. Empty hides the section; an invented one is a
-          lie a client can check.
-        </span>
-        <textarea name="outcome">{val('outcome', existing?.outcome)}</textarea>
-      </label>
-    </details>
+          <label>
+            <span class="lab">Client &amp; context</span>
+            <textarea name="context">{val('context', existing?.context)}</textarea>
+          </label>
+          <label>
+            <span class="lab">The challenge</span>
+            <textarea name="challenge">{val('challenge', existing?.challenge)}</textarea>
+          </label>
+          <label>
+            <span class="lab">Creative direction</span>
+            <textarea name="direction">{val('direction', existing?.direction)}</textarea>
+          </label>
+          <label>
+            <span class="lab">What was delivered</span>
+            <span class="hint">
+              One per line. Leave empty and it is built from the project type plus its extras.
+            </span>
+            <textarea name="delivered">{listVal('delivered', existing?.delivered)}</textarea>
+          </label>
+          <label>
+            <span class="lab">Verified outcome</span>
+            <span class="hint">
+              ONLY a result the client actually reported. Empty hides the section; an invented one
+              is a lie a client can check.
+            </span>
+            <textarea name="outcome">{val('outcome', existing?.outcome)}</textarea>
+          </label>
+        </details>
 
-    <details class="fold" open={linkCount > 0}>
-      <summary>
-        <span class="fold-title">Links</span>
-        <span class="fold-count">{linkCount === 0 ? 'none' : `${linkCount} set`}</span>
-      </summary>
-      <div class="grid2">
-        <label>
-          <span class="lab">Brand website</span>
-          <input type="text" name="website" value={val('website', existing?.website)} />
-        </label>
-        <label>
-          <span class="lab">Instagram</span>
-          <input type="text" name="instagram" value={val('instagram', existing?.instagram)} />
-        </label>
-        <label>
-          <span class="lab">Facebook</span>
-          <input type="text" name="facebook" value={val('facebook', existing?.facebook)} />
-        </label>
-        <label>
-          <span class="lab">LinkedIn</span>
-          <input type="text" name="linkedin" value={val('linkedin', existing?.linkedin)} />
-        </label>
-      </div>
-      <label>
-        <span class="lab">Other links</span>
-        <span class="hint">One per line — TikTok, Behance, X…</span>
-        <textarea name="other_links">{listVal('other_links', existing?.other_links)}</textarea>
-      </label>
-    </details>
+        <details class="fold" open={linkCount > 0}>
+          <summary>
+            <span class="fold-title">Links</span>
+            <span class="fold-count">{linkCount === 0 ? 'none' : `${linkCount} set`}</span>
+          </summary>
+          <div class="grid2">
+            <label>
+              <span class="lab">Brand website</span>
+              <input type="text" name="website" value={val('website', existing?.website)} />
+            </label>
+            <label>
+              <span class="lab">Instagram</span>
+              <input type="text" name="instagram" value={val('instagram', existing?.instagram)} />
+            </label>
+            <label>
+              <span class="lab">Facebook</span>
+              <input type="text" name="facebook" value={val('facebook', existing?.facebook)} />
+            </label>
+            <label>
+              <span class="lab">LinkedIn</span>
+              <input type="text" name="linkedin" value={val('linkedin', existing?.linkedin)} />
+            </label>
+          </div>
+          <label>
+            <span class="lab">Other links</span>
+            <span class="hint">One per line — TikTok, Behance, X…</span>
+            <textarea name="other_links">{listVal('other_links', existing?.other_links)}</textarea>
+          </label>
+        </details>
 
-    <section class="panel">
-      <div class="panel-head">
-        <h2 class="panel-title">Grid cover</h2>
-      </div>
-      <p class="panel-note" data-cover-note>
-        {
-          currentLayout === 'icons'
-            ? 'The cover is the first sheet. Star any other in the set above to use that instead. This is what a screen reader announces for the thumbnail on the work grid.'
-            : 'The cover is page one of the deck. Star any other page above to use that instead. This is what a screen reader announces for the thumbnail on the work grid.'
-        }
-      </p>
-      <label>
-        <span class="lab">Cover alt text</span>
-        <span class="hint">Describe what the grid thumbnail shows.</span>
-        <input type="text" name="cover_alt" value={val('cover_alt', existing?.cover_alt)} />
-      </label>
-    </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Grid cover</h2>
+          </div>
+          <p class="panel-note" data-cover-note>
+            {currentLayout === 'icons'
+              ? 'The cover is the first sheet. Star any other in the set above to use that instead. This is what a screen reader announces for the thumbnail on the work grid.'
+              : 'The cover is page one of the deck. Star any other page above to use that instead. This is what a screen reader announces for the thumbnail on the work grid.'}
+          </p>
+          <label>
+            <span class="lab">Cover alt text</span>
+            <span class="hint">Describe what the grid thumbnail shows.</span>
+            <input type="text" name="cover_alt" value={val('cover_alt', existing?.cover_alt)} />
+          </label>
+        </section>
 
-    <SaveBar
-      label={isNew ? 'Create project — then add the deck' : 'Save — publishes immediately'}
-      cancelHref="/admin/"
-    />
-  </form>
+        <SaveBar
+          label={isNew ? 'Create project — then add the images' : 'Save — publishes immediately'}
+          cancelHref="/admin/"
+        />
+      </form>
+    )
+  }
 
   {
     /* Set apart and named, because it is the one control on this screen with
@@ -704,6 +820,106 @@ const readiness = isNew
 </script>
 
 <style>
+  /* --- The chooser --------------------------------------------------------
+     One card per thing you can publish. The shape on the left is the only
+     part that is not words: it is what Layout decides, drawn. */
+  .kinds {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 0.7rem;
+    margin: 0;
+    padding: 0;
+  }
+
+  .kind {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    /* The blurb absorbs the difference so the rule above "what it asks for"
+       lands on one line across the row, whatever length the descriptions are. */
+    grid-template-rows: auto 1fr auto;
+    column-gap: 0.85rem;
+    block-size: 100%;
+    padding: 1.1rem 1.2rem;
+    border: 1px solid var(--color-line);
+    border-radius: 14px;
+    background: var(--color-paper-raised);
+    box-shadow: var(--shadow-sm);
+    color: inherit;
+    text-decoration: none;
+    transition:
+      border-color var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+
+  .kind:hover {
+    border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+    box-shadow: var(--glow-card), var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  .kind:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  .kind-shape {
+    grid-row: 1 / 2;
+    display: grid;
+    place-items: center;
+    inline-size: 2.6rem;
+    block-size: 2.1rem;
+    border-radius: 7px;
+    background: var(--color-accent-wash);
+  }
+
+  .kind-shape svg {
+    inline-size: 1.5rem;
+    fill: var(--color-accent);
+  }
+
+  .kind-name {
+    grid-column: 2;
+    align-self: center;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .kind:hover .kind-name {
+    color: var(--color-accent);
+  }
+
+  .kind-blurb {
+    grid-column: 1 / -1;
+    margin-block-start: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--color-ink-soft);
+  }
+
+  /* What the form will want, said before it is opened rather than found
+     halfway down it.
+
+     A band across the foot of the card rather than a rule above a line of
+     text: these run to one line or two depending on the type, and a bare rule
+     bottom-aligned above them lands at a different height on every card. A
+     band of a different height reads as a band; a rule at a different height
+     reads as a mistake. */
+  .kind-asks {
+    grid-column: 1 / -1;
+    align-self: end;
+    margin: 0.9rem -1.2rem -1.1rem;
+    padding: 0.65rem 1.2rem;
+    border-block-start: 1px solid var(--color-line);
+    border-end-start-radius: 13px;
+    border-end-end-radius: 13px;
+    background: var(--color-paper-sunken);
+    font-size: 0.78rem;
+    color: var(--color-ink-mute);
+  }
+
   /* --- Readiness ----------------------------------------------------------
      Three facts about this project, above everything that can change them. */
   .ready {

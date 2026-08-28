@@ -61,6 +61,7 @@ export async function listProjects() {
     slug: string;
     title: string;
     category: string;
+    layout: string;
     sort_order: number;
     pages: number;
     updated_at: Date;
@@ -71,12 +72,12 @@ export async function listProjects() {
     cover_storage: string | null;
     cover_alt: string | null;
   }>(
-    `SELECT p.slug, p.title, p.category, p.sort_order, p.industry,
+    `SELECT p.slug, p.title, p.category, p.layout, p.sort_order, p.industry,
             p.cover, p.cover_width, p.cover_height, p.cover_storage, p.cover_alt,
             COUNT(i.src) AS pages, p.updated_at
        FROM projects p
        LEFT JOIN project_images i ON i.project_slug = p.slug
-      GROUP BY p.slug, p.title, p.category, p.sort_order, p.industry,
+      GROUP BY p.slug, p.title, p.category, p.layout, p.sort_order, p.industry,
                p.cover, p.cover_width, p.cover_height, p.cover_storage,
                p.cover_alt, p.updated_at
       ORDER BY p.sort_order ASC, p.title ASC`,

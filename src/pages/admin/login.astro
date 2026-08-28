@@ -6,6 +6,7 @@
  */
 import AdminLayout from '@/layouts/AdminLayout.astro';
 import { checkPassword, sessionCookie } from '@/lib/auth';
+import Logo from '@/components/Logo.astro';
 
 let error = '';
 const next = Astro.url.searchParams.get('next') ?? '/admin/';
@@ -33,23 +34,105 @@ if (Astro.request.method === 'POST') {
 ---
 
 <AdminLayout title="Sign in" nav={false}>
-  <h1>XStudioz admin</h1>
-  <p class="sub">Sign in to edit the live site.</p>
+  <div class="signin">
+    <span class="signin-mark">
+      <Logo size={44} />
+    </span>
+    <h1>XStudioz admin</h1>
+    <p class="signin-lede">Sign in to edit the live site.</p>
 
-  {error && <p class="flash bad">{error}</p>}
+    {error && <p class="flash bad">{error}</p>}
 
-  <form method="POST">
-    <label>
-      <span class="lab">Password</span>
-      <input
-        type="password"
-        name="password"
-        autocomplete="current-password"
-        required
-        autofocus
-        aria-invalid={error ? 'true' : undefined}
-      />
-    </label>
-    <button class="btn" type="submit">Sign in</button>
-  </form>
+    <form method="POST">
+      <label>
+        <span class="lab">Password</span>
+        <input
+          type="password"
+          name="password"
+          autocomplete="current-password"
+          required
+          autofocus
+          aria-invalid={error ? 'true' : undefined}
+        />
+      </label>
+      <button class="btn signin-go" type="submit">Sign in</button>
+    </form>
+  </div>
+
+  <p class="signin-foot">
+    <a href="/">Back to xstudioz.com</a>
+  </p>
 </AdminLayout>
+
+<style>
+  /* The one screen with nothing else on it, so it is allowed the atmosphere
+     the rest of the tool does without: obsidian ground, a single violet light
+     behind the card. It is also the only admin page that ever gets seen by
+     someone who has not signed in, and it should look like the studio. */
+  :global(body.solo) {
+    background:
+      radial-gradient(
+        42rem 30rem at 50% -8%,
+        color-mix(in srgb, var(--color-accent) 20%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        30rem 24rem at 88% 106%,
+        color-mix(in srgb, var(--color-accent-bright) 13%, transparent),
+        transparent 70%
+      ),
+      var(--color-paper);
+    background-attachment: fixed;
+  }
+
+  .signin {
+    padding: 2rem 1.75rem 1.75rem;
+    border: 1px solid var(--color-line);
+    border-radius: 18px;
+    background: var(--color-paper-raised);
+    box-shadow: var(--shadow-lift);
+    text-align: center;
+  }
+
+  /* A wrapper, not a class on <Logo>: a scoped class does not reach inside a
+     child component, and global.css makes every img a block — which
+     text-align has no effect on. */
+  .signin-mark {
+    display: inline-block;
+    line-height: 0;
+    margin-block-end: 1.1rem;
+  }
+
+  .signin-lede {
+    margin: 0.4rem 0 1.6rem;
+    color: var(--color-ink-mute);
+    font-size: 0.9rem;
+  }
+
+  /* The field is the only thing here, so it is centred with everything else
+     and labelled above rather than floated left of a lone input. */
+  .signin :global(label) {
+    text-align: start;
+    margin-bottom: 1rem;
+  }
+
+  .signin-go {
+    inline-size: 100%;
+  }
+
+  .signin-foot {
+    margin: 1.25rem 0 0;
+    text-align: center;
+    font-size: 0.82rem;
+  }
+
+  .signin-foot a {
+    color: var(--color-ink-mute);
+    text-decoration: none;
+  }
+
+  .signin-foot a:hover {
+    color: var(--color-ink);
+    text-decoration: underline;
+  }
+</style>

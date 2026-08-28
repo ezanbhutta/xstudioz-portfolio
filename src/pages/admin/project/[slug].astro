@@ -168,17 +168,103 @@ const extrasCount =
 
 /** A section opens if it has content, or if a failed save put an error in it. */
 const anyError = Object.keys(errors).length > 0;
+
+/**
+ * What is still missing, said out loud.
+ *
+ * Each of these is a fact the editor already had and never mentioned. The
+ * expensive one is the first: `getSortedProjects` drops a project with no
+ * images, so a project can be saved, look complete, and simply not be on the
+ * site — and the only way to find out was to go and look at the grid. The
+ * others are smaller but the same shape: quiet omissions that nothing on this
+ * screen was ever going to point at.
+ *
+ * Only ever computed, never guessed. A check that is satisfied says so rather
+ * than disappearing, because "no warnings" and "nothing checked" look
+ * identical otherwise.
+ */
+const named = images.filter((i) => i.label.trim() !== '').length;
+
+const readiness = isNew
+  ? []
+  : [
+      images.length === 0
+        ? { ok: false, label: 'Not on the site', note: 'It has no pages, so nothing renders it.' }
+        : {
+            ok: true,
+            label: 'Live on the site',
+            count: images.length,
+            note: `${images.length} ${currentLayout === 'icons' ? 'sheet' : 'page'}${images.length === 1 ? '' : 's'} published.`,
+          },
+      existing?.cover_alt
+        ? { ok: true, label: 'Cover described', note: 'The grid thumbnail has alt text.' }
+        : {
+            ok: false,
+            label: 'Cover not described',
+            note: 'A screen reader announces nothing for the thumbnail on the work grid.',
+          },
+      ...(currentLayout === 'icons' && images.length > 0
+        ? [
+            named === images.length
+              ? { ok: true, label: 'Every sheet named', note: 'All captions are filled in.' }
+              : {
+                  ok: false,
+                  label: `${named} of ${images.length} sheets named`,
+                  note: 'An unnamed sheet shows no caption under it on the case study.',
+                },
+          ]
+        : []),
+    ];
 ---
 
-<AdminLayout title={title}>
-  <h1>{title}</h1>
-  <p class="sub" data-sub-count={isNew ? undefined : String(images.length)}>
+<AdminLayout title={title} eyebrow={isNew ? 'New project' : 'Editing'} heading={title}>
+  <p slot="lede" class="sub" data-sub-count={isNew ? undefined : String(images.length)}>
     {
       isNew
         ? 'Fill this in and save. The deck is uploaded on the next screen — a project stays off the site until it has one.'
         : `${images.length} ${currentLayout === 'icons' ? 'sheet' : 'page'}${images.length === 1 ? '' : 's'}. Saving publishes immediately.`
     }
   </p>
+
+  {
+    /* The live page, from the screen that changes it. Only once there is one:
+       a project with no pages is dropped by getSortedProjects, so the link
+       would be a 404 and the operator would be told nothing about why. */
+    !isNew && images.length > 0 && (
+      <a
+        class="btn ghost sm"
+        slot="actions"
+        href={`/work/${routeSlug}/`}
+        target="_blank"
+        rel="noopener"
+      >
+        View live page ↗
+      </a>
+    )
+  }
+
+  {
+    readiness.length > 0 && (
+      <ul class="ready">
+        {readiness.map((r) => (
+          <li class:list={['ready-item', r.ok ? 'is-ok' : 'is-todo']}>
+            <span class="ready-mark" aria-hidden="true">
+              {r.ok ? '✓' : '!'}
+            </span>
+            <span>
+              <strong>{r.label}</strong>
+              <span
+                class="ready-note"
+                data-ready-count={'count' in r ? String(r.count) : undefined}
+              >
+                {r.note}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    )
+  }
 
   {
     justCreated && (
@@ -223,8 +309,10 @@ const anyError = Object.keys(errors).length > 0;
   }
 
   <form method="POST" data-editor>
-    <fieldset>
-      <legend>Basics</legend>
+    <section class="panel">
+      <div class="panel-head">
+        <h2 class="panel-title">Basics</h2>
+      </div>
 
       {
         isNew && (
@@ -344,7 +432,7 @@ const anyError = Object.keys(errors).length > 0;
           {industries.map((i) => <option value={i} />)}
         </datalist>
       </label>
-    </fieldset>
+    </section>
 
     <details class="fold" open={extrasCount > 0}>
       <summary>
@@ -355,16 +443,28 @@ const anyError = Object.keys(errors).length > 0;
         Anything included beyond the core sections. Listed on the case study, so tick them
         accurately.
       </p>
-      <div class="checks">
-        {
-          EXTRA_OPTIONS.map((e) => (
-            <label>
-              <input type="checkbox" name="extras" value={e} checked={checkedExtras.includes(e)} />
-              <span>{e}</span>
-            </label>
-          ))
-        }
-      </div>
+      {
+        /* A real group, so a screen reader reads the question before the
+          twelve answers rather than twelve unrelated checkboxes. */
+      }
+      <fieldset class="bare">
+        <legend class="vh">Extra elements included in this project</legend>
+        <div class="checks">
+          {
+            EXTRA_OPTIONS.map((e) => (
+              <label>
+                <input
+                  type="checkbox"
+                  name="extras"
+                  value={e}
+                  checked={checkedExtras.includes(e)}
+                />
+                <span>{e}</span>
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
       <label>
         <span class="lab">Custom extras</span>
         <span class="hint">Anything the list above does not cover, one per line.</span>
@@ -373,8 +473,10 @@ const anyError = Object.keys(errors).length > 0;
       </label>
     </details>
 
-    <fieldset>
-      <legend>Copy</legend>
+    <section class="panel">
+      <div class="panel-head">
+        <h2 class="panel-title">Copy</h2>
+      </div>
 
       <label>
         <span class="lab">Details</span>
@@ -394,7 +496,7 @@ const anyError = Object.keys(errors).length > 0;
         </span>
         <input type="text" name="intent" value={val('intent', existing?.intent)} />
       </label>
-    </fieldset>
+    </section>
 
     <details class="fold" open={storyCount > 0 || anyError}>
       <summary>
@@ -467,9 +569,11 @@ const anyError = Object.keys(errors).length > 0;
       </label>
     </details>
 
-    <fieldset>
-      <legend>Grid cover</legend>
-      <p class="legend-note" data-cover-note>
+    <section class="panel">
+      <div class="panel-head">
+        <h2 class="panel-title">Grid cover</h2>
+      </div>
+      <p class="panel-note" data-cover-note>
         {
           currentLayout === 'icons'
             ? 'The cover is the first sheet. Star any other in the set above to use that instead. This is what a screen reader announces for the thumbnail on the work grid.'
@@ -481,7 +585,7 @@ const anyError = Object.keys(errors).length > 0;
         <span class="hint">Describe what the grid thumbnail shows.</span>
         <input type="text" name="cover_alt" value={val('cover_alt', existing?.cover_alt)} />
       </label>
-    </fieldset>
+    </section>
 
     <SaveBar
       label={isNew ? 'Create project — then add the deck' : 'Save — publishes immediately'}
@@ -490,17 +594,27 @@ const anyError = Object.keys(errors).length > 0;
   </form>
 
   {
+    /* Set apart and named, because it is the one control on this screen with
+       no undo behind it and it used to sit loose under the save bar. */
     !isNew && (
-      <form
-        method="POST"
-        style="margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--color-line)"
-        onsubmit="return confirm('Delete this project? It disappears from the live site immediately. This cannot be undone.')"
-      >
-        <input type="hidden" name="_action" value="delete" />
-        <button class="btn danger" type="submit">
-          Delete project
-        </button>
-      </form>
+      <section class="danger-zone">
+        <div>
+          <h2 class="panel-title">Delete this project</h2>
+          <p class="panel-note">
+            It disappears from the live site immediately and cannot be brought back. Its uploaded
+            image files are left on disk.
+          </p>
+        </div>
+        <form
+          method="POST"
+          onsubmit="return confirm('Delete this project? It disappears from the live site immediately. This cannot be undone.')"
+        >
+          <input type="hidden" name="_action" value="delete" />
+          <button class="btn danger" type="submit">
+            Delete project
+          </button>
+        </form>
+      </section>
     )
   }
 </AdminLayout>
@@ -567,10 +681,20 @@ const anyError = Object.keys(errors).length > 0;
           : 'The cover is page one of the deck. Star any other page above to use that instead. This is what a screen reader announces for the thumbnail on the work grid.';
       }
 
+      const noun = icons ? 'sheet' : 'page';
+
       if (sub) {
         const n = Number(sub.dataset.subCount ?? '0');
-        const noun = icons ? 'sheet' : 'page';
         sub.textContent = `${n} ${noun}${n === 1 ? '' : 's'}. Saving publishes immediately.`;
+      }
+
+      // The readiness strip counts the same images by the same name. Leaving
+      // it saying "pages" while everything else says "sheets" reads as two
+      // parts of the screen disagreeing about what is on it.
+      const ready = document.querySelector<HTMLElement>('[data-ready-count]');
+      if (ready) {
+        const n = Number(ready.dataset.readyCount ?? '0');
+        ready.textContent = `${n} ${noun}${n === 1 ? '' : 's'} published.`;
       }
     };
 
@@ -578,3 +702,90 @@ const anyError = Object.keys(errors).length > 0;
     applyLayout();
   }
 </script>
+
+<style>
+  /* --- Readiness ----------------------------------------------------------
+     Three facts about this project, above everything that can change them. */
+  .ready {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 0.5rem;
+    margin: 0 0 1.5rem;
+    padding: 0;
+  }
+
+  .ready-item {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    background: var(--color-paper-raised);
+    font-size: 0.83rem;
+  }
+
+  .ready-mark {
+    display: grid;
+    place-items: center;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    flex: none;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .ready-item.is-ok .ready-mark {
+    color: var(--color-success);
+    background: color-mix(in srgb, var(--color-success) 16%, transparent);
+  }
+
+  .ready-item.is-todo {
+    border-color: color-mix(in srgb, var(--color-danger) 35%, transparent);
+  }
+
+  .ready-item.is-todo .ready-mark {
+    color: var(--color-danger);
+    background: color-mix(in srgb, var(--color-danger) 16%, transparent);
+  }
+
+  .ready-item strong {
+    display: block;
+    font-size: 0.85rem;
+  }
+
+  .ready-note {
+    display: block;
+    color: var(--color-ink-mute);
+    margin-block-start: 0.1rem;
+  }
+
+  .danger-zone {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-block-start: 3.5rem;
+    padding: 1.25rem 1.35rem;
+    border: 1px solid color-mix(in srgb, var(--color-danger) 35%, transparent);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--color-danger) 6%, transparent);
+  }
+
+  .danger-zone :global(.panel-title) {
+    color: var(--color-danger);
+  }
+
+  .danger-zone :global(.panel-note) {
+    margin: 0.3rem 0 0;
+    max-inline-size: 48ch;
+  }
+
+  .danger-zone form {
+    margin: 0;
+  }
+</style>

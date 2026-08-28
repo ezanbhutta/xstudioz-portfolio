@@ -863,12 +863,16 @@ const icons = layout === 'icons';
 </script>
 
 <style>
+  /* The same card every other section of the editor is, with one difference:
+     it is the only one that saves on its own, so it is the only one allowed
+     to sit above the form rather than inside it. */
   .deck {
-    border: 1px solid var(--color-line-strong);
+    border: 1px solid var(--color-line);
     border-radius: 14px;
-    padding: 1.4rem;
-    margin-block: 2rem;
+    padding: 1.35rem;
+    margin-block: 0 1.75rem;
     background: var(--color-paper-raised);
+    box-shadow: var(--shadow-sm);
   }
 
   /* The layout switch, done in CSS.
@@ -886,7 +890,10 @@ const icons = layout === 'icons';
   }
 
   .deck-head h2 {
-    font-size: 1.15rem;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     margin: 0;
   }
 
@@ -978,6 +985,9 @@ const icons = layout === 'icons';
     border: 0;
     padding: 0;
     margin: 0;
+    /* A fieldset's intrinsic minimum is its content, which overflows a grid
+       column that was told to be able to shrink. */
+    min-inline-size: 0;
     display: grid;
     gap: 0.5rem;
   }
@@ -995,8 +1005,28 @@ const icons = layout === 'icons';
     display: flex;
     gap: 0.55rem;
     align-items: start;
+    padding: 0.4rem 0.5rem;
+    border-radius: 9px;
     font-size: 0.85rem;
     cursor: pointer;
+  }
+
+  .up-radio:hover {
+    background: var(--color-accent-wash);
+  }
+
+  .up-radio input {
+    accent-color: var(--color-accent-deep);
+    margin-block-start: 0.15rem;
+  }
+
+  .up-radio:has(input:disabled) {
+    cursor: default;
+    opacity: 0.55;
+  }
+
+  .up-radio:has(input:disabled):hover {
+    background: none;
   }
 
   .up-radio:has(input:disabled) {

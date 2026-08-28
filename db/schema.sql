@@ -47,6 +47,10 @@ CREATE TABLE IF NOT EXISTS projects (
   slug            VARCHAR(120) NOT NULL,
   title           VARCHAR(200) NOT NULL,
   category        VARCHAR(64)  NOT NULL,
+  -- How the case study lays out its images. 'deck' is pages of a document in
+  -- one column; 'icons' is a grid of separate marks, each with its own name
+  -- and kind. See db/migrations/002-icon-sets.sql.
+  layout          ENUM('deck','icons') NOT NULL DEFAULT 'deck',
   -- Logo Design projects: powers the Type filter. Also set on guidelines
   -- projects to name the mark at the centre of the work.
   logo_type       VARCHAR(40)      NULL,
@@ -103,6 +107,10 @@ CREATE TABLE IF NOT EXISTS project_images (
   sort_order      INT          NOT NULL,
   src             VARCHAR(255) NOT NULL,
   alt             VARCHAR(400) NOT NULL,
+  -- Set only on an icon set's images: the mark's own name and kind. A deck
+  -- page is "page 7 of 45" and needs neither. Descriptive, not a filter.
+  label           VARCHAR(120)     NULL,
+  logo_type       VARCHAR(40)      NULL,
   PRIMARY KEY (project_slug, sort_order),
   CONSTRAINT fk_images_project
     FOREIGN KEY (project_slug) REFERENCES projects (slug)

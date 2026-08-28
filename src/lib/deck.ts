@@ -17,12 +17,21 @@
 import { db, query } from '@/lib/db';
 import { removeImage } from '@/lib/uploads';
 import { resolveImage } from '@/lib/content';
+import { LOGO_TYPES } from '@/data/filters';
 
 export type DeckPage = {
   /** The stored path. This is the page's identity in every operation below. */
   src: string;
   alt: string;
   sortOrder: number;
+  /**
+   * An icon's own name and kind. Only meaningful on a project whose layout is
+   * 'icons' — a deck page is "page 7 of 45" and carries neither. Both are
+   * always read, so switching a project's layout shows whatever was already
+   * typed rather than appearing to have lost it.
+   */
+  label: string;
+  logoType: string;
   /**
    * What to actually put in an <img>.
    *
@@ -46,8 +55,10 @@ export async function listPages(slug: string): Promise<DeckPage[]> {
     height: number | null;
     storage: string;
     sort_order: number;
+    label: string | null;
+    logo_type: string | null;
   }>(
-    `SELECT src, alt, width, height, storage, sort_order
+    `SELECT src, alt, width, height, storage, sort_order, label, logo_type
        FROM project_images
       WHERE project_slug = ?
       ORDER BY sort_order`,
@@ -57,6 +68,8 @@ export async function listPages(slug: string): Promise<DeckPage[]> {
     src: r.src,
     alt: r.alt,
     sortOrder: r.sort_order,
+    label: r.label ?? '',
+    logoType: r.logo_type ?? '',
     display: resolveImage(slug, r.src, r.storage, r.width, r.height),
   }));
 }
@@ -184,6 +197,42 @@ export async function setPageAlt(slug: string, src: string, alt: string): Promis
     [alt.trim().slice(0, 400), slug, src],
   );
   return ((result as { affectedRows?: number }).affectedRows ?? 0) > 0;
+}
+
+/**
+ * Name one icon and say what kind of mark it is.
+ *
+ * Only meaningful on a project laid out as icons. A set is the case the
+ * project's own `logo_type` cannot describe: twenty marks drawn for one
+ * client, sharing an industry and nothing else, each a different kind. The
+ * project keeps one category and one type for the filters; these are the
+ * per-icon captions underneath.
+ *
+ * The kind is checked against the same LOGO_TYPES the editor's dropdown is
+ * built from, so a caption can never disagree with the taxonomy the rest of
+ * the site filters on. Empty clears the field rather than failing — an icon
+ * whose kind has not been decided yet is a normal state, and refusing to save
+ * the name because the kind is blank would be obstructive.
+ */
+export async function setPageMeta(
+  slug: string,
+  src: string,
+  label: string,
+  logoType: string,
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const kind = logoType.trim();
+  if (kind && !(LOGO_TYPES as readonly string[]).includes(kind)) {
+    return { ok: false, reason: `"${kind}" is not one of the known logo types.` };
+  }
+
+  const [result] = await db().execute(
+    `UPDATE project_images SET label = ?, logo_type = ? WHERE project_slug = ? AND src = ?`,
+    [label.trim().slice(0, 120) || null, kind || null, slug, src],
+  );
+  if (((result as { affectedRows?: number }).affectedRows ?? 0) === 0) {
+    return { ok: false, reason: 'That image is no longer in this project.' };
+  }
+  return { ok: true };
 }
 
 /**

@@ -58,6 +58,15 @@ const {
 } = project.data;
 
 const categoryInfo = getCategory(category);
+/**
+ * A set of icons is not a document.
+ *
+ * The images arrive identically — one PDF, one mark per page — but reading
+ * them in a single column, in order, states a sequence that is not there.
+ * Twenty marks drawn for one client share an industry and nothing else, so
+ * they lay out as a grid and each is captioned with its own name and kind.
+ */
+const isIconSet = project.data.layout === 'icons';
 const kind = projectType(project.data);
 const extras = projectExtras(project.data);
 const deliverables = projectDeliverables(project.data);
@@ -145,7 +154,7 @@ const specs = [
   // A guidelines project is still built around a mark; naming which kind is
   // detail a designer's client notices.
   ['Mark', secondaryType(project.data)],
-  ['Pages', `${images.length}`],
+  [isIconSet ? 'Icons' : 'Pages', `${images.length}`],
 ].filter((row): row is [string, string] => Boolean(row[1]));
 
 // Social card and structured data point at the cover. It is already served at
@@ -199,6 +208,12 @@ const jsonLd = {
 // own srcset, built from the variants actually written to disk at upload, so
 // the page can never advertise a width that returns 404.
 const heroSizes = '(min-width: 1360px) 1232px, 92vw';
+/**
+ * A grid tile is a quarter of the column at most, so asking for the same
+ * widths a full-bleed deck page needs would download roughly four times the
+ * bytes required and waste them on a 280px square.
+ */
+const iconSizes = '(min-width: 900px) 280px, (min-width: 560px) 40vw, 45vw';
 ---
 
 <BaseLayout
@@ -367,16 +382,19 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
       pages.length > 0 && (
         <section class="container project-gallery" aria-labelledby="gallery-heading">
           <div class="gallery-head">
-            <p class="overline">The system</p>
+            <p class="overline">{isIconSet ? 'The set' : 'The system'}</p>
             <h2 id="gallery-heading" class="gallery-title">
-              Every page<span class="accent-dot">.</span>
+              {isIconSet ? 'Every mark' : 'Every page'}
+              <span class="accent-dot">.</span>
             </h2>
             <p class="gallery-count">
-              {images.length} pages, in order. Click any one to open it full screen.
+              {isIconSet
+                ? `${images.length} icons. Click any one to open it full screen.`
+                : `${images.length} pages, in order. Click any one to open it full screen.`}
             </p>
           </div>
 
-          <div class="gallery-stack">
+          <div class={isIconSet ? 'gallery-grid' : 'gallery-stack'}>
             {pages.map(({ img, at, placeholder }) => (
               <figure class="gallery-figure" data-reveal="wipe">
                 <button
@@ -388,7 +406,7 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
                   <img
                     src={img.src}
                     srcset={img.srcset}
-                    sizes={heroSizes}
+                    sizes={isIconSet ? iconSizes : heroSizes}
                     alt={img.alt}
                     width={img.width}
                     height={img.height}
@@ -396,13 +414,24 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
                     decoding="async"
                     style={placeholder}
                   />
-                  <span class="page-num" aria-hidden="true">
-                    {String(at + 1).padStart(2, '0')}
-                  </span>
+                  {!isIconSet && (
+                    <span class="page-num" aria-hidden="true">
+                      {String(at + 1).padStart(2, '0')}
+                    </span>
+                  )}
                   <span class="page-cue" aria-hidden="true">
                     Enlarge
                   </span>
                 </button>
+                {/* An icon says what it is; a deck page is just page seven.
+                    Rendered only when there is something to say, so a set
+                    part-way through being named does not print empty rules. */}
+                {isIconSet && (img.label || img.logoType) && (
+                  <figcaption class="icon-caption">
+                    {img.label && <span class="icon-name">{img.label}</span>}
+                    {img.logoType && <span class="icon-kind">{img.logoType}</span>}
+                  </figcaption>
+                )}
               </figure>
             ))}
           </div>
@@ -779,8 +808,37 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
     margin-block-start: var(--space-xl);
   }
 
+  /* A set, not a sequence. Auto-fill rather than a fixed column count so a
+     set of four and a set of forty both fill the row they are given, and the
+     tiles stay a readable size on a phone instead of shrinking to fit. */
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(220px, 45%), 1fr));
+    gap: var(--space-lg);
+    margin-block-start: var(--space-xl);
+    align-items: start;
+  }
+
   .gallery-figure {
     margin: 0;
+  }
+
+  /* Only ever rendered when the icon has a name or a kind to print. */
+  .icon-caption {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    margin-block-start: var(--space-2xs);
+  }
+
+  .icon-name {
+    font-weight: 600;
+    font-size: var(--text-sm);
+  }
+
+  .icon-kind {
+    font-size: var(--text-xs);
+    color: var(--color-ink-mute);
   }
 
   /* --- More projects ------------------------------------------------------ */

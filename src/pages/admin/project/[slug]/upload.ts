@@ -62,6 +62,54 @@ const initialAlt = (title: string, layout: 'deck' | 'icons', n: number, total: n
     ? `${title} — icon ${n} of ${total}`
     : `${title} presentation, page ${n} of ${total}`;
 
+/**
+ * Was this description written by the machine, or by a person?
+ *
+ * The two patterns above are the only shapes `initialAlt` produces, so an alt
+ * matching neither is one somebody typed. Used to decide what a replacement
+ * upload is allowed to overwrite — the same test the append path already made
+ * inline in SQL, lifted out so both paths cannot drift apart.
+ */
+const isGeneratedAlt = (alt: string) =>
+  / presentation, page \d+ of \d+$/.test(alt) || / — icon \d+ of \d+$/.test(alt);
+
+/**
+ * What a page carries with it across a replacement, by position.
+ *
+ * Replacing a deck used to be total: the rows went, and every icon name, kind
+ * and hand-written description went with them. That is right for the images —
+ * a replacement is a new export — and wrong for the words, which are the part
+ * nobody re-derives. Twenty icons named one at a time were lost to fixing a
+ * single mark and re-uploading.
+ *
+ * Position is the only correspondence available. Filenames restart at 1 on a
+ * replace, so they identify nothing; sheet 7 of the new set is what sheet 7 of
+ * the old one became. That is right when the export was corrected and wrong
+ * when the set is a different set — so the finish message says how many
+ * carried, rather than moving them silently.
+ *
+ * Generated descriptions are not carried. "page 7 of 36" is about a position
+ * in a document, and the new document restates it correctly; carrying it would
+ * pin an old page count onto a new deck.
+ */
+type Carried = { alt: string | null; label: string | null; logoType: string | null };
+
+const carryFrom = (row: PriorPage | undefined): Carried => ({
+  alt: row && row.alt && !isGeneratedAlt(row.alt) ? row.alt : null,
+  label: row?.label ?? null,
+  logoType: row?.logo_type ?? null,
+});
+
+const carriedAnything = (c: Carried) => Boolean(c.alt || c.label || c.logoType);
+
+/** "12 sheets kept their caption." — said out loud, because it is a guess. */
+function carriedNote(count: number, layout: 'deck' | 'icons'): string {
+  if (count === 0) return '';
+  const noun = layout === 'icons' ? 'sheet' : 'page';
+  const what = layout === 'icons' ? 'caption' : 'description';
+  return count === 1 ? ` One ${noun} kept its ${what}.` : ` ${count} ${noun}s kept their ${what}s.`;
+}
+
 /** Where a page's file lives, given its number. One spelling, used everywhere. */
 const pageSrc = (slug: string, number: number) =>
   `/uploads/${slug}/page-${String(number).padStart(2, '0')}.webp`;
@@ -166,9 +214,23 @@ async function takePdf(
   return { bytes, name: file.name, append: String(form.get('mode') ?? '') === 'append' };
 }
 
+type PriorPage = {
+  src: string;
+  alt: string | null;
+  label: string | null;
+  logo_type: string | null;
+};
+
+/**
+ * The deck as it stands, in display order.
+ *
+ * More than the paths now: a replacement needs to know what was typed about
+ * each position before it deletes the row that holds it.
+ */
 async function existingPages(slug: string) {
-  return query<{ src: string }>(
-    `SELECT src FROM project_images WHERE project_slug = ? ORDER BY sort_order`,
+  return query<PriorPage>(
+    `SELECT src, alt, label, logo_type
+       FROM project_images WHERE project_slug = ? ORDER BY sort_order`,
     [slug],
   );
 }
@@ -204,8 +266,10 @@ async function finish(slug: string, title: string, layout: 'deck' | 'icons'): Pr
     );
   }
 
-  // Noted before the rows go, so the files they leave behind can go too.
-  const previous = manifest.append ? [] : (await existingPages(slug)).map((r) => r.src);
+  // Read before the rows go: their files have to be cleaned up afterwards,
+  // and on a replace what was typed about each position has to outlive them.
+  const prior = await existingPages(slug);
+  const previous = manifest.append ? [] : prior.map((r) => r.src);
 
   await promoteJob(slug);
 
@@ -228,6 +292,8 @@ async function finish(slug: string, title: string, layout: 'deck' | 'icons'): Pr
         height: pages[0].height,
       };
 
+  let carried = 0;
+
   const conn = await db().getConnection();
   try {
     await conn.beginTransaction();
@@ -235,10 +301,15 @@ async function finish(slug: string, title: string, layout: 'deck' | 'icons'): Pr
       await conn.execute(`DELETE FROM project_images WHERE project_slug = ?`, [slug]);
     }
     for (const [i, page] of pages.entries()) {
+      // An append adds positions rather than replacing them, so there is
+      // nothing at this position to carry anything from.
+      const kept = manifest.append ? carryFrom(undefined) : carryFrom(prior[i]);
+      if (carriedAnything(kept)) carried++;
+
       await conn.execute(
         `INSERT INTO project_images
-           (project_slug, sort_order, src, alt, width, height, storage)
-         VALUES (?,?,?,?,?,?, 'upload')`,
+           (project_slug, sort_order, src, alt, width, height, storage, label, logo_type)
+         VALUES (?,?,?,?,?,?, 'upload', ?, ?)`,
         [
           slug,
           manifest.existing + i,
@@ -246,9 +317,11 @@ async function finish(slug: string, title: string, layout: 'deck' | 'icons'): Pr
           // Counted against the finished deck, not this batch — an appended
           // page calling itself "page 2 of 3" inside a 38-page book is a lie
           // to every screen reader that meets it.
-          initialAlt(title, layout, manifest.existing + i + 1, total),
+          kept.alt ?? initialAlt(title, layout, manifest.existing + i + 1, total),
           page.width,
           page.height,
+          kept.label,
+          kept.logoType,
         ],
       );
     }
@@ -319,7 +392,8 @@ async function finish(slug: string, title: string, layout: 'deck' | 'icons'): Pr
     ok: true,
     message: manifest.append
       ? `${pages.length} page${pages.length === 1 ? '' : 's'} added — ${total} in the deck.`
-      : `${pages.length} page${pages.length === 1 ? '' : 's'} published.`,
+      : `${pages.length} page${pages.length === 1 ? '' : 's'} published.` +
+        carriedNote(carried, layout),
   });
 }
 
@@ -340,9 +414,11 @@ async function synchronousFallback(
   const pages = await renderPdf(bytes);
   if (pages.length === 0) return redirectBack(slug, 'That PDF has no pages.', false);
 
-  const existing = append ? await existingPages(slug) : [];
-  // What is being replaced, noted before the rows go so its files can go too.
-  const previous = append ? [] : (await existingPages(slug)).map((r) => r.src);
+  const prior = await existingPages(slug);
+  const existing = append ? prior : [];
+  // What is being replaced, read before the rows go: its files have to be
+  // cleaned up, and what was typed about each position has to outlive it.
+  const previous = append ? [] : prior.map((r) => r.src);
   const firstNumber = append ? nextPageNumber(existing.map((r) => r.src)) : 1;
   const total = existing.length + pages.length;
 
@@ -356,6 +432,8 @@ async function synchronousFallback(
   // Page one itself, as above — a reference, not a second copy of it.
   const cover = append ? null : written[0];
 
+  let carried = 0;
+
   const conn = await db().getConnection();
   try {
     await conn.beginTransaction();
@@ -363,17 +441,22 @@ async function synchronousFallback(
       await conn.execute(`DELETE FROM project_images WHERE project_slug = ?`, [slug]);
     }
     for (const [i, image] of written.entries()) {
+      const kept = append ? carryFrom(undefined) : carryFrom(prior[i]);
+      if (carriedAnything(kept)) carried++;
+
       await conn.execute(
         `INSERT INTO project_images
-           (project_slug, sort_order, src, alt, width, height, storage)
-         VALUES (?,?,?,?,?,?, 'upload')`,
+           (project_slug, sort_order, src, alt, width, height, storage, label, logo_type)
+         VALUES (?,?,?,?,?,?, 'upload', ?, ?)`,
         [
           slug,
           existing.length + i,
           image.src,
-          initialAlt(title, layout, existing.length + i + 1, total),
+          kept.alt ?? initialAlt(title, layout, existing.length + i + 1, total),
           image.width,
           image.height,
+          kept.label,
+          kept.logoType,
         ],
       );
     }
@@ -400,5 +483,9 @@ async function synchronousFallback(
   const dead = append ? [] : [`/uploads/${slug}/cover.webp`];
   await Promise.all([...previous.filter((src) => !keep.has(src)), ...dead].map(removeImage));
 
-  return redirectBack(slug, `${pages.length} pages published.`, true);
+  return redirectBack(
+    slug,
+    `${pages.length} pages published.` + carriedNote(carried, layout),
+    true,
+  );
 }

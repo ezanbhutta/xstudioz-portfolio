@@ -137,6 +137,13 @@ const icons = layout === 'icons';
                   Removes all {pages.length}
                   <span data-deck-only> pages</span>
                   <span data-icons-only> sheets</span> and rebuilds the cover.
+                  {/* The one thing a replacement does not throw away, said
+                      before it happens rather than reported after. */}
+                  <span data-deck-only> Descriptions you have written carry over by position.</span>
+                  <span data-icons-only>
+                    {' '}
+                    Names, kinds and descriptions carry over by position.
+                  </span>
                 </>
               ) : (
                 <>
@@ -318,9 +325,17 @@ const icons = layout === 'icons';
                   <span class="page-alt-label">
                     {icons ? 'Describe it for a screen reader' : 'What is on this page?'}
                   </span>
-                  <textarea class="page-alt-input" rows="2" data-alt maxlength="400">
-                    {page.alt}
-                  </textarea>
+                  {/* set:text, not a child expression: a textarea keeps every
+                      character between its tags, so the formatter putting the
+                      value on its own line puts a newline and an indent into
+                      the field. */}
+                  <textarea
+                    class="page-alt-input"
+                    rows="2"
+                    data-alt
+                    maxlength="400"
+                    set:text={page.alt}
+                  />
                 </label>
               </div>
             </li>
@@ -840,7 +855,14 @@ const icons = layout === 'icons';
         setBar(100);
         stat!.textContent = `${finished.message ?? 'Published.'} Reloading…`;
         window.removeEventListener('beforeunload', holdTab);
-        location.reload();
+        // Carried into the reload rather than left in the progress line, which
+        // the reload wipes. The message can say something the operator needs
+        // to act on — how many pages kept captions written for the deck this
+        // one replaced — and a sentence shown for one frame is not said.
+        const next = new URL(location.href);
+        next.searchParams.delete('uploadError');
+        next.searchParams.set('uploaded', finished.message ?? 'Published.');
+        location.replace(next.toString());
       } catch (error) {
         window.removeEventListener('beforeunload', holdTab);
         setBar(0);

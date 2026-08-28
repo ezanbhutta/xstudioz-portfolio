@@ -86,18 +86,26 @@ const placeholder = await lqipStyle(cover.src);
         ? `--card-ratio:${cover.width} / ${cover.height}`
         : undefined}
     >
-      <img
-        src={cover.src}
-        srcset={cover.srcset}
-        sizes={sizes}
-        alt={coverAlt || `${title} presentation cover`}
-        width={cover.width}
-        height={cover.height}
-        loading={eager ? 'eager' : 'lazy'}
-        fetchpriority={eager ? 'high' : 'auto'}
-        decoding="async"
-        style={placeholder}
-      />
+      {
+        /* The sizes list has to be repeated on the source: a <source> without
+          one picks its candidate against 100vw and downloads the widest file
+          in the ladder, which is the opposite of the point. */
+      }
+      <picture>
+        {cover.avifSrcset && <source type="image/avif" srcset={cover.avifSrcset} sizes={sizes} />}
+        <img
+          src={cover.src}
+          srcset={cover.srcset}
+          sizes={sizes}
+          alt={coverAlt || `${title} presentation cover`}
+          width={cover.width}
+          height={cover.height}
+          loading={eager ? 'eager' : 'lazy'}
+          fetchpriority={eager ? 'high' : 'auto'}
+          decoding="async"
+          style={placeholder}
+        />
+      </picture>
 
       {
         /* Sits on the artwork and only resolves on hover or focus. The copy

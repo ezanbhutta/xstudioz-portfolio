@@ -10,6 +10,7 @@
 import AdminLayout from '@/layouts/AdminLayout.astro';
 import SaveBar from '@/components/admin/SaveBar.astro';
 import { listSettings, saveSettings } from '@/lib/admin-data';
+import { listRebuildTargets } from '@/lib/image-maintenance';
 
 const META: Record<string, { label: string; hint?: string; multiline?: boolean }> = {
   name: { label: 'Studio name' },
@@ -77,6 +78,16 @@ const settings = await listSettings();
 
 const grouped = new Set(GROUPS.flatMap((g) => g.keys));
 const ungrouped = settings.filter((s) => !grouped.has(s.setting_key));
+
+/**
+ * How much of the portfolio is on the current image ladder.
+ *
+ * Counted rather than assumed, because the answer changes on its own: every
+ * upload adds an image already up to date, and every change to the ladder puts
+ * every existing image behind it again.
+ */
+const images = await listRebuildTargets();
+const behind = images.filter((i) => !i.formats.includes('avif')).length;
 ---
 
 <AdminLayout title="Settings" eyebrow="Site" heading="Brand & links">
@@ -145,4 +156,154 @@ const ungrouped = settings.filter((s) => !grouped.has(s.setting_key));
 
     <SaveBar label="Save — live immediately" />
   </form>
+
+  {
+    /* Outside the form on purpose: it saves nothing, and a button inside a
+      form guarded against unsaved changes would ask to confirm on the way. */
+  }
+  <section class="panel maint">
+    <div class="panel-head">
+      <h2 class="panel-title">Image variants</h2>
+    </div>
+    <p class="panel-note">
+      Every uploaded image is written at four widths in WebP and AVIF, so a phone downloads a
+      quarter of what a desktop does and a modern browser downloads about a third less again. Images
+      published before a width or a format existed do not have it until they are rebuilt — which
+      reads the widest file already on disk, so no PDF is needed and nothing published changes.
+    </p>
+
+    <p class="maint-state" data-maint-state>
+      {
+        images.length === 0
+          ? 'No uploaded images yet.'
+          : behind === 0
+            ? `All ${images.length} images are on the current ladder.`
+            : `${behind} of ${images.length} image${images.length === 1 ? '' : 's'} ${behind === 1 ? 'is' : 'are'} missing widths or AVIF.`
+      }
+    </p>
+
+    {
+      images.length > 0 && (
+        <div class="maint-go">
+          <button class="btn ghost" type="button" data-maint-run>
+            Rebuild image variants
+          </button>
+          <div class="maint-prog" data-maint-prog hidden>
+            <div class="maint-bar">
+              <span data-maint-bar />
+            </div>
+            <p class="maint-log" data-maint-log />
+          </div>
+        </div>
+      )
+    }
+  </section>
 </AdminLayout>
+
+<script>
+  /**
+   * One image per request, in order, reporting as it goes.
+   *
+   * The same loop the deck upload uses: the work is bounded per request, so
+   * nothing here can outlive a gateway, and a hundred and forty encodes are
+   * visible as they happen rather than as a spinner that either finishes or
+   * does not.
+   */
+  const run = document.querySelector<HTMLButtonElement>('[data-maint-run]');
+  const prog = document.querySelector<HTMLElement>('[data-maint-prog]');
+  const bar = document.querySelector<HTMLElement>('[data-maint-bar]');
+  const log = document.querySelector<HTMLElement>('[data-maint-log]');
+  const state = document.querySelector<HTMLElement>('[data-maint-state]');
+
+  const post = async (body: unknown) => {
+    const res = await fetch('/admin/images/rebuild/', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error ?? 'That failed.');
+    return data;
+  };
+
+  run?.addEventListener('click', async () => {
+    run.disabled = true;
+    run.textContent = 'Rebuilding…';
+    if (prog) prog.hidden = false;
+    let written = 0;
+    let skipped = 0;
+    try {
+      const { total } = await post({ action: 'list' });
+      for (let i = 0; i < total; i++) {
+        if (log) log.textContent = `Image ${i + 1} of ${total}…`;
+        const r = await post({ action: 'one', index: i });
+        written += r.wrote ?? 0;
+        if (r.skipped) {
+          skipped++;
+          console.warn(`[rebuild] ${r.src}: ${r.skipped}`);
+        }
+        if (bar) bar.style.inlineSize = `${Math.round(((i + 1) / total) * 100)}%`;
+      }
+      if (log) {
+        log.textContent =
+          `Done — ${written} file${written === 1 ? '' : 's'} written` +
+          (skipped ? `, ${skipped} skipped (see the console).` : '.');
+      }
+      // The count above is now wrong, and it is the thing being fixed.
+      if (state) state.textContent = 'Rebuilt. Reload to see the current count.';
+      run.textContent = 'Rebuild again';
+    } catch (error) {
+      if (log) log.textContent = (error as Error).message;
+      run.textContent = 'Rebuild image variants';
+    } finally {
+      run.disabled = false;
+    }
+  });
+</script>
+
+<style>
+  .maint {
+    margin-block-start: 2rem;
+    padding-block-end: 1.35rem;
+  }
+
+  .maint-state {
+    margin: 0 0 1rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .maint-go {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .maint-prog {
+    flex: 1 1 14rem;
+    min-inline-size: 0;
+  }
+
+  .maint-bar {
+    block-size: 0.4rem;
+    border-radius: 999px;
+    background: var(--color-line);
+    overflow: hidden;
+  }
+
+  .maint-bar span {
+    display: block;
+    inline-size: 0;
+    block-size: 100%;
+    border-radius: 999px;
+    background: var(--gradient-accent);
+    transition: inline-size 200ms ease;
+  }
+
+  .maint-log {
+    margin: 0.4rem 0 0;
+    font-size: 0.82rem;
+    color: var(--color-ink-mute);
+  }
+</style>

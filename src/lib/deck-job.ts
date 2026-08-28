@@ -42,7 +42,14 @@ export type JobManifest = {
    * page needs it to reserve space, and re-reading every file at the end to
    * recover it would be work already done once.
    */
-  done: Array<{ index: number; number: number; width: number; height: number }>;
+  done: Array<{
+    index: number;
+    number: number;
+    width: number;
+    height: number;
+    /** What was actually written for this page — 'avif,webp' or 'webp'. */
+    formats?: string;
+  }>;
   /** Where appended pages start, fixed at the beginning so it cannot drift. */
   firstNumber: number;
   /** How many pages the project had when this started. */
@@ -133,7 +140,13 @@ export async function renderJobPage(
   // save a tally that does not know about the other.
   const current = (await readManifest(slug)) ?? manifest;
   if (!current.done.some((d) => d.index === index)) {
-    current.done.push({ index, number, width: written.width, height: written.height });
+    current.done.push({
+      index,
+      number,
+      width: written.width,
+      height: written.height,
+      formats: written.formats,
+    });
   }
   await writeManifest(slug, current);
 

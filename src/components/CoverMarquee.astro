@@ -38,16 +38,25 @@ const columns =
           <div class="marquee-track">
             {[...column, ...column].map((p) => (
               <figure class="marquee-tile">
-                <img
-                  src={p.data.cover.src}
-                  srcset={p.data.cover.srcset}
-                  sizes="(min-width: 1100px) 320px, 40vw"
-                  alt=""
-                  width={p.data.cover.width}
-                  height={p.data.cover.height}
-                  loading="lazy"
-                  decoding="async"
-                />
+                <picture>
+                  {p.data.cover.avifSrcset && (
+                    <source
+                      type="image/avif"
+                      srcset={p.data.cover.avifSrcset}
+                      sizes="(min-width: 1100px) 320px, 40vw"
+                    />
+                  )}
+                  <img
+                    src={p.data.cover.src}
+                    srcset={p.data.cover.srcset}
+                    sizes="(min-width: 1100px) 320px, 40vw"
+                    alt=""
+                    width={p.data.cover.width}
+                    height={p.data.cover.height}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </picture>
               </figure>
             ))}
           </div>

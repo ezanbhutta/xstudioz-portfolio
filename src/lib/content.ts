@@ -44,6 +44,13 @@ const IMAGES = import.meta.glob<{ default: ImageMetadata }>(
 export type ResolvedImage = {
   src: string;
   srcset?: string;
+  /**
+   * The same ladder in AVIF, present only when those files were actually
+   * written. Offered as a <picture> source ahead of the WebP: a browser does
+   * not fall back from a <source> that 404s, so this is undefined rather than
+   * optimistic whenever the encode did not happen.
+   */
+  avifSrcset?: string;
   width: number;
   height: number;
 };
@@ -76,6 +83,12 @@ export function resolveImage(
   storage: unknown,
   width: unknown,
   height: unknown,
+  /**
+   * What the row says was written, e.g. 'avif,webp'. Absent — an old row, or a
+   * database that has not run the formats migration yet — means WebP only,
+   * which is what every image was before AVIF existed.
+   */
+  formats?: unknown,
 ): ResolvedImage | undefined {
   if (!src) return undefined;
 
@@ -85,7 +98,16 @@ export function resolveImage(
     // A row with no dimensions would render an image the layout cannot
     // reserve space for. Treat it as unresolved so the warning names it.
     if (w === 0 || h === 0) return undefined;
-    return { src, srcset: srcsetFor(src, w), width: w, height: h };
+    const hasAvif = String(formats ?? '')
+      .split(',')
+      .includes('avif');
+    return {
+      src,
+      srcset: srcsetFor(src, w),
+      ...(hasAvif ? { avifSrcset: srcsetFor(src, w, 'avif') } : {}),
+      width: w,
+      height: h,
+    };
   }
 
   const file = src.replace(/^\.\//, '').replace(/^\//, '');
@@ -149,6 +171,8 @@ type ImageRow = {
   height: number | null;
   label: string | null;
   logo_type: string | null;
+  /** Absent until the formats migration has run. Read defensively. */
+  formats?: string | null;
 };
 
 /** A bare domain gets https:// so a link the studio typed by hand still works. */
@@ -173,10 +197,12 @@ export async function getSortedProjects(): Promise<ReadyProject[]> {
   try {
     [rows, imageRows] = await Promise.all([
       query<ProjectRow>(`SELECT * FROM projects ORDER BY sort_order ASC, title ASC`),
-      query<ImageRow>(
-        `SELECT project_slug, src, alt, storage, width, height, label, logo_type
-           FROM project_images ORDER BY project_slug, sort_order ASC`,
-      ),
+      // `SELECT *` rather than a column list, so that a database which has
+      // not run the formats migration still answers. A named column that does
+      // not exist is a query error and an empty portfolio; a missing key is
+      // just an image with no AVIF, which is how the whole site worked
+      // yesterday.
+      query<ImageRow>(`SELECT * FROM project_images ORDER BY project_slug, sort_order ASC`),
     ]);
   } catch (error) {
     // An unreachable database used to take every page down with it, which on a
@@ -213,7 +239,7 @@ export async function getSortedProjects(): Promise<ReadyProject[]> {
 
     const images = (bySlug.get(slug) ?? [])
       .map((img) => ({
-        ...resolveImage(slug, img.src, img.storage, img.width, img.height),
+        ...resolveImage(slug, img.src, img.storage, img.width, img.height, img.formats),
         alt: img.alt,
         ...(img.label ? { label: img.label } : {}),
         ...(img.logo_type ? { logoType: img.logo_type } : {}),
@@ -245,10 +271,26 @@ export async function getSortedProjects(): Promise<ReadyProject[]> {
      * the next time its deck is replaced.
      */
     const legacyCover = /^\/uploads\/[^/]+\/cover\.webp$/.test(String(row.cover ?? ''));
+    /**
+     * The cover's formats are the formats of the page it points at.
+     *
+     * Looked up rather than stored a second time on `projects`. A cover is a
+     * reference to a page now, so a `cover_formats` column would be a copy of
+     * a fact that already exists — and copies go stale, which is exactly how
+     * the old standalone cover.webp went wrong.
+     */
+    const coverFormats = (bySlug.get(slug) ?? []).find((i) => i.src === row.cover)?.formats;
     const cover =
       legacyCover && images[0]
         ? images[0]
-        : resolveImage(slug, opt(row.cover), row.cover_storage, row.cover_width, row.cover_height);
+        : resolveImage(
+            slug,
+            opt(row.cover),
+            row.cover_storage,
+            row.cover_width,
+            row.cover_height,
+            coverFormats,
+          );
 
     // Same rule the content-collection version applied: a project without
     // visuals is not displayable, and a warning beats a broken grid.

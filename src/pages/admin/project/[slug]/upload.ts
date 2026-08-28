@@ -308,8 +308,8 @@ async function finish(slug: string, title: string, layout: 'deck' | 'icons'): Pr
 
       await conn.execute(
         `INSERT INTO project_images
-           (project_slug, sort_order, src, alt, width, height, storage, label, logo_type)
-         VALUES (?,?,?,?,?,?, 'upload', ?, ?)`,
+           (project_slug, sort_order, src, alt, width, height, storage, label, logo_type, formats)
+         VALUES (?,?,?,?,?,?, 'upload', ?, ?, ?)`,
         [
           slug,
           manifest.existing + i,
@@ -322,6 +322,9 @@ async function finish(slug: string, title: string, layout: 'deck' | 'icons'): Pr
           page.height,
           kept.label,
           kept.logoType,
+          // What the render actually produced. A page whose AVIF encode was
+          // refused records 'webp' and is served exactly as it was before.
+          page.formats ?? 'webp',
         ],
       );
     }
@@ -446,8 +449,8 @@ async function synchronousFallback(
 
       await conn.execute(
         `INSERT INTO project_images
-           (project_slug, sort_order, src, alt, width, height, storage, label, logo_type)
-         VALUES (?,?,?,?,?,?, 'upload', ?, ?)`,
+           (project_slug, sort_order, src, alt, width, height, storage, label, logo_type, formats)
+         VALUES (?,?,?,?,?,?, 'upload', ?, ?, ?)`,
         [
           slug,
           existing.length + i,
@@ -457,6 +460,7 @@ async function synchronousFallback(
           image.height,
           kept.label,
           kept.logoType,
+          image.formats,
         ],
       );
     }

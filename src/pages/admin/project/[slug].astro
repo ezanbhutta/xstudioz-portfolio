@@ -28,8 +28,8 @@ import {
   type FieldErrors,
 } from '@/lib/admin-data';
 import { listPages } from '@/lib/deck';
-import { CATEGORIES } from '@/data/categories';
-import { LOGO_TYPES, GUIDELINE_TYPES } from '@/data/filters';
+import { CATEGORIES, type CategoryId } from '@/data/categories';
+import { LOGO_TYPES, GUIDELINE_TYPES, TYPE_FILTERS } from '@/data/filters';
 import { getSortedProjects } from '@/lib/content';
 
 const routeSlug = Astro.params.slug!;
@@ -111,15 +111,72 @@ const uploadError = Astro.url.searchParams.get('uploadError');
 
 const currentIndustry = val('industry', existing?.industry);
 const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
+
+/**
+ * The two choices the rest of the form answers to.
+ *
+ * Both are rendered server-side into the state they imply, so the form is
+ * already correct on arrival and stays correct with JavaScript off. The script
+ * at the bottom only keeps it correct while the operator changes its mind.
+ */
+const currentCategory = val('category', existing?.category ?? CATEGORIES[0].id);
+const currentLayout = val('layout', existing?.layout ?? 'deck') === 'icons' ? 'icons' : 'deck';
+
+/**
+ * Which type dropdown a service actually uses, read from the same table the
+ * public filters read. A guidelines type on a logo project is a field that can
+ * only ever be wrong, and the operator had no way to know that from looking at
+ * it — the hint said "Brand Guidelines projects only" underneath a control
+ * that was always there.
+ *
+ * The logo type stays for every service: it filters Logo Design, and on
+ * everything else it names the mark the work was built around, which the case
+ * study prints as "Mark".
+ */
+const guidelineTypeApplies = (category: string) =>
+  TYPE_FILTERS[category as CategoryId]?.key === 'guidelineType';
+
+/**
+ * How much is in each optional section.
+ *
+ * Every one of these fields is optional and most projects use few of them, so
+ * they open only when they hold something and otherwise announce what they
+ * are and stay out of the way. The count is what makes a closed section
+ * honest: "Story — empty" is a fact, where a bare collapsed heading is a place
+ * something might be hiding.
+ */
+const filled = (...values: unknown[]) => values.filter((v) => String(v ?? '').trim() !== '').length;
+
+const storyFields = [
+  val('context', existing?.context),
+  val('challenge', existing?.challenge),
+  val('direction', existing?.direction),
+  listVal('delivered', existing?.delivered),
+  val('outcome', existing?.outcome),
+];
+const linkFields = [
+  val('website', existing?.website),
+  val('instagram', existing?.instagram),
+  val('facebook', existing?.facebook),
+  val('linkedin', existing?.linkedin),
+  listVal('other_links', existing?.other_links),
+];
+const storyCount = filled(...storyFields);
+const linkCount = filled(...linkFields);
+const extrasCount =
+  checkedExtras.length + filled(listVal('extras_custom', existing?.extras_custom));
+
+/** A section opens if it has content, or if a failed save put an error in it. */
+const anyError = Object.keys(errors).length > 0;
 ---
 
 <AdminLayout title={title}>
   <h1>{title}</h1>
-  <p class="sub">
+  <p class="sub" data-sub-count={isNew ? undefined : String(images.length)}>
     {
       isNew
         ? 'Fill this in and save. The deck is uploaded on the next screen — a project stays off the site until it has one.'
-        : `${images.length} page${images.length === 1 ? '' : 's'}. Saving publishes immediately.`
+        : `${images.length} ${currentLayout === 'icons' ? 'sheet' : 'page'}${images.length === 1 ? '' : 's'}. Saving publishes immediately.`
     }
   </p>
 
@@ -235,8 +292,12 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
       <div class="grid2">
         <label>
           <span class="lab">Logo type</span>
-          <span class="hint">
-            Logo Design projects. Also names the mark behind a guidelines project.
+          <span class="hint" data-logo-hint>
+            {
+              currentCategory === 'logo-design'
+                ? 'The kind of mark this project is. Powers the Type filter on Logo Design.'
+                : 'The kind of mark this work was built around. Shown on the case study as “Mark”.'
+            }
           </span>
           <select name="logo_type">
             <option value="">— none —</option>
@@ -250,9 +311,15 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
           </select>
         </label>
 
-        <label>
+        {
+          /* Only Brand Guidelines uses this — TYPE_FILTERS says so, and the
+            public Type filter reads the same table. Hidden rather than
+            removed, so switching service away and back does not quietly drop
+            a value that was already saved. */
+        }
+        <label data-when-guidelines hidden={!guidelineTypeApplies(currentCategory)}>
           <span class="lab">Guidelines type</span>
-          <span class="hint">Brand Guidelines projects only.</span>
+          <span class="hint">How complete the guidelines document is.</span>
           <select name="guideline_type">
             <option value="">— none —</option>
             {
@@ -279,8 +346,11 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
       </label>
     </fieldset>
 
-    <fieldset>
-      <legend>Extra elements</legend>
+    <details class="fold" open={extrasCount > 0}>
+      <summary>
+        <span class="fold-title">Extra elements</span>
+        <span class="fold-count">{extrasCount === 0 ? 'none' : `${extrasCount} ticked`}</span>
+      </summary>
       <p class="legend-note">
         Anything included beyond the core sections. Listed on the case study, so tick them
         accurately.
@@ -301,7 +371,7 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
         <textarea name="extras_custom">{listVal('extras_custom', existing?.extras_custom)}</textarea
         >
       </label>
-    </fieldset>
+    </details>
 
     <fieldset>
       <legend>Copy</legend>
@@ -326,8 +396,13 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
       </label>
     </fieldset>
 
-    <fieldset>
-      <legend>Story</legend>
+    <details class="fold" open={storyCount > 0 || anyError}>
+      <summary>
+        <span class="fold-title">Story</span>
+        <span class="fold-count">
+          {storyCount === 0 ? 'empty' : `${storyCount} of ${storyFields.length} written`}
+        </span>
+      </summary>
       <p class="legend-note">
         Every field optional — an empty one hides its section. Never fill these with a guess: they
         are statements about a real client's business.
@@ -360,10 +435,13 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
         </span>
         <textarea name="outcome">{val('outcome', existing?.outcome)}</textarea>
       </label>
-    </fieldset>
+    </details>
 
-    <fieldset>
-      <legend>Links</legend>
+    <details class="fold" open={linkCount > 0}>
+      <summary>
+        <span class="fold-title">Links</span>
+        <span class="fold-count">{linkCount === 0 ? 'none' : `${linkCount} set`}</span>
+      </summary>
       <div class="grid2">
         <label>
           <span class="lab">Brand website</span>
@@ -387,13 +465,16 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
         <span class="hint">One per line — TikTok, Behance, X…</span>
         <textarea name="other_links">{listVal('other_links', existing?.other_links)}</textarea>
       </label>
-    </fieldset>
+    </details>
 
     <fieldset>
       <legend>Grid cover</legend>
-      <p class="legend-note">
-        The cover is built from page one of the deck. This is what a screen reader announces for the
-        thumbnail on the work grid.
+      <p class="legend-note" data-cover-note>
+        {
+          currentLayout === 'icons'
+            ? 'The cover is the first sheet. Star any other in the set above to use that instead. This is what a screen reader announces for the thumbnail on the work grid.'
+            : 'The cover is page one of the deck. Star any other page above to use that instead. This is what a screen reader announces for the thumbnail on the work grid.'
+        }
       </p>
       <label>
         <span class="lab">Cover alt text</span>
@@ -423,3 +504,77 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
     )
   }
 </AdminLayout>
+
+<script>
+  /**
+   * The form answers to two of its own fields.
+   *
+   * Service decides whether a guidelines type is a real question or a control
+   * that can only ever be wrong, and what the logo type is being asked for.
+   * Layout decides whether the images above are pages of a document or sheets
+   * of marks, which changes what the deck manager is called, whether each
+   * image can be named, and where the cover comes from.
+   *
+   * Both are already rendered into the right state by the server, so the page
+   * is correct on arrival and stays correct with JavaScript off. This only
+   * keeps it correct while the operator is still deciding — the alternative is
+   * saving to find out, on a form long enough that the answer is off-screen.
+   *
+   * Nothing here disables or clears a field. A hidden input still submits its
+   * value, so switching service away from Brand Guidelines and back finds the
+   * guidelines type exactly as it was rather than silently blanked.
+   */
+  const form = document.querySelector<HTMLFormElement>('[data-editor]');
+  const category = form?.querySelector<HTMLSelectElement>('select[name="category"]');
+  const layout = form?.querySelector<HTMLSelectElement>('select[name="layout"]');
+
+  if (form && category) {
+    const guidelines = form.querySelector<HTMLElement>('[data-when-guidelines]');
+    const logoHint = form.querySelector<HTMLElement>('[data-logo-hint]');
+
+    const applyCategory = () => {
+      // Brand Guidelines is the only service with a guidelines type, which is
+      // the same rule TYPE_FILTERS gives the public filters.
+      if (guidelines) guidelines.hidden = category.value !== 'brand-guidelines';
+      if (logoHint) {
+        logoHint.textContent =
+          category.value === 'logo-design'
+            ? 'The kind of mark this project is. Powers the Type filter on Logo Design.'
+            : 'The kind of mark this work was built around. Shown on the case study as “Mark”.';
+      }
+    };
+
+    category.addEventListener('change', applyCategory);
+    applyCategory();
+  }
+
+  if (form && layout) {
+    const deck = document.querySelector<HTMLElement>('[data-deck]');
+    const coverNote = form.querySelector<HTMLElement>('[data-cover-note]');
+    const sub = document.querySelector<HTMLElement>('[data-sub-count]');
+
+    const applyLayout = () => {
+      const icons = layout.value === 'icons';
+
+      // The deck manager reads this to swap its own wording and reveal the
+      // per-sheet name and kind. Those fields are always in the DOM, so the
+      // switch costs no request and nothing typed is lost by flipping back.
+      if (deck) deck.dataset.layout = icons ? 'icons' : 'deck';
+
+      if (coverNote) {
+        coverNote.textContent = icons
+          ? 'The cover is the first sheet. Star any other in the set above to use that instead. This is what a screen reader announces for the thumbnail on the work grid.'
+          : 'The cover is page one of the deck. Star any other page above to use that instead. This is what a screen reader announces for the thumbnail on the work grid.';
+      }
+
+      if (sub) {
+        const n = Number(sub.dataset.subCount ?? '0');
+        const noun = icons ? 'sheet' : 'page';
+        sub.textContent = `${n} ${noun}${n === 1 ? '' : 's'}. Saving publishes immediately.`;
+      }
+    };
+
+    layout.addEventListener('change', applyLayout);
+    applyLayout();
+  }
+</script>

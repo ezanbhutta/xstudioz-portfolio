@@ -328,6 +328,61 @@ const { title, nav = true } = Astro.props;
       /* The save bar follows the form to the bottom of the viewport. Its
          border only appears while it is stuck, so it does not draw a line
          across the page when it is sitting in its natural position. */
+      /* Optional sections, folded away until they hold something.
+         The editor was six fieldsets and four thousand pixels of scroll, most
+         of it empty on most projects: an icon set fills three fields and was
+         shown thirty. A closed section still submits every field inside it —
+         details only hides — so nothing here changes what gets saved. */
+      .fold {
+        border: 1px solid var(--color-line);
+        border-radius: 10px;
+        padding: 0 1rem;
+        margin-block: 1.25rem;
+        background: var(--color-paper-raised);
+      }
+      .fold > summary {
+        display: flex;
+        align-items: baseline;
+        gap: 0.6rem;
+        padding: 0.85rem 0;
+        cursor: pointer;
+        list-style: none;
+        font-weight: 600;
+      }
+      .fold > summary::-webkit-details-marker {
+        display: none;
+      }
+      /* A disclosure needs an affordance that is not the word itself. */
+      .fold > summary::before {
+        content: '';
+        inline-size: 0.5rem;
+        block-size: 0.5rem;
+        border-inline-end: 2px solid var(--color-ink-mute);
+        border-block-end: 2px solid var(--color-ink-mute);
+        transform: rotate(-45deg);
+        transition: transform 140ms ease;
+        flex: none;
+      }
+      .fold[open] > summary::before {
+        transform: rotate(45deg);
+      }
+      .fold > summary:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 3px;
+        border-radius: 6px;
+      }
+      /* The count is what makes a closed section honest: "empty" is a fact,
+         where a bare heading is a place something might be hiding. */
+      .fold-count {
+        margin-inline-start: auto;
+        font-weight: 400;
+        font-size: 0.82rem;
+        color: var(--color-ink-mute);
+      }
+      .fold > :last-child {
+        margin-block-end: 1rem;
+      }
+
       .savebar {
         position: sticky;
         bottom: 0;

@@ -42,21 +42,43 @@ interface Props {
 
 const { slug, pages, pdf, layout = 'deck' } = Astro.props;
 
+/**
+ * Only the tile labels still branch here. Every other wording is both
+ * variants in the markup, shown by `data-layout` on the root — so the Layout
+ * select in the form below switches this section live, with no save and no
+ * request.
+ */
 const icons = layout === 'icons';
-/** One word, declined once, rather than a ternary at every mention. */
-const noun = icons ? 'icon' : 'page';
-const nouns = icons ? 'icons' : 'pages';
 ---
 
-<section class="deck" data-deck data-slug={slug} aria-labelledby="deck-heading">
+<section
+  class="deck"
+  data-deck
+  data-slug={slug}
+  data-layout={layout}
+  aria-labelledby="deck-heading"
+>
   <div class="deck-head">
     <div>
-      <h2 id="deck-heading">{icons ? 'The set' : 'The deck'}</h2>
+      <h2 id="deck-heading">
+        <span data-deck-only>The deck</span><span data-icons-only>The set</span>
+      </h2>
       <p class="deck-sub">
         {
-          pages.length === 0
-            ? `No ${nouns} yet. Upload a PDF and every page becomes ${icons ? 'one icon' : 'a page of the case study'}.`
-            : `${pages.length} ${pages.length === 1 ? noun : nouns}. Drag to reorder — each change saves immediately.`
+          pages.length === 0 ? (
+            <>
+              Nothing here yet. Upload a PDF —
+              <span data-deck-only> every page becomes a page of the case study.</span>
+              <span data-icons-only> every page becomes one sheet of the set.</span>
+            </>
+          ) : (
+            <>
+              {pages.length}
+              <span data-deck-only> page{pages.length === 1 ? '' : 's'}</span>
+              <span data-icons-only> sheet{pages.length === 1 ? '' : 's'}</span>. Drag to reorder —
+              each change saves immediately.
+            </>
+          )
         }
         {pdf && <span class="deck-pdf">From {pdf}</span>}
       </p>
@@ -105,12 +127,23 @@ const nouns = icons ? 'icons' : 'pages';
       <label class="up-radio">
         <input type="radio" name="mode" value="replace" checked />
         <span>
-          <strong>Replace the {icons ? 'set' : 'deck'}</strong>
+          <strong>
+            Replace the <span data-deck-only>deck</span><span data-icons-only>set</span>
+          </strong>
           <span class="up-note">
             {
-              pages.length > 0
-                ? `Removes all ${pages.length} ${nouns} and rebuilds the cover.`
-                : `Builds the ${icons ? 'set' : 'deck'} and its cover.`
+              pages.length > 0 ? (
+                <>
+                  Removes all {pages.length}
+                  <span data-deck-only> pages</span>
+                  <span data-icons-only> sheets</span> and rebuilds the cover.
+                </>
+              ) : (
+                <>
+                  Builds the <span data-deck-only>deck</span>
+                  <span data-icons-only>set</span> and its cover.
+                </>
+              )
             }
           </span>
         </span>
@@ -123,7 +156,7 @@ const nouns = icons ? 'icons' : 'pages';
             {
               pages.length === 0
                 ? 'Nothing to add to yet.'
-                : `Keeps the ${nouns} and cover already here.`
+                : 'Keeps everything already here, and the cover.'
             }
           </span>
         </span>
@@ -148,9 +181,15 @@ const nouns = icons ? 'icons' : 'pages';
     pages.length > 0 && (
       <>
         <p class="deck-help" id="deck-help">
-          Drag {icons ? 'an icon' : 'a page'} to move it. With the keyboard: focus one, press Space
-          to pick it up, arrow keys to move, Space to drop. The star makes it the grid cover; the
-          lines open {icons ? 'its name, kind and description' : 'its description'}.
+          Drag{' '}
+          <>
+            <span data-deck-only>a page</span>
+            <span data-icons-only>a sheet</span>
+          </>{' '}
+          to move it. With the keyboard: focus one, press Space to pick it up, arrow keys to move,
+          Space to drop. The star makes it the grid cover; the lines open
+          <span data-deck-only> its description</span>
+          <span data-icons-only> its name, kind and description</span>.
         </p>
 
         <ol class="pages" data-pages aria-describedby="deck-help">
@@ -241,12 +280,14 @@ const nouns = icons ? 'icons' : 'pages';
               </div>
 
               <div class="page-meta" hidden data-alt-wrap>
-                {icons && (
-                  <>
-                    {/* An icon is a thing with a name and a kind, and both
-                        differ within one set — which is exactly what the
-                        project's single logo type cannot express. Saved
-                        together on blur, like the description below. */}
+                <div data-icons-only>
+                  {/* A sheet can hold a group of marks, and which group is
+                      exactly what the project's single logo type cannot
+                      express. Always in the DOM so switching Layout in the
+                      form below reveals these immediately, with nothing typed
+                      lost by switching back. Saved on blur, like the
+                      description. */}
+                  <div class="page-fields">
                     <label class="page-field">
                       <span class="page-alt-label">Name</span>
                       <input
@@ -270,8 +311,8 @@ const nouns = icons ? 'icons' : 'pages';
                         ))}
                       </select>
                     </label>
-                  </>
-                )}
+                  </div>
+                </div>
 
                 <label class="page-field">
                   <span class="page-alt-label">
@@ -828,6 +869,20 @@ const nouns = icons ? 'icons' : 'pages';
     padding: 1.4rem;
     margin-block: 2rem;
     background: var(--color-paper-raised);
+  }
+
+  /* The layout switch, done in CSS.
+     Both wordings and the per-sheet fields are always in the DOM, so flipping
+     Layout in the form below is instant, costs no request, and cannot lose
+     anything typed into a field it hides. */
+  [data-layout='deck'] [data-icons-only],
+  [data-layout='icons'] [data-deck-only] {
+    display: none;
+  }
+
+  .page-fields {
+    display: grid;
+    gap: 0.4rem;
   }
 
   .deck-head h2 {

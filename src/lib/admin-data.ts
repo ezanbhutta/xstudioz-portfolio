@@ -28,6 +28,7 @@ export type AdminProject = {
   slug: string;
   title: string;
   category: string;
+  layout: 'deck' | 'icons';
   logo_type: string | null;
   guideline_type: string | null;
   industry: string | null;
@@ -233,6 +234,9 @@ export async function saveProject(form: FormData, slug: string): Promise<void> {
     slug,
     str(form.get('title')),
     str(form.get('category')),
+    // Anything but 'icons' is a deck. A form that never rendered the control
+    // — or a browser that dropped it — must not silently reshape a project.
+    form.get('layout') === 'icons' ? 'icons' : 'deck',
     nullIfEmpty(form.get('logo_type')),
     nullIfEmpty(form.get('guideline_type')),
     nullIfEmpty(form.get('industry')),
@@ -257,13 +261,14 @@ export async function saveProject(form: FormData, slug: string): Promise<void> {
 
   await db().execute(
     `INSERT INTO projects
-       (slug, title, category, logo_type, guideline_type, industry, website,
-        instagram, facebook, linkedin, other_links, extras, extras_custom,
-        sort_order, summary, intent, context, challenge, direction, delivered,
-        outcome, testimonial, cover_alt)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+       (slug, title, category, layout, logo_type, guideline_type, industry,
+        website, instagram, facebook, linkedin, other_links, extras,
+        extras_custom, sort_order, summary, intent, context, challenge,
+        direction, delivered, outcome, testimonial, cover_alt)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
      ON DUPLICATE KEY UPDATE
-       title=VALUES(title), category=VALUES(category), logo_type=VALUES(logo_type),
+       title=VALUES(title), category=VALUES(category), layout=VALUES(layout),
+       logo_type=VALUES(logo_type),
        guideline_type=VALUES(guideline_type), industry=VALUES(industry),
        website=VALUES(website), instagram=VALUES(instagram),
        facebook=VALUES(facebook), linkedin=VALUES(linkedin),

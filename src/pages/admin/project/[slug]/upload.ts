@@ -47,6 +47,21 @@ const redirectBack = (slug: string, message: string, ok: boolean) =>
     },
   });
 
+/**
+ * The description an image gets when it is first written.
+ *
+ * A deck page is a page of a document and is honestly described by its
+ * position. An icon is not: "page 7 of 20" says nothing about a mark, and
+ * twenty of them in a row is twenty rows of noise for a screen reader. So an
+ * icon starts with the project's own name and waits to be named properly in
+ * the admin, which is a blank worth leaving — a wrong description reads as
+ * finished work and never gets revisited.
+ */
+const initialAlt = (title: string, layout: 'deck' | 'icons', n: number, total: number) =>
+  layout === 'icons'
+    ? `${title} — icon ${n} of ${total}`
+    : `${title} presentation, page ${n} of ${total}`;
+
 /** Where a page's file lives, given its number. One spelling, used everywhere. */
 const pageSrc = (slug: string, number: number) =>
   `/uploads/${slug}/page-${String(number).padStart(2, '0')}.webp`;
@@ -118,7 +133,7 @@ async function route(slug: string, request: Request): Promise<Response> {
   if (type.includes('multipart/form-data')) {
     return wantsJson
       ? await start(slug, request)
-      : await synchronousFallback(slug, project.title, request);
+      : await synchronousFallback(slug, project.title, project.layout, request);
   }
 
   const body = (await request.json()) as { action?: string; index?: number };
@@ -126,7 +141,7 @@ async function route(slug: string, request: Request): Promise<Response> {
     if (typeof body.index !== 'number') return json({ error: 'Expected a page number.' }, 400);
     return json({ ok: true, ...(await renderJobPage(slug, body.index)) });
   }
-  if (body.action === 'finish') return await finish(slug, project.title);
+  if (body.action === 'finish') return await finish(slug, project.title, project.layout);
   if (body.action === 'cancel') {
     await clearJob(slug);
     return json({ ok: true });
@@ -179,7 +194,7 @@ async function start(slug: string, request: Request): Promise<Response> {
  * not there yet renders a broken page, while a file with no row is an orphan
  * nobody sees.
  */
-async function finish(slug: string, title: string): Promise<Response> {
+async function finish(slug: string, title: string, layout: 'deck' | 'icons'): Promise<Response> {
   const manifest = await readManifest(slug);
   if (!manifest) return json({ error: 'That upload is no longer in progress.' }, 409);
   if (manifest.done.length < manifest.total) {
@@ -231,21 +246,34 @@ async function finish(slug: string, title: string): Promise<Response> {
           // Counted against the finished deck, not this batch — an appended
           // page calling itself "page 2 of 3" inside a 38-page book is a lie
           // to every screen reader that meets it.
-          `${title} presentation, page ${manifest.existing + i + 1} of ${total}`,
+          initialAlt(title, layout, manifest.existing + i + 1, total),
           page.width,
           page.height,
         ],
       );
     }
     if (manifest.append) {
-      // Pages already here still say "page 2 of 3" in a deck that now has six.
+      // Images already here still say "2 of 3" in a project that now has six.
       // Restate the total only on descriptions still carrying the generated
-      // wording, so anything written by hand survives.
+      // wording, so anything written by hand survives — and match the wording
+      // this layout actually produces, or an appended icon set would leave
+      // every existing caption claiming the old total.
       await conn.execute(
-        `UPDATE project_images
-            SET alt = CONCAT(?, ' presentation, page ', sort_order + 1, ' of ', ?)
-          WHERE project_slug = ? AND alt REGEXP ?`,
-        [title, total, slug, '^.* presentation, page [0-9]+ of [0-9]+$'],
+        layout === 'icons'
+          ? `UPDATE project_images
+                SET alt = CONCAT(?, ' — icon ', sort_order + 1, ' of ', ?)
+              WHERE project_slug = ? AND alt REGEXP ?`
+          : `UPDATE project_images
+                SET alt = CONCAT(?, ' presentation, page ', sort_order + 1, ' of ', ?)
+              WHERE project_slug = ? AND alt REGEXP ?`,
+        [
+          title,
+          total,
+          slug,
+          layout === 'icons'
+            ? '^.* — icon [0-9]+ of [0-9]+$'
+            : '^.* presentation, page [0-9]+ of [0-9]+$',
+        ],
       );
     }
     if (cover) {
@@ -305,6 +333,7 @@ async function finish(slug: string, title: string): Promise<Response> {
 async function synchronousFallback(
   slug: string,
   title: string,
+  layout: 'deck' | 'icons',
   request: Request,
 ): Promise<Response> {
   const { bytes, name, append } = await takePdf(request);
@@ -342,7 +371,7 @@ async function synchronousFallback(
           slug,
           existing.length + i,
           image.src,
-          `${title} presentation, page ${existing.length + i + 1} of ${total}`,
+          initialAlt(title, layout, existing.length + i + 1, total),
           image.width,
           image.height,
         ],

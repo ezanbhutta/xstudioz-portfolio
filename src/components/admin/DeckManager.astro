@@ -25,26 +25,38 @@
  * second form inside the first is invalid HTML anyway.
  */
 import type { DeckPage } from '@/lib/deck';
+import { LOGO_TYPES } from '@/data/filters';
 
 interface Props {
   slug: string;
   pages: DeckPage[];
   /** Filename of the PDF this deck came from, when one is recorded. */
   pdf?: string | null;
+  /**
+   * How the project reads its images. Only the wording and the per-image
+   * fields change — upload, reorder, delete and set-cover are identical for
+   * both, because a set of icons arrives as one PDF exactly like a deck does.
+   */
+  layout?: 'deck' | 'icons';
 }
 
-const { slug, pages, pdf } = Astro.props;
+const { slug, pages, pdf, layout = 'deck' } = Astro.props;
+
+const icons = layout === 'icons';
+/** One word, declined once, rather than a ternary at every mention. */
+const noun = icons ? 'icon' : 'page';
+const nouns = icons ? 'icons' : 'pages';
 ---
 
 <section class="deck" data-deck data-slug={slug} aria-labelledby="deck-heading">
   <div class="deck-head">
     <div>
-      <h2 id="deck-heading">The deck</h2>
+      <h2 id="deck-heading">{icons ? 'The set' : 'The deck'}</h2>
       <p class="deck-sub">
         {
           pages.length === 0
-            ? 'No pages yet. Upload a PDF and every page becomes a page of the case study.'
-            : `${pages.length} page${pages.length === 1 ? '' : 's'}. Drag to reorder — each change saves immediately.`
+            ? `No ${nouns} yet. Upload a PDF and every page becomes ${icons ? 'one icon' : 'a page of the case study'}.`
+            : `${pages.length} ${pages.length === 1 ? noun : nouns}. Drag to reorder — each change saves immediately.`
         }
         {pdf && <span class="deck-pdf">From {pdf}</span>}
       </p>
@@ -93,12 +105,12 @@ const { slug, pages, pdf } = Astro.props;
       <label class="up-radio">
         <input type="radio" name="mode" value="replace" checked />
         <span>
-          <strong>Replace the deck</strong>
+          <strong>Replace the {icons ? 'set' : 'deck'}</strong>
           <span class="up-note">
             {
               pages.length > 0
-                ? `Removes all ${pages.length} pages and rebuilds the cover.`
-                : 'Builds the deck and its cover.'
+                ? `Removes all ${pages.length} ${nouns} and rebuilds the cover.`
+                : `Builds the ${icons ? 'set' : 'deck'} and its cover.`
             }
           </span>
         </span>
@@ -111,7 +123,7 @@ const { slug, pages, pdf } = Astro.props;
             {
               pages.length === 0
                 ? 'Nothing to add to yet.'
-                : 'Keeps the pages and cover already here.'
+                : `Keeps the ${nouns} and cover already here.`
             }
           </span>
         </span>
@@ -136,9 +148,9 @@ const { slug, pages, pdf } = Astro.props;
     pages.length > 0 && (
       <>
         <p class="deck-help" id="deck-help">
-          Drag a page to move it. With the keyboard: focus a page, press Space to pick it up, arrow
-          keys to move, Space to drop. The star makes a page the grid cover; the lines edit its
-          description.
+          Drag {icons ? 'an icon' : 'a page'} to move it. With the keyboard: focus one, press Space
+          to pick it up, arrow keys to move, Space to drop. The star makes it the grid cover; the
+          lines open {icons ? 'its name, kind and description' : 'its description'}.
         </p>
 
         <ol class="pages" data-pages aria-describedby="deck-help">
@@ -149,7 +161,7 @@ const { slug, pages, pdf } = Astro.props;
               tabindex="0"
               data-page
               data-src={page.src}
-              aria-label={`Page ${i + 1}`}
+              aria-label={`${icons ? 'Icon' : 'Page'} ${i + 1}`}
             >
               <span class="page-no" data-no aria-hidden="true">
                 {i + 1}
@@ -228,12 +240,48 @@ const { slug, pages, pdf } = Astro.props;
                 </button>
               </div>
 
-              <label class="page-alt" hidden data-alt-wrap>
-                <span class="page-alt-label">What is on this page?</span>
-                <textarea class="page-alt-input" rows="2" data-alt maxlength="400">
-                  {page.alt}
-                </textarea>
-              </label>
+              <div class="page-meta" hidden data-alt-wrap>
+                {icons && (
+                  <>
+                    {/* An icon is a thing with a name and a kind, and both
+                        differ within one set — which is exactly what the
+                        project's single logo type cannot express. Saved
+                        together on blur, like the description below. */}
+                    <label class="page-field">
+                      <span class="page-alt-label">Name</span>
+                      <input
+                        class="page-alt-input"
+                        type="text"
+                        data-label
+                        maxlength="120"
+                        value={page.label}
+                        placeholder="e.g. Sunrise Yoga"
+                      />
+                    </label>
+
+                    <label class="page-field">
+                      <span class="page-alt-label">Kind</span>
+                      <select class="page-alt-input" data-logo-type>
+                        <option value="">— not set —</option>
+                        {LOGO_TYPES.map((t) => (
+                          <option value={t} selected={page.logoType === t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                )}
+
+                <label class="page-field">
+                  <span class="page-alt-label">
+                    {icons ? 'Describe it for a screen reader' : 'What is on this page?'}
+                  </span>
+                  <textarea class="page-alt-input" rows="2" data-alt maxlength="400">
+                    {page.alt}
+                  </textarea>
+                </label>
+              </div>
             </li>
           ))}
         </ol>
@@ -447,7 +495,9 @@ const { slug, pages, pdf } = Astro.props;
       const item = button.closest<HTMLElement>('[data-page]')!;
       const wrap = item.querySelector<HTMLElement>('[data-alt-wrap]')!;
       wrap.hidden = !wrap.hidden;
-      if (!wrap.hidden) item.querySelector<HTMLTextAreaElement>('[data-alt]')!.focus();
+      // The first field in the panel, whichever it is: an icon set opens on
+      // its name, a deck straight onto the description.
+      if (!wrap.hidden) wrap.querySelector<HTMLElement>('input, select, textarea')?.focus();
     });
 
     // Saved on blur rather than per keystroke: one request when the operator
@@ -470,6 +520,50 @@ const { slug, pages, pdf } = Astro.props;
       },
       true,
     );
+
+    /**
+     * An icon's name and kind, saved as one thing.
+     *
+     * Both live on the same row and are read together, so they go in one
+     * request: two would let a dropped connection store the name of a mark
+     * whose kind never arrived. The name saves on blur like the description;
+     * the kind saves the moment it is chosen, because a select has no typing
+     * to finish waiting for.
+     */
+    const saveMeta = async (item: HTMLElement) => {
+      const label = item.querySelector<HTMLInputElement>('[data-label]');
+      const kind = item.querySelector<HTMLSelectElement>('[data-logo-type]');
+      if (!label && !kind) return;
+      try {
+        await post({
+          action: 'meta',
+          src: item.dataset.src,
+          label: label?.value ?? '',
+          logoType: kind?.value ?? '',
+        });
+        if (label) label.defaultValue = label.value;
+        say(label?.value ? `“${label.value.trim()}” saved.` : 'Icon saved.');
+      } catch (error) {
+        say((error as Error).message);
+      }
+    };
+
+    list?.addEventListener(
+      'blur',
+      (event) => {
+        const field = event.target as HTMLInputElement;
+        if (!field.matches('[data-label]')) return;
+        if (field.value.trim() === field.defaultValue.trim()) return;
+        void saveMeta(field.closest<HTMLElement>('[data-page]')!);
+      },
+      true,
+    );
+
+    list?.addEventListener('change', (event) => {
+      const field = event.target as HTMLElement;
+      if (!field.matches('[data-logo-type]')) return;
+      void saveMeta(field.closest<HTMLElement>('[data-page]')!);
+    });
 
     // --- Upload ------------------------------------------------------------
     const form = deck.querySelector<HTMLFormElement>('[data-up]');
@@ -921,6 +1015,11 @@ const { slug, pages, pdf } = Astro.props;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 0.8rem;
+    /* Each tile owns its height. Opening the metadata panel makes one tile
+       much taller, and stretching — the grid default — would drag every other
+       tile in its row down with it, leaving a row of thumbnails floating in
+       empty space. */
+    align-items: start;
   }
 
   .page {
@@ -1034,11 +1133,19 @@ const { slug, pages, pdf } = Astro.props;
     background: var(--color-danger-fill);
   }
 
-  .page-alt {
-    display: block;
+  /* Holds every per-image field. One disclosure rather than one per field:
+     these are read and edited together, and three separate toggles on a tile
+     the size of a thumbnail would be unusable. */
+  .page-meta {
+    display: grid;
+    gap: 0.4rem;
     padding: 0.5rem;
     background: var(--color-paper-raised);
     border-block-start: 1px solid var(--color-line);
+  }
+
+  .page-field {
+    display: block;
   }
 
   .page-alt-label {
@@ -1052,6 +1159,9 @@ const { slug, pages, pdf } = Astro.props;
     inline-size: 100%;
     font: inherit;
     font-size: 0.78rem;
+  }
+
+  textarea.page-alt-input {
     resize: vertical;
   }
 

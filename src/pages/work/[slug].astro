@@ -58,6 +58,22 @@ const {
 } = project.data;
 
 const categoryInfo = getCategory(category);
+/**
+ * A set of icons is not a document.
+ *
+ * The images arrive identically — one PDF — but a sheet is not a page of an
+ * argument. Each one holds many marks composed together, grouped by industry
+ * or by kind, and the project is one or a few of them rather than a document
+ * read in order.
+ *
+ * So the sheets are still shown at full width, because twenty icons on one
+ * sheet are only legible at full width — laying them out as a grid of
+ * thumbnails would shrink the very thing the page exists to show. What
+ * changes is what the section is called, that a sheet can say which group it
+ * holds, and that page numbers are dropped: they number an argument, and
+ * there isn't one.
+ */
+const isIconSet = project.data.layout === 'icons';
 const kind = projectType(project.data);
 const extras = projectExtras(project.data);
 const deliverables = projectDeliverables(project.data);
@@ -145,7 +161,7 @@ const specs = [
   // A guidelines project is still built around a mark; naming which kind is
   // detail a designer's client notices.
   ['Mark', secondaryType(project.data)],
-  ['Pages', `${images.length}`],
+  [isIconSet ? 'Sheets' : 'Pages', `${images.length}`],
 ].filter((row): row is [string, string] => Boolean(row[1]));
 
 // Social card and structured data point at the cover. It is already served at
@@ -339,13 +355,15 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
         uninterrupted from this point down. Pairs with the grid card's view
         transition and loads with priority. */
     }
-    <div class="container project-hero">
+    <figure class="container project-hero">
       <button
         type="button"
         class="page-open media"
         data-open-page="0"
         style={`view-transition-name: work-${project.id}`}
-        aria-label={`Open the ${title} presentation, page 1 of ${images.length}`}
+        aria-label={isIconSet
+          ? `Open sheet 1 of ${images.length} of the ${title} full screen`
+          : `Open the ${title} presentation, page 1 of ${images.length}`}
       >
         <img
           src={hero.src}
@@ -361,18 +379,34 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
         />
         <span class="page-cue" aria-hidden="true">View full screen</span>
       </button>
-    </div>
+      {
+        /* The first sheet is the hero, so without this its label is the one
+          caption in the set that never appears — and on a one-sheet set that
+          is every label the project has. */
+      }
+      {
+        isIconSet && (hero.label || hero.logoType) && (
+          <figcaption class="icon-caption">
+            {hero.label && <span class="icon-name">{hero.label}</span>}
+            {hero.logoType && <span class="icon-kind">{hero.logoType}</span>}
+          </figcaption>
+        )
+      }
+    </figure>
 
     {
       pages.length > 0 && (
         <section class="container project-gallery" aria-labelledby="gallery-heading">
           <div class="gallery-head">
-            <p class="overline">The system</p>
+            <p class="overline">{isIconSet ? 'The set' : 'The system'}</p>
             <h2 id="gallery-heading" class="gallery-title">
-              Every page<span class="accent-dot">.</span>
+              {isIconSet ? 'Every mark' : 'Every page'}
+              <span class="accent-dot">.</span>
             </h2>
             <p class="gallery-count">
-              {images.length} pages, in order. Click any one to open it full screen.
+              {isIconSet
+                ? `${images.length} ${images.length === 1 ? 'sheet' : 'sheets'} of icons. Click any one to open it full screen.`
+                : `${images.length} pages, in order. Click any one to open it full screen.`}
             </p>
           </div>
 
@@ -396,13 +430,25 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
                     decoding="async"
                     style={placeholder}
                   />
-                  <span class="page-num" aria-hidden="true">
-                    {String(at + 1).padStart(2, '0')}
-                  </span>
+                  {!isIconSet && (
+                    <span class="page-num" aria-hidden="true">
+                      {String(at + 1).padStart(2, '0')}
+                    </span>
+                  )}
                   <span class="page-cue" aria-hidden="true">
                     Enlarge
                   </span>
                 </button>
+                {/* A sheet can say which group it holds — "Fitness", or
+                    "Mascot" — where a deck page is just page seven. Rendered
+                    only when there is something to say, so a set part-way
+                    through being labelled prints nothing rather than a rule. */}
+                {isIconSet && (img.label || img.logoType) && (
+                  <figcaption class="icon-caption">
+                    {img.label && <span class="icon-name">{img.label}</span>}
+                    {img.logoType && <span class="icon-kind">{img.logoType}</span>}
+                  </figcaption>
+                )}
               </figure>
             ))}
           </div>
@@ -639,6 +685,9 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
      the gallery it has to hold its own bottom edge, or the cover butts straight
      into the "Every page" heading with nothing between them.                  */
   .project-hero {
+    /* A <figure> so an icon sheet can carry its caption; figures default to a
+       browser margin that would misalign it against every other container. */
+    margin: 0;
     padding-block-end: var(--space-2xl);
   }
 
@@ -781,6 +830,24 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
 
   .gallery-figure {
     margin: 0;
+  }
+
+  /* Only ever rendered when the icon has a name or a kind to print. */
+  .icon-caption {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    margin-block-start: var(--space-2xs);
+  }
+
+  .icon-name {
+    font-weight: 600;
+    font-size: var(--text-sm);
+  }
+
+  .icon-kind {
+    font-size: var(--text-xs);
+    color: var(--color-ink-mute);
   }
 
   /* --- More projects ------------------------------------------------------ */

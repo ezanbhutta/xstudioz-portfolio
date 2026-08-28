@@ -145,7 +145,12 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
        below the save button, which is why it read as "there is no upload". It
        saves on its own, so it must not be inside the form either. */
     !isNew ? (
-      <DeckManager slug={routeSlug} pages={images} pdf={existing?.pdf} />
+      <DeckManager
+        slug={routeSlug}
+        pages={images}
+        pdf={existing?.pdf}
+        layout={existing?.layout === 'icons' ? 'icons' : 'deck'}
+      />
     ) : (
       /* Uploading needs a project to attach pages to, so it cannot happen
          before the first save. Saying that here — in the place the upload will
@@ -208,6 +213,22 @@ const title = isNew ? 'New project' : (existing?.title ?? routeSlug);
             }
           </select>
           {errors.category && <span class="err">{errors.category}</span>}
+        </label>
+
+        <label>
+          <span class="lab">Layout</span>
+          <span class="hint">
+            How the case study shows its images. A deck reads in one column, in order. A set lays
+            them out as a grid, each with its own name and kind.
+          </span>
+          <select name="layout">
+            <option value="deck" selected={val('layout', existing?.layout ?? 'deck') !== 'icons'}>
+              Deck — pages of a document
+            </option>
+            <option value="icons" selected={val('layout', existing?.layout ?? 'deck') === 'icons'}>
+              Icon set — a grid of separate marks
+            </option>
+          </select>
         </label>
       </div>
 

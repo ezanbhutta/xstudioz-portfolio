@@ -12,7 +12,14 @@
  * cookie riding along and delete a deck a page at a time.
  */
 import type { APIRoute } from 'astro';
-import { reorderPages, deletePage, setPageAlt, listPages, setCoverFromPage } from '@/lib/deck';
+import {
+  reorderPages,
+  deletePage,
+  setPageAlt,
+  setPageMeta,
+  listPages,
+  setCoverFromPage,
+} from '@/lib/deck';
 import { getProject } from '@/lib/admin-data';
 
 const json = (body: unknown, status = 200) =>
@@ -54,7 +61,14 @@ export const POST: APIRoute = async ({ params, request }) => {
     return json({ error: 'That project no longer exists.' }, 404);
   }
 
-  let body: { action?: string; src?: string; order?: unknown; alt?: string };
+  let body: {
+    action?: string;
+    src?: string;
+    order?: unknown;
+    alt?: string;
+    label?: string;
+    logoType?: string;
+  };
   try {
     body = await request.json();
   } catch {
@@ -86,6 +100,21 @@ export const POST: APIRoute = async ({ params, request }) => {
         }
         const updated = await setPageAlt(slug, body.src, body.alt);
         if (!updated) return json({ error: 'That page is no longer in this deck.' }, 404);
+        return json({ ok: true });
+      }
+
+      case 'meta': {
+        // An icon's name and kind. Saved together because they are one
+        // thought — "this is the mascot" — and two requests would let a
+        // dropped connection leave half of it stored.
+        if (typeof body.src !== 'string') return json({ error: 'Expected an image.' }, 400);
+        const result = await setPageMeta(
+          slug,
+          body.src,
+          typeof body.label === 'string' ? body.label : '',
+          typeof body.logoType === 'string' ? body.logoType : '',
+        );
+        if (!result.ok) return json({ error: result.reason }, 400);
         return json({ ok: true });
       }
 

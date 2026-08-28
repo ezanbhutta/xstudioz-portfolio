@@ -48,7 +48,17 @@ export type ResolvedImage = {
   height: number;
 };
 
-export type ProjectImage = ResolvedImage & { alt: string };
+export type ProjectImage = ResolvedImage & {
+  alt: string;
+  /**
+   * An icon's own name and kind, set only on a project whose layout is
+   * 'icons'. A deck page is "page 7 of 45" and needs neither, so both are
+   * undefined for every deck — which is what the gallery keys off to decide
+   * whether it has captions to render.
+   */
+  label?: string;
+  logoType?: string;
+};
 
 /**
  * Resolve a stored path.
@@ -107,6 +117,8 @@ export type ProjectData = {
   outcome?: string;
   testimonial?: { quote: string; name?: string; role?: string };
   pdf?: string;
+  /** 'deck' reads the images as pages of a document; 'icons' as a set. */
+  layout: 'deck' | 'icons';
   cover?: ResolvedImage;
   coverAlt?: string;
   images: ProjectImage[];
@@ -135,6 +147,8 @@ type ImageRow = {
   storage: string;
   width: number | null;
   height: number | null;
+  label: string | null;
+  logo_type: string | null;
 };
 
 /** A bare domain gets https:// so a link the studio typed by hand still works. */
@@ -160,7 +174,7 @@ export async function getSortedProjects(): Promise<ReadyProject[]> {
     [rows, imageRows] = await Promise.all([
       query<ProjectRow>(`SELECT * FROM projects ORDER BY sort_order ASC, title ASC`),
       query<ImageRow>(
-        `SELECT project_slug, src, alt, storage, width, height
+        `SELECT project_slug, src, alt, storage, width, height, label, logo_type
            FROM project_images ORDER BY project_slug, sort_order ASC`,
       ),
     ]);
@@ -201,6 +215,8 @@ export async function getSortedProjects(): Promise<ReadyProject[]> {
       .map((img) => ({
         ...resolveImage(slug, img.src, img.storage, img.width, img.height),
         alt: img.alt,
+        ...(img.label ? { label: img.label } : {}),
+        ...(img.logo_type ? { logoType: img.logo_type } : {}),
       }))
       .filter((img): img is ProjectImage => Boolean(img.src));
 
@@ -269,6 +285,10 @@ export async function getSortedProjects(): Promise<ReadyProject[]> {
         outcome: opt(row.outcome),
         testimonial: jsonObject<{ quote: string; name?: string; role?: string }>(row.testimonial),
         pdf: opt(row.pdf),
+        // Anything but the exact string 'icons' reads as a deck, so a row
+        // predating this column — or one holding something unexpected — keeps
+        // the behaviour every project had before icon sets existed.
+        layout: row.layout === 'icons' ? 'icons' : 'deck',
         cover,
         coverAlt: opt(row.cover_alt),
         images,

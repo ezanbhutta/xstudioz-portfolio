@@ -160,11 +160,22 @@ export async function renderJobPage(
  * deck half-written because the request ran long. The staging directory goes
  * afterwards, taking the source PDF with it.
  */
+/** Every extension `writeImage` produces. Anything else in staging is not an image. */
+const IMAGE_FORMATS = ['webp', 'avif'] as const;
+
 export async function promoteJob(slug: string): Promise<void> {
   const dir = stageDir(slug);
   const target = path.join(uploadsDir(), safeSegment(slug));
   for (const name of await readdir(dir)) {
-    if (!name.endsWith('.webp')) continue; // manifest and source stay behind
+    // The manifest and the source PDF stay behind; every rendered image goes.
+    //
+    // This tested for '.webp' alone, which was the whole list until AVIF was
+    // written beside it. The AVIF files were then left in the staging
+    // directory and deleted with it, while the row that had just been written
+    // said the page had them — a <source> pointing at nothing, which renders
+    // as a broken image rather than falling back. Naming the formats rather
+    // than one of them means adding a third cannot repeat it.
+    if (!IMAGE_FORMATS.some((ext) => name.endsWith(`.${ext}`))) continue;
     await rename(path.join(dir, name), path.join(target, name));
   }
 }

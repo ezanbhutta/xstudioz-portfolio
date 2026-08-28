@@ -485,15 +485,15 @@ const readiness = isNew
             <label>
               <span class="lab">Layout</span>
               <span class="hint">
-                How the case study shows its images. A deck reads in one column, in order. A set
-                lays them out as a grid, each with its own name and kind.
+                How the case study shows its images. A deck reads as pages of a document, in order.
+                A set is sheets of marks, each named and typed underneath it.
               </span>
               <select name="layout">
                 <option value="deck" selected={currentLayout !== 'icons'}>
                   Deck — pages of a document
                 </option>
                 <option value="icons" selected={currentLayout === 'icons'}>
-                  Icon set — a grid of separate marks
+                  Icon set — sheets of separate marks
                 </option>
               </select>
             </label>

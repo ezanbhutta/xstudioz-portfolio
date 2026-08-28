@@ -18,7 +18,7 @@
  */
 import type { ImageMetadata } from 'astro';
 import { query, jsonList, jsonObject, opt } from './db';
-import { srcsetFor } from './uploads';
+import { srcsetFor, WIDTHS, LEGACY_WIDTHS } from './uploads';
 import { CATEGORY_IDS, type CategoryId } from '@/data/categories';
 
 /**
@@ -98,13 +98,18 @@ export function resolveImage(
     // A row with no dimensions would render an image the layout cannot
     // reserve space for. Treat it as unresolved so the warning names it.
     if (w === 0 || h === 0) return undefined;
+    // 'avif' is written only by the paths that also write the 1280 rung, so
+    // it is the exact record of which ladder is on disk for this image. An
+    // image that predates both gets the ladder it actually has; offering it
+    // the wider one would advertise a width that 404s.
     const hasAvif = String(formats ?? '')
       .split(',')
       .includes('avif');
+    const ladder = hasAvif ? WIDTHS : LEGACY_WIDTHS;
     return {
       src,
-      srcset: srcsetFor(src, w),
-      ...(hasAvif ? { avifSrcset: srcsetFor(src, w, 'avif') } : {}),
+      srcset: srcsetFor(src, w, 'webp', ladder),
+      ...(hasAvif ? { avifSrcset: srcsetFor(src, w, 'avif', ladder) } : {}),
       width: w,
       height: h,
     };

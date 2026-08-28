@@ -33,6 +33,23 @@ import { loadSharp } from '@/lib/sharp';
 export const WIDTHS = [640, 1024, 1280, 1600] as const;
 
 /**
+ * The ladder as it was before 1280 existed.
+ *
+ * An image written under the old pipeline has 640, 1024 and its full width on
+ * disk and nothing else. `srcsetFor` builds its list from a width table rather
+ * than from the directory, so advertising the new table for an old image
+ * offers a candidate that 404s — and a browser that picks a 404 from a srcset
+ * shows a broken image, not the next best one. It is the exact failure the
+ * AVIF source is guarded against, and it applies to widths too.
+ *
+ * Which ladder an image is on is read off `formats`: 'avif' is written only by
+ * the two code paths that also write 1280, so it is an exact record of having
+ * been through the current pipeline. An image whose AVIF encode failed falls
+ * back to this list and is merely un-optimised, which is the safe direction.
+ */
+export const LEGACY_WIDTHS = [640, 1024] as const;
+
+/**
  * AVIF beside every WebP.
  *
  * Measured on the two heaviest images the site actually serves, re-encoded
@@ -209,9 +226,14 @@ export async function writeAvif(
  * only wrote those — advertising a width that returns 404 would leave the
  * browser with no image at all at that breakpoint.
  */
-export function srcsetFor(src: string, width: number, ext: 'webp' | 'avif' = 'webp'): string {
+export function srcsetFor(
+  src: string,
+  width: number,
+  ext: 'webp' | 'avif' = 'webp',
+  ladder: readonly number[] = WIDTHS,
+): string {
   const base = src.replace(/\.webp$/, '');
-  const entries = WIDTHS.filter((w) => w < width).map((w) => `${base}-${w}.${ext} ${w}w`);
+  const entries = ladder.filter((w) => w < width).map((w) => `${base}-${w}.${ext} ${w}w`);
   entries.push(`${base}.${ext} ${width}w`);
   return entries.join(', ');
 }

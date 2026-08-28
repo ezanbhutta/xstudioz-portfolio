@@ -61,10 +61,17 @@ const categoryInfo = getCategory(category);
 /**
  * A set of icons is not a document.
  *
- * The images arrive identically — one PDF, one mark per page — but reading
- * them in a single column, in order, states a sequence that is not there.
- * Twenty marks drawn for one client share an industry and nothing else, so
- * they lay out as a grid and each is captioned with its own name and kind.
+ * The images arrive identically — one PDF — but a sheet is not a page of an
+ * argument. Each one holds many marks composed together, grouped by industry
+ * or by kind, and the project is one or a few of them rather than a document
+ * read in order.
+ *
+ * So the sheets are still shown at full width, because twenty icons on one
+ * sheet are only legible at full width — laying them out as a grid of
+ * thumbnails would shrink the very thing the page exists to show. What
+ * changes is what the section is called, that a sheet can say which group it
+ * holds, and that page numbers are dropped: they number an argument, and
+ * there isn't one.
  */
 const isIconSet = project.data.layout === 'icons';
 const kind = projectType(project.data);
@@ -154,7 +161,7 @@ const specs = [
   // A guidelines project is still built around a mark; naming which kind is
   // detail a designer's client notices.
   ['Mark', secondaryType(project.data)],
-  [isIconSet ? 'Icons' : 'Pages', `${images.length}`],
+  [isIconSet ? 'Sheets' : 'Pages', `${images.length}`],
 ].filter((row): row is [string, string] => Boolean(row[1]));
 
 // Social card and structured data point at the cover. It is already served at
@@ -208,12 +215,6 @@ const jsonLd = {
 // own srcset, built from the variants actually written to disk at upload, so
 // the page can never advertise a width that returns 404.
 const heroSizes = '(min-width: 1360px) 1232px, 92vw';
-/**
- * A grid tile is a quarter of the column at most, so asking for the same
- * widths a full-bleed deck page needs would download roughly four times the
- * bytes required and waste them on a 280px square.
- */
-const iconSizes = '(min-width: 900px) 280px, (min-width: 560px) 40vw, 45vw';
 ---
 
 <BaseLayout
@@ -354,13 +355,15 @@ const iconSizes = '(min-width: 900px) 280px, (min-width: 560px) 40vw, 45vw';
         uninterrupted from this point down. Pairs with the grid card's view
         transition and loads with priority. */
     }
-    <div class="container project-hero">
+    <figure class="container project-hero">
       <button
         type="button"
         class="page-open media"
         data-open-page="0"
         style={`view-transition-name: work-${project.id}`}
-        aria-label={`Open the ${title} presentation, page 1 of ${images.length}`}
+        aria-label={isIconSet
+          ? `Open sheet 1 of ${images.length} of the ${title} full screen`
+          : `Open the ${title} presentation, page 1 of ${images.length}`}
       >
         <img
           src={hero.src}
@@ -376,7 +379,20 @@ const iconSizes = '(min-width: 900px) 280px, (min-width: 560px) 40vw, 45vw';
         />
         <span class="page-cue" aria-hidden="true">View full screen</span>
       </button>
-    </div>
+      {
+        /* The first sheet is the hero, so without this its label is the one
+          caption in the set that never appears — and on a one-sheet set that
+          is every label the project has. */
+      }
+      {
+        isIconSet && (hero.label || hero.logoType) && (
+          <figcaption class="icon-caption">
+            {hero.label && <span class="icon-name">{hero.label}</span>}
+            {hero.logoType && <span class="icon-kind">{hero.logoType}</span>}
+          </figcaption>
+        )
+      }
+    </figure>
 
     {
       pages.length > 0 && (
@@ -389,12 +405,12 @@ const iconSizes = '(min-width: 900px) 280px, (min-width: 560px) 40vw, 45vw';
             </h2>
             <p class="gallery-count">
               {isIconSet
-                ? `${images.length} icons. Click any one to open it full screen.`
+                ? `${images.length} ${images.length === 1 ? 'sheet' : 'sheets'} of icons. Click any one to open it full screen.`
                 : `${images.length} pages, in order. Click any one to open it full screen.`}
             </p>
           </div>
 
-          <div class={isIconSet ? 'gallery-grid' : 'gallery-stack'}>
+          <div class="gallery-stack">
             {pages.map(({ img, at, placeholder }) => (
               <figure class="gallery-figure" data-reveal="wipe">
                 <button
@@ -406,7 +422,7 @@ const iconSizes = '(min-width: 900px) 280px, (min-width: 560px) 40vw, 45vw';
                   <img
                     src={img.src}
                     srcset={img.srcset}
-                    sizes={isIconSet ? iconSizes : heroSizes}
+                    sizes={heroSizes}
                     alt={img.alt}
                     width={img.width}
                     height={img.height}
@@ -423,9 +439,10 @@ const iconSizes = '(min-width: 900px) 280px, (min-width: 560px) 40vw, 45vw';
                     Enlarge
                   </span>
                 </button>
-                {/* An icon says what it is; a deck page is just page seven.
-                    Rendered only when there is something to say, so a set
-                    part-way through being named does not print empty rules. */}
+                {/* A sheet can say which group it holds — "Fitness", or
+                    "Mascot" — where a deck page is just page seven. Rendered
+                    only when there is something to say, so a set part-way
+                    through being labelled prints nothing rather than a rule. */}
                 {isIconSet && (img.label || img.logoType) && (
                   <figcaption class="icon-caption">
                     {img.label && <span class="icon-name">{img.label}</span>}
@@ -668,6 +685,9 @@ const iconSizes = '(min-width: 900px) 280px, (min-width: 560px) 40vw, 45vw';
      the gallery it has to hold its own bottom edge, or the cover butts straight
      into the "Every page" heading with nothing between them.                  */
   .project-hero {
+    /* A <figure> so an icon sheet can carry its caption; figures default to a
+       browser margin that would misalign it against every other container. */
+    margin: 0;
     padding-block-end: var(--space-2xl);
   }
 
@@ -806,17 +826,6 @@ const iconSizes = '(min-width: 900px) 280px, (min-width: 560px) 40vw, 45vw';
     display: grid;
     gap: var(--space-xl);
     margin-block-start: var(--space-xl);
-  }
-
-  /* A set, not a sequence. Auto-fill rather than a fixed column count so a
-     set of four and a set of forty both fill the row they are given, and the
-     tiles stay a readable size on a phone instead of shrinking to fit. */
-  .gallery-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(220px, 45%), 1fr));
-    gap: var(--space-lg);
-    margin-block-start: var(--space-xl);
-    align-items: start;
   }
 
   .gallery-figure {

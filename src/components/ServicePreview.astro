@@ -39,6 +39,8 @@ interface Props {
    */
   directCount?: number;
   viaExtrasCount?: number;
+  /** Position among the sections that have work — printed as the section number. */
+  index?: number;
 }
 
 const {
@@ -48,6 +50,7 @@ const {
   lead = false,
   directCount = projects.length,
   viaExtrasCount = 0,
+  index = 0,
 } = Astro.props;
 
 /** Everything shown came in through an extra — so the row needs saying. */
@@ -61,7 +64,27 @@ const remaining = projects.length - preview.length;
 
 <section class="preview" aria-labelledby={headingId}>
   <div class="container">
-    <h2 id={headingId} class="preview-title" data-reveal>{category.title}</h2>
+    {
+      /* Numbered, and the count said out loud.
+ 
+        These five names are the structure of the site, and a stack of five
+        display headings with nothing between them reads as five separate
+        pages that happen to share a scroll. A numeral and a count turn it
+        into one document with sections — the visitor knows where they are and
+        how much is left, which is the whole job of a running head. The number
+        is the section's position; nothing is typed to get it. */
+    }
+    <div class="preview-head" data-reveal>
+      <span class="preview-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+      <h2 id={headingId} class="preview-title">{category.title}</h2>
+      {
+        projects.length > 0 && (
+          <span class="preview-count">
+            {projects.length} {projects.length === 1 ? 'project' : 'projects'}
+          </span>
+        )
+      }
+    </div>
 
     {
       preview.length > 0 && (
@@ -116,6 +139,46 @@ const remaining = projects.length - preview.length;
      not draw a second one 1px below it. */
   :global(.servicenav) + .preview {
     border-block-start: none;
+  }
+
+  /* The numeral hangs outside the title's optical edge on a wide screen, the
+     way a running head sits in a margin — inline with it below that, where
+     there is no margin to hang into. */
+  .preview-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: baseline;
+    column-gap: var(--space-sm);
+  }
+
+  .preview-index {
+    font-family: var(--font-display);
+    font-size: var(--text-md);
+    font-weight: var(--weight-medium);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--tracking-wide);
+    color: var(--color-accent);
+  }
+
+  .preview-count {
+    justify-self: end;
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-ink-mute);
+  }
+
+  @media (min-width: 1200px) {
+    .preview-head {
+      /* The numeral in the margin, the rule running to the far edge under the
+         whole head — a section opening, not a heading with a badge. */
+      margin-inline-start: -3.25rem;
+      grid-template-columns: 3.25rem minmax(0, 1fr) auto;
+      column-gap: 0;
+    }
   }
 
   /* Set at section scale, not heading scale. With the page stripped to the

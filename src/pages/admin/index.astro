@@ -564,10 +564,14 @@ const live = projects.length - hidden.length;
     box-shadow: var(--image-frame);
   }
 
+  /* Top-anchored, like the public "more work" tile and for the same reason:
+     a portrait brand board cropped to 16/10 from its centre shows mockups and
+     loses the mark, and the mark is how an operator finds the row they want. */
   .prow-thumb img {
     inline-size: 100%;
     block-size: 100%;
     object-fit: cover;
+    object-position: 50% 0;
     display: block;
   }
 

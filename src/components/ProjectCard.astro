@@ -157,10 +157,24 @@ const coverAltText = coverAlt ?? '';
         sentence stack the project nav already uses at the foot of a case
         study. */
     }
+    {
+      /* A specimen label, not a caption.
+ 
+        Under a 900px brand board, a title in body type and a grey line of
+        metadata is a whisper — the label has to hold its own beside the work
+        or the wall reads as a set of untitled images. So: a hairline the full
+        width of the board, an index numeral set in the display face, and the
+        title beside it. The number is what makes a grid of five read as a
+        catalogue of five rather than as five things that happen to be near
+        each other, and it is free — the card already knows its position. */
+    }
     <div class="card-say">
-      <h3 class="card-title">{title}</h3>
-      <p class="card-meta">{meta}</p>
-      {intent && <p class="card-intent">{intent}</p>}
+      <span class="card-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+      <div class="card-words">
+        <h3 class="card-title">{title}</h3>
+        <p class="card-meta">{meta}</p>
+        {intent && <p class="card-intent">{intent}</p>}
+      </div>
     </div>
   </a>
 </li>
@@ -278,10 +292,34 @@ const coverAltText = coverAlt ?? '';
   }
 
   .card-say {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    gap: 0 var(--space-sm);
+    margin-block-start: var(--space-sm);
+    padding-block-start: var(--space-sm);
+    /* The rule runs the width of the board above it, so the label reads as
+       belonging to that board rather than floating between two of them. */
+    border-block-start: 1px solid var(--color-line-strong);
+  }
+
+  .card-words {
     display: flex;
     flex-direction: column;
     gap: var(--space-3xs);
-    margin-block-start: var(--space-sm);
+    min-inline-size: 0;
+  }
+
+  /* Tabular so 01 and 10 occupy the same width and every label in the column
+     starts its title at the same x. */
+  .card-index {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--tracking-wide);
+    color: var(--color-ink-mute);
+    transition: color var(--duration-fast) var(--ease-out);
   }
 
   /* Both were hardcoded #fff because they sat on artwork. On paper that is
@@ -311,10 +349,20 @@ const coverAltText = coverAlt ?? '';
   }
 
   .card-title {
-    font-size: var(--text-lg);
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
     font-weight: var(--weight-display);
     letter-spacing: var(--tracking-tight);
+    line-height: 1.05;
     color: var(--color-ink);
+  }
+
+  /* The index is the one thing that takes the accent on hover: the label
+     acknowledges the pointer without the title changing colour under it. */
+  @media (hover: hover) {
+    .card-link:hover .card-index {
+      color: var(--color-accent);
+    }
   }
 
   @media (hover: hover) {

@@ -244,8 +244,17 @@ const specs = [
   // A guidelines project is still built around a mark; naming which kind is
   // detail a designer's client notices.
   ['Mark', secondaryType(project.data)],
-  [isIconSet ? 'Sheets' : 'Pages', `${images.length}`],
-].filter((row): row is [string, string] => Boolean(row[1]));
+  /**
+   * Only when there is more than one.
+   *
+   * "Pages 1" is the spec table volunteering that this case study contains a
+   * single image — the weakest line it could end on, and the line four of the
+   * five published projects ended on. A count is worth printing when it says
+   * "there is a lot to read"; at one it says the opposite, and the visitor can
+   * already see the one image above it.
+   */
+  images.length > 1 ? [isIconSet ? 'Sheets' : 'Pages', `${images.length}`] : null,
+].filter((row): row is [string, string] => Boolean(row && row[1]));
 
 // Social card and structured data point at the cover. It is already served at
 // a known size, so there is nothing to derive — an absolute URL is all the
@@ -492,6 +501,38 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
     </figure>
 
     {
+      /**
+       * The door, under the first image, on every layout.
+       *
+       * This button was added to the gallery head, which only renders when
+       * there is a second image — so on four of the five published projects
+       * it did not exist at all, and those are the ones that need it most: a
+       * single-image case study has exactly one thing to look at, and the only
+       * way to see it larger was to guess the image was clickable. The
+       * "View full screen" cue that hints at it is hover-only, so a phone
+       * never showed it either.
+       *
+       * One door, not two. It sits where a visitor first wants it — beside the
+       * image, before the reading — rather than a thousand pixels down the
+       * page beside a heading that names what they would already be scrolling
+       * through. The delegated handler in Lightbox.astro catches any
+       * [data-open-page], so this needs no script of its own.
+       */
+    }
+    <p class="container project-open">
+      <button class="button button--outline" type="button" data-open-page="0">
+        {
+          images.length === 1
+            ? 'View full screen'
+            : isIconSet
+              ? `Open all ${images.length} sheets`
+              : `Open all ${images.length} pages`
+        }
+        <span aria-hidden="true">↗</span>
+      </button>
+    </p>
+
+    {
       pages.length > 0 && (
         <section class="container project-gallery" aria-labelledby="gallery-heading">
           <div class="gallery-head">
@@ -509,20 +550,6 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
                   ? `${images.length} pages, in order, in ${namedChapters.length} chapters.`
                   : `${images.length} pages, in order.`}
             </p>
-            {/* A door, not a rumour.
-                
-                The only way into the viewer was to notice that an image was
-                clickable — the "Enlarge" cue appears on hover, so on a phone
-                it never appears at all, and a 45-page deck was 16,000px of
-                scrolling with a better way to read it that nobody was told
-                about. The delegated handler in Lightbox.astro catches any
-                [data-open-page], so this needs no new script. */}
-            <p class="gallery-open">
-              <button class="button button--outline" type="button" data-open-page="0">
-                Open the viewer <span aria-hidden="true">↗</span>
-              </button>
-            </p>
-
             {/* The way in to a specific part.
 
                 A deck is read start to finish by whoever commissioned it and
@@ -639,9 +666,17 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
           <h2 id="project-close-heading" class="project-close-title">
             {industry ? `Want a system like this for ${industry}?` : 'Want a system like this?'}
           </h2>
+          {
+            /* Not the footer's line. Both bands appeared on the same page,
+              ~600px apart, opening with the identical sentence — "Send what
+              the business does and who it is for." The footer's is the general
+              invitation and keeps it; this one stands beside the work a
+              visitor has just finished looking at and can say something the
+              footer cannot. */
+          }
           <p class="section-lede">
-            Send what the business does and who it is for. What comes back is a mark, its variants,
-            and the files to use them.
+            Everything on this page was made for one business. The next one is made for yours, to
+            the same standard, with the same files at the end.
           </p>
         </div>
         <div class="project-close-actions">
@@ -937,12 +972,17 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
     margin-block: 0;
     margin-inline: auto;
     order: -1;
-    padding-block-end: var(--space-2xl);
+    /* Only as far as its own button, which now holds the edge below it. */
+    padding-block-end: var(--space-sm);
   }
 
   /* --- Story + spec ------------------------------------------------------- */
-  .gallery-open {
-    margin-block-start: var(--space-md);
+  /* Under the hero, above the reading. `order: -1` puts it with the image in
+     the flex column, which is where the button belongs; without it the button
+     would fall to the bottom of the article with the closing band. */
+  .project-open {
+    order: -1;
+    margin-block: 0 var(--space-2xl);
   }
 
   .project-close {

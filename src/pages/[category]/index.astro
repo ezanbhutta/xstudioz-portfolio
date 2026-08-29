@@ -32,6 +32,17 @@ const allProjects = await getSortedProjects();
 const { direct, viaExtras } = projectsForService(allProjects, category);
 const others = ACTIVE_CATEGORIES.filter((c) => c.id !== category.id);
 
+/**
+ * What to show on a service with nothing of its own published.
+ *
+ * The most recent work, whatever service it belongs to. Not a claim that these
+ * are examples of this service — the heading above them says whose hands made
+ * them, not what they are — but a visitor who has read the promise and the
+ * inclusions has nothing left to judge, and a page that ends there ends on
+ * "nothing". Four, because the grid alternates wide and narrow in pairs.
+ */
+const standIn = direct.length === 0 && viaExtras.length === 0 ? allProjects.slice(0, 4) : [];
+
 const description = metaDescription(category.outcome, category.description);
 
 const jsonLd = {
@@ -70,11 +81,17 @@ const jsonLd = {
       <h1 class="page-title service-title">{category.title}</h1>
       {category.outcome && <p class="service-outcome">{category.outcome}</p>}
       {
-        /* This line has always existed and has only ever reached <head> —
-          metaDescription and two JSON-LD nodes. It is the sentence that says
-          what the client walks away with, so it belongs on the page. */
+        /* `category.description` is deliberately NOT printed here.
+ 
+          It was, briefly: the line saying what the client walks away with had
+          only ever reached <head>, so it was put in the hero. But the
+          "What's included" list below was derived from that same sentence, so
+          every service page then said the same thing twice, ~200px apart —
+          Animation's first bullet, "MP4 and GIF, ready for web, decks and
+          social", is a substring of its description. The list is the better
+          half of that pair: itemised, scannable, and the anchor every case
+          study's closing band links to. The sentence keeps its <head> job. */
       }
-      {category.description && <p class="service-description">{category.description}</p>}
       {category.intro && <p class="page-lede service-intro">{category.intro}</p>}
       <div class="service-actions">
         <a
@@ -181,6 +198,32 @@ const jsonLd = {
                 and the same hands do this.
               </p>
             </div>
+
+            {/* The work that sentence promises.
+ 
+                It said "the identity work below shows the standard" and then
+                rendered nothing below — the copy referred to a grid that only
+                existed on the branch where work was found. On a site where two
+                of five services have no case study of their own, that made two
+                service pages a heading, a broken promise and a list of links
+                away. Showing the studio's most recent work is both true and
+                the only thing a visitor at this point can actually judge. */}
+            {standIn.length > 0 && (
+              <>
+                {/* Labelled out loud, because these are not examples of this
+                    service. "The same hands do this" is the claim the lede
+                    makes and the only one this grid can support. */}
+                <p class="standin-label" data-reveal>
+                  Recent work from the studio
+                </p>
+                <WorkGrid
+                  projects={standIn}
+                  heading={`Recent work from the studio`}
+                  eagerCount={1}
+                  labelled
+                />
+              </>
+            )}
           </div>
         </section>
       )
@@ -204,13 +247,6 @@ const jsonLd = {
 </BaseLayout>
 
 <style>
-  .service-description {
-    font-size: var(--text-md);
-    color: var(--color-ink-soft);
-    max-width: var(--measure);
-    margin-block-start: var(--space-sm);
-  }
-
   .service-includes {
     padding-block: var(--space-lg) 0;
     /* Anchored from the case study's closing band, so it must not land under
@@ -325,6 +361,18 @@ const jsonLd = {
 
   .other-heading {
     margin-block-end: var(--space-md);
+  }
+
+  /* Sits between the lede and the grid, so nobody reads four identity
+     projects as four animation projects. */
+  .standin-label {
+    margin-block: var(--space-xl) var(--space-sm);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-ink-mute);
   }
 
   .other-list {

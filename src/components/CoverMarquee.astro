@@ -92,20 +92,38 @@ const columns =
        covers arrive from nowhere and leave to nowhere. */
     block-size: clamp(22rem, 46vh, 34rem);
     overflow: hidden;
-    /* Fade both ends into the page rather than cutting them off */
-    mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+    /* Fade both ends into the page rather than cutting them off.
+
+       A fixed distance, not a percentage. At 12% of a 414px lane the fade was
+       50px; the lane now fills the hero, so the same 12% became a 99px ramp —
+       and in light mode a dark cover ramping into near-white paper over 99px
+       is a grey smear that reads as a rendering fault rather than an edge.
+       Three rem is the same soft edge whatever height the hero gives it. */
+    --marquee-fade: 3rem;
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      #000 var(--marquee-fade),
+      #000 calc(100% - var(--marquee-fade)),
+      transparent
+    );
   }
 
-  @media (min-width: 1100px) {
-    .marquee {
-      grid-template-columns: 1fr 1fr;
-    }
+  /* One lane at every width, and the second lane never renders.
+
+     Two lanes measured 260px per tile at 1440 — narrower than the phone the
+     same page is read on. A brand mark at 260px is a swatch: you can tell the
+     artwork apart from its neighbour and you cannot read it, which is the one
+     thing the first screen of a logo studio has to let you do. One lane is
+     717px on the same screen, 2.75x the width and 7.5x the area, and the
+     counter-drifting second column is not worth a cover nobody can judge.
+
+     The mask lives on the column rather than the grid, so the lane fades at
+     both of its own ends whatever height the hero gives it. */
+  .marquee-col--reverse {
+    display: none;
   }
 
-  /* One lane below the two-column hero. Two lanes at 390px is two 45%-wide
-     columns of postage stamps; one lane is a cover you can actually read.
-     The mask moves onto the column so the single lane still fades at both
-     of its own ends. */
   @media (max-width: 1099px) {
     .marquee {
       block-size: auto;
@@ -114,11 +132,31 @@ const columns =
 
     .marquee-col {
       block-size: clamp(18rem, 42vh, 26rem);
-      mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+      mask-image: linear-gradient(
+        to bottom,
+        transparent,
+        #000 var(--marquee-fade),
+        #000 calc(100% - var(--marquee-fade)),
+        transparent
+      );
     }
+  }
 
-    .marquee-col--reverse {
-      display: none;
+  /* Fills the height the hero gives it, instead of a fixed 414px floating in
+     the middle of a 1038px column — which left the top-right quadrant of the
+     first screen, the most valuable space on the site, completely empty.
+
+     Out of flow, which is the whole trick. `block-size: 100%` against a parent
+     whose height is auto resolves to auto, so the lane grew to fit all
+     eighteen tiles and took the hero to 5,263px. Absolute, it contributes no
+     height at all: the row is sized by the words beside it and the lane is
+     told to match. Requires a positioned parent — the hero sets
+     `position: relative` on the element this renders into. */
+  @media (min-width: 1100px) {
+    .marquee {
+      position: absolute;
+      inset: 0;
+      block-size: auto;
     }
   }
 

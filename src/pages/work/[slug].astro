@@ -412,8 +412,21 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
             </h2>
             <p class="gallery-count">
               {isIconSet
-                ? `${images.length} ${images.length === 1 ? 'sheet' : 'sheets'} of icons. Click any one to open it full screen.`
-                : `${images.length} pages, in order. Click any one to open it full screen.`}
+                ? `${images.length} ${images.length === 1 ? 'sheet' : 'sheets'} of icons.`
+                : `${images.length} pages, in order.`}
+            </p>
+            {/* A door, not a rumour.
+                
+                The only way into the viewer was to notice that an image was
+                clickable — the "Enlarge" cue appears on hover, so on a phone
+                it never appears at all, and a 45-page deck was 16,000px of
+                scrolling with a better way to read it that nobody was told
+                about. The delegated handler in Lightbox.astro catches any
+                [data-open-page], so this needs no new script. */}
+            <p class="gallery-open">
+              <button class="button button--outline" type="button" data-open-page="0">
+                Open the viewer <span aria-hidden="true">↗</span>
+              </button>
             </p>
           </div>
 
@@ -467,6 +480,46 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
         </section>
       )
     }
+
+    {
+      /**
+       * The ask.
+       *
+       * A case study ran to the end and then offered two more case studies.
+       * Nowhere on the page — the one page a visitor reaches after deciding
+       * they like the work — was there anything to do about it: `fiverrUrl`
+       * appeared zero times in this template, and `.section--ink` sat in
+       * global.css annotated "used for the closing Fiverr handoff" with no
+       * caller anywhere in the codebase. This is that caller.
+       */
+    }
+    <section class="project-close section--ink" aria-labelledby="project-close-heading">
+      <div class="container project-close-inner">
+        <div>
+          <p class="overline">{categoryInfo.title}</p>
+          <h2 id="project-close-heading" class="project-close-title">
+            {industry ? `Want a system like this for ${industry}?` : 'Want a system like this?'}
+          </h2>
+          <p class="section-lede">
+            Send what the business does and who it is for. What comes back is a mark, its variants,
+            and the files to use them.
+          </p>
+        </div>
+        <div class="project-close-actions">
+          <a
+            class="button button--primary button--lg"
+            href={SITE.fiverrUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Start on Fiverr <span aria-hidden="true">↗</span>
+          </a>
+          <a class="button button--ghost button--lg" href={`/${category}/#includes`}>
+            What's included
+          </a>
+        </div>
+      </div>
+    </section>
 
     {
       (prev || next) && (
@@ -528,8 +581,30 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
 </script>
 
 <style>
+  /**
+   * The work comes before the writing.
+   *
+   * In the document the hero figure sits AFTER the whole body — title, then
+   * summary, then the story sections, then the spec table, and only then the
+   * first image. Measured on the 45-page Materia study that is a full 1440
+   * screen of type before any design appears, and two screens on a phone.
+   * On a portfolio, the first screen answering "is this studio good?" with an
+   * essay is the wrong answer to the only question being asked.
+   *
+   * Ordering rather than moving the markup: the hero carries the
+   * view-transition name the grid morphs into, and the spec aside is
+   * position: sticky inside .project-body. Both keep working untouched; only
+   * the paint order changes.
+   */
+  .project {
+    display: flex;
+    flex-direction: column;
+  }
+
   .project-header {
-    padding-block: var(--space-2xl) var(--space-xl);
+    order: -2;
+    /* Tighter, because the image now follows it rather than 800px of copy. */
+    padding-block: var(--space-xl) var(--space-md);
   }
 
   .project-back {
@@ -722,14 +797,51 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
        (viewport − 1400) / 2: 260px at 1920, 580px at 2560. */
     margin-block: 0;
     margin-inline: auto;
+    order: -1;
     padding-block-end: var(--space-2xl);
   }
 
   /* --- Story + spec ------------------------------------------------------- */
+  .gallery-open {
+    margin-block-start: var(--space-md);
+  }
+
+  .project-close {
+    padding-block: var(--space-2xl);
+    margin-block-start: var(--space-2xl);
+  }
+
+  .project-close-inner {
+    display: grid;
+    gap: var(--space-lg);
+    align-items: end;
+  }
+
+  @media (min-width: 860px) {
+    .project-close-inner {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-2xl);
+    }
+  }
+
+  .project-close-title {
+    font-size: var(--text-2xl);
+    letter-spacing: var(--tracking-tight);
+    line-height: var(--leading-snug);
+    margin-block: var(--space-2xs) var(--space-sm);
+    max-inline-size: 20ch;
+  }
+
+  .project-close-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
   .project-body {
     display: grid;
     gap: var(--space-2xl);
-    padding-block: var(--space-3xl);
+    padding-block: var(--space-xl) var(--space-3xl);
   }
 
   @media (min-width: 1000px) {

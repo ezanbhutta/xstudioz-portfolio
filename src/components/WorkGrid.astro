@@ -83,13 +83,23 @@ const {
   .work-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-3xl) var(--space-lg);
+    /* Fluid across, fixed down: at 680px a --space-lg column gutter is 5% of
+       the row, at 1440 it is 2.5%, and the bento's two tiles should not drift
+       apart as the canvas grows. */
+    gap: var(--space-3xl) clamp(1rem, 2.5vw, 2.25rem);
     list-style: none;
     padding: 0;
     margin: 0;
   }
 
-  @media (min-width: 680px) {
+  /* 1040, not 680.
+     
+     The 7 + 5 split is a bento at desktop widths and a pair of thumbnails
+     below them: at 680px the narrow tile resolves to about 267px, which is
+     too small to read a deck cover set in 9pt type. Between 680 and 1040 a
+     single full-width card is the better answer — the artwork gets the whole
+     measure instead of two cramped halves. */
+  @media (min-width: 1040px) {
     .work-grid {
       /* Twelve columns, split 7 + 5. A 4 + 2 split on six columns put the
          narrow tile at a third of the row — 371px against 821px — which was

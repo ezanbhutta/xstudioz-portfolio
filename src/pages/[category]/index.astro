@@ -69,6 +69,12 @@ const jsonLd = {
     <header class="container page-hero service-hero">
       <h1 class="page-title service-title">{category.title}</h1>
       {category.outcome && <p class="service-outcome">{category.outcome}</p>}
+      {
+        /* This line has always existed and has only ever reached <head> —
+          metaDescription and two JSON-LD nodes. It is the sentence that says
+          what the client walks away with, so it belongs on the page. */
+      }
+      {category.description && <p class="service-description">{category.description}</p>}
       {category.intro && <p class="page-lede service-intro">{category.intro}</p>}
       <div class="service-actions">
         <a
@@ -88,6 +94,27 @@ const jsonLd = {
         }
       </div>
     </header>
+
+    {
+      /* What you get, answered before the work rather than after it. The
+        case study's closing band links straight to this anchor. */
+      category.deliverables && category.deliverables.length > 0 && (
+        <section
+          id="includes"
+          class="container service-includes"
+          aria-labelledby="includes-heading"
+        >
+          <h2 id="includes-heading" class="overline">
+            What's included
+          </h2>
+          <ul class="spec-list service-includes-list">
+            {category.deliverables.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
 
     <ServiceNav current={category.id} />
 
@@ -177,6 +204,25 @@ const jsonLd = {
 </BaseLayout>
 
 <style>
+  .service-description {
+    font-size: var(--text-md);
+    color: var(--color-ink-soft);
+    max-width: var(--measure);
+    margin-block-start: var(--space-sm);
+  }
+
+  .service-includes {
+    padding-block: var(--space-lg) 0;
+    /* Anchored from the case study's closing band, so it must not land under
+       the sticky header. */
+    scroll-margin-block-start: var(--header-h);
+  }
+
+  .service-includes-list {
+    margin-block-start: var(--space-sm);
+    max-inline-size: var(--measure-wide);
+  }
+
   .service-hero {
     /* ServiceNav sits immediately below and carries its own rule, so the
        hero does not need to reserve space of its own. */

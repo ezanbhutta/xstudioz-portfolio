@@ -220,7 +220,10 @@ const { pages, title } = Astro.props;
      full-height black panel into the page flow on every case study. */
   .lightbox[open] {
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    /* One row. The head and the bar are absolutely positioned over it now,
+       so the artwork gets the whole viewport instead of the ~136px that two
+       chrome rows used to take off the top and bottom. */
+    grid-template-rows: minmax(0, 1fr);
     /* `minmax(0, 1fr)`, not the implicit `auto` column: an auto track floors
        at its widest item's min-content, and a 36-dot rail min-contents at
        554px. On a 390px phone that pushed every row off the left edge. */
@@ -237,8 +240,48 @@ const { pages, title } = Astro.props;
     padding: 0;
     border: none;
     background: #0d0b10;
+    /* The viewer is its own dark room whatever the page theme. Without this
+       the ink tokens resolve light-mode values inside it, and the controls —
+       set in --color-ink on #0d0b10 — go nearly black on black. */
+    color-scheme: dark;
+    --color-ink: #f4f4f5;
+    --color-paper-mute: #a1a1aa;
+    --color-accent-bright: #d946ef;
+    --color-line-on-ink-strong: rgb(255 255 255 / 24%);
     color: var(--color-ink);
     overflow: hidden;
+  }
+
+  /**
+   * The chrome floats; the stage is the whole dialog.
+   *
+   * The head (~60px) and the bar (~76px) were grid rows, so "open full
+   * screen" handed back 136px less height than it took. On a 1440x900
+   * laptop a deck page went from 1272x716 in the page to 1440x764 in the
+   * viewer — 13% wider — and a taller icon sheet came out SHORTER than it
+   * had been on the page it was opened from. Overlaying the controls gives
+   * the artwork the full viewport and the gain becomes real.
+   */
+  .lightbox-head,
+  .lightbox-bar {
+    position: absolute;
+    inset-inline: 0;
+    z-index: 2;
+    /* A short scrim so controls stay legible over a light deck page. */
+    background: linear-gradient(to bottom, rgb(13 11 16 / 82%), transparent);
+  }
+
+  .lightbox-head {
+    inset-block-start: 0;
+  }
+
+  .lightbox-bar {
+    inset-block-end: 0;
+    background: linear-gradient(to top, rgb(13 11 16 / 82%), transparent);
+  }
+
+  .lightbox-stage {
+    grid-row: 1 / -1;
   }
 
   .lightbox::backdrop {
@@ -288,7 +331,9 @@ const { pages, title } = Astro.props;
     inset: 0;
     inline-size: 100%;
     block-size: 100%;
-    padding: clamp(0.5rem, 2vw, 1.5rem);
+    /* Enough to clear the floating chrome at the top and bottom without
+       boxing the artwork in on a wide screen. */
+    padding: 3.25rem clamp(0.5rem, 2vw, 1.5rem) 4.25rem;
     object-fit: contain;
   }
 

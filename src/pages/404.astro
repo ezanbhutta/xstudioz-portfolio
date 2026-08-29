@@ -27,7 +27,15 @@ import { ACTIVE_CATEGORIES } from '@/data/categories';
     </ul>
 
     <div class="notfound-actions">
-      <a class="button button--primary" href="/" data-astro-prefetch>See the work</a>
+      {
+        /* `/#work`, not `/`. The lede says "start from the portfolio", and
+          the portfolio is 900px below the top of the home page — sending a
+          lost visitor to the hero makes them scroll to reach the thing they
+          were just promised. The primary stays on the work rather than on
+          Fiverr: a 404 is a recovery screen, and the useful next action is
+          finding what they came for. */
+      }
+      <a class="button button--primary" href="/#work" data-astro-prefetch>See the work</a>
       <a
         class="button button--outline"
         href={SITE.fiverrUrl}

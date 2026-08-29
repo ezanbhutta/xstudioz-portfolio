@@ -34,6 +34,20 @@ const meta = [serviceLabel, industry].filter(Boolean).join(' · ');
 const href = `/work/${project.id}/`;
 const delay = (index % 2) * 60;
 const placeholder = await lqipStyle(cover.src);
+
+/**
+ * Empty when nothing was written by hand, rather than a generated
+ * "<title> presentation cover".
+ *
+ * The whole card is one link, and its accessible name is everything inside it
+ * — so the fallback made every card announce the project twice: "Fitness Icon
+ * Set presentation cover, Fitness Icon Set, Logo Design · Fitness". The title,
+ * service and intent below the artwork already name it. A description an
+ * operator actually typed is theirs and is still used; one this file invented
+ * from the title sitting next to it never said anything the title did not. The
+ * marquee tile has always passed an empty alt for the same reason.
+ */
+const coverAltText = coverAlt ?? '';
 ---
 
 <li
@@ -97,7 +111,7 @@ const placeholder = await lqipStyle(cover.src);
           src={cover.src}
           srcset={cover.srcset}
           sizes={sizes}
-          alt={coverAlt || `${title} presentation cover`}
+          alt={coverAltText}
           width={cover.width}
           height={cover.height}
           loading={eager ? 'eager' : 'lazy'}
@@ -114,7 +128,15 @@ const placeholder = await lqipStyle(cover.src);
           to one cover is unreadable over the next. A panel is exactly as
           tall as its text, whatever the artwork behind it. */
       }
-      <div class="card-veil">
+      {
+        /* Hidden from assistive tech: it is a pointer affordance, and the
+          only thing it says is what the link already is. Announced, it came
+          FIRST — the whole card is one link, and its accessible name opened
+          with "View case study" before reaching the name of the project. The
+          title, service and intent below say what this card is; the cue only
+          says that a cursor may click it. */
+      }
+      <div class="card-veil" aria-hidden="true">
         <div class="card-copy">
           <span class="card-cue">
             View case study <span aria-hidden="true">→</span>

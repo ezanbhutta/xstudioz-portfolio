@@ -77,38 +77,52 @@ const jsonLd = {
 
 <BaseLayout title={`${category.title}`} description={description} jsonLd={jsonLd}>
   <article>
-    <header class="container page-hero service-hero">
-      <h1 class="page-title service-title">{category.title}</h1>
-      {category.outcome && <p class="service-outcome">{category.outcome}</p>}
-      {
-        /* `category.description` is deliberately NOT printed here.
+    {
+      /* A masthead, not a left column.
  
-          It was, briefly: the line saying what the client walks away with had
-          only ever reached <head>, so it was put in the hero. But the
-          "What's included" list below was derived from that same sentence, so
-          every service page then said the same thing twice, ~200px apart —
-          Animation's first bullet, "MP4 and GIF, ready for web, decks and
-          social", is a substring of its description. The list is the better
-          half of that pair: itemised, scannable, and the anchor every case
-          study's closing band links to. The sentence keeps its <head> job. */
-      }
-      {category.intro && <p class="page-lede service-intro">{category.intro}</p>}
-      <div class="service-actions">
-        <a
-          class="button button--primary"
-          href={SITE.fiverrUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Start a {category.navLabel ?? category.title} project <span aria-hidden="true">↗</span>
-        </a>
-        {
-          direct.length + viaExtras.length > 0 && (
-            <a class="button button--outline" href="#service-work">
-              See the work <span aria-hidden="true">↓</span>
-            </a>
-          )
-        }
+        Every block on this page — title, promise, argument, buttons, the
+        inclusions list — was stacked in one measure-wide column, so at 1440
+        the right two thirds of the first screen held nothing at all on five
+        of the site's eight page types. The service name and its promise are
+        the statement and take the left; the argument and the list of what
+        arrives are the detail and take the right. Below 1000px they stack in
+        the order they were already in. */
+    }
+    {
+      /* `category.description` is deliberately not printed on this page. The
+        line saying what the client walks away with had only ever reached
+        <head>, so it was put in the hero — but the "What's included" list is
+        derived from that same sentence, so every service page then said the
+        same thing twice, ~200px apart. Animation's first bullet, "MP4 and GIF,
+        ready for web, decks and social", is a substring of its description.
+        The list is the better half: itemised, and the anchor every case
+        study's closing band links to. The sentence keeps its <head> job. */
+    }
+    <header class="container page-hero service-hero">
+      <div class="service-say">
+        <h1 class="page-title service-title">{category.title}</h1>
+        {category.outcome && <p class="service-outcome">{category.outcome}</p>}
+      </div>
+
+      <div class="service-detail">
+        {category.intro && <p class="page-lede service-intro">{category.intro}</p>}
+        <div class="service-actions">
+          <a
+            class="button button--primary"
+            href={SITE.fiverrUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Start a {category.navLabel ?? category.title} project <span aria-hidden="true">↗</span>
+          </a>
+          {
+            direct.length + viaExtras.length > 0 && (
+              <a class="button button--outline" href="#service-work">
+                See the work <span aria-hidden="true">↓</span>
+              </a>
+            )
+          }
+        </div>
       </div>
     </header>
 
@@ -254,15 +268,78 @@ const jsonLd = {
     scroll-margin-block-start: var(--header-h);
   }
 
+  /**
+   * A specification across the page, not a list down the side of it.
+   *
+   * Three items stacked in a 44rem column under a 1400px masthead is a
+   * shopping list. Across, each item under its own rule with a numeral, it
+   * reads as what it is: the three things that arrive. The numerals come from
+   * the list itself — an ordered set of deliverables IS numbered — so nothing
+   * has to be typed to get them.
+   */
   .service-includes-list {
     margin-block-start: var(--space-sm);
-    max-inline-size: var(--measure-wide);
+    border-block-start: 0;
+    counter-reset: includes;
+  }
+
+  /* The numeral is the device, at every width — only the arrangement changes.
+     Stacked it hangs beside the item; across it sits above. */
+  .service-includes-list > :global(li)::before {
+    counter-increment: includes;
+    content: counter(includes, decimal-leading-zero);
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--tracking-wide);
+    color: var(--color-ink-mute);
+  }
+
+  .service-includes-list > :global(li) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 var(--space-sm);
+  }
+
+  @media (min-width: 760px) {
+    .service-includes-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+      gap: 0 var(--space-lg);
+    }
+
+    .service-includes-list > :global(li) {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-2xs);
+      align-content: start;
+      padding-block: var(--space-sm) var(--space-md);
+      border-block-start: 1px solid var(--color-line-strong);
+      border-block-end: 0;
+    }
   }
 
   .service-hero {
     /* ServiceNav sits immediately below and carries its own rule, so the
        hero does not need to reserve space of its own. */
     padding-block-end: var(--space-xl);
+  }
+
+  /* The statement takes the left, the detail the right. One column below
+     1000px, in the order the markup is already in. */
+  @media (min-width: 1000px) {
+    .service-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      align-items: end;
+      column-gap: var(--space-3xl);
+    }
+
+    /* Baselines, not boxes: the promise on the left and the argument on the
+       right should start their last line at the same height, which is what
+       `align-items: end` buys once both columns are their natural size. */
+    .service-detail {
+      padding-block-end: 0.35rem;
+    }
   }
 
   .service-title {
@@ -286,6 +363,12 @@ const jsonLd = {
 
   .service-intro {
     max-width: var(--measure);
+  }
+
+  @media (max-width: 999px) {
+    .service-detail {
+      margin-block-start: var(--space-md);
+    }
   }
 
   .service-actions {

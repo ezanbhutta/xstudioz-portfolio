@@ -80,55 +80,56 @@ const {
 </script>
 
 <style>
+  /**
+   * A wall, not a bento.
+   *
+   * The 7 + 5 bento was designed against 16:9 deck covers, where "half as
+   * wide" is also "half as tall" and two tiles in a row end within a hundred
+   * pixels of each other. The work is not that shape. Four of the five
+   * published covers are brand boards around 1542x2100 — portrait, ratio 0.70
+   * — and at 1440 the split put an 796x1042 tile beside a 568x744 one: a
+   * 300px step at the foot of every row, then a hole before the next row
+   * cleared the taller of the two. A grid of ragged blocks.
+   *
+   * Columns instead of grid tracks. Each column flows independently, so tiles
+   * of any height stack without leaving holes and every board keeps its own
+   * proportions — nothing is cropped to make a row line up, which is the
+   * whole point when the thing in the box is somebody's identity system.
+   *
+   * Column order also happens to be the right order: the browser fills column
+   * one top to bottom before column two, which is exactly the sequence the
+   * DOM is in, so reading order, tab order and visual order agree. A row-major
+   * grid gets that wrong the moment the tiles are different heights.
+   */
   .work-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    /* Fluid across, fixed down: at 680px a --space-lg column gutter is 5% of
-       the row, at 1440 it is 2.5%, and the bento's two tiles should not drift
-       apart as the canvas grows. */
-    gap: var(--space-3xl) clamp(1rem, 2.5vw, 2.25rem);
+    columns: 1;
+    column-gap: clamp(1rem, 2.5vw, 2.25rem);
     list-style: none;
     padding: 0;
     margin: 0;
   }
 
-  /* 1040, not 680.
-     
-     The 7 + 5 split is a bento at desktop widths and a pair of thumbnails
-     below them: at 680px the narrow tile resolves to about 267px, which is
-     too small to read a deck cover set in 9pt type. Between 680 and 1040 a
-     single full-width card is the better answer — the artwork gets the whole
-     measure instead of two cramped halves. */
-  @media (min-width: 1040px) {
+  .work-grid > :global(li) {
+    /* A card must never be split across the column break. */
+    break-inside: avoid;
+    /* The gap between boards down a column. Margin rather than `gap`, which
+       multi-column layout does not have in the block direction. */
+    margin-block-end: var(--space-3xl);
+  }
+
+  /* Astro inlines this component's <script> as an element inside the <ul>.
+     It has no box, but it can still take a column slot's worth of nothing at
+     the foot of a column if it is allowed to break. */
+  .work-grid > :global(script) {
+    display: none;
+  }
+
+  /* Two boards abreast is the most this work can take: at 1440 that is 682px
+     each, and a 682px board is 892px tall. Three would be 447px, which is a
+     thumbnail of a document. */
+  @media (min-width: 900px) {
     .work-grid {
-      /* Twelve columns, split 7 + 5. A 4 + 2 split on six columns put the
-         narrow tile at a third of the row — 371px against 821px — which was
-         too small to read the artwork in. 7 + 5 is 58/42: still clearly a
-         bento, with both tiles big enough to be looked at. */
-      grid-template-columns: repeat(12, minmax(0, 1fr));
-      align-items: start;
-    }
-
-    /* Wide, narrow, narrow, wide: each row reads 7 + 5 then 5 + 7, so the
-       eye changes direction every row instead of scanning a column.
-       `of li:not([hidden])` matters twice over. It skips hidden cards, so a
-       filtered grid re-flows into the same rhythm instead of leaving holes —
-       and it skips NON-cards, which is not hypothetical: Astro inlines this
-       component's own <script> as an element inside the <ul>, and counting
-       it shifted every card after the first into the wrong span. */
-    .work-grid > :global(li) {
-      grid-column: span 5;
-    }
-
-    .work-grid > :global(li:nth-child(4n + 1 of li:not([hidden]))),
-    .work-grid > :global(li:nth-child(4n + 4 of li:not([hidden]))) {
-      grid-column: span 7;
-    }
-
-    /* A trailing narrow tile with nothing beside it looks like a mistake;
-       let the last visible card finish its row. */
-    .work-grid > :global(li:last-child:nth-child(odd of li:not([hidden]))) {
-      grid-column: span 12;
+      columns: 2;
     }
   }
 </style>

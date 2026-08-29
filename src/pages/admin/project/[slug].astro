@@ -11,10 +11,12 @@
  * guess. `context`, `challenge` and `outcome` are statements about a real
  * client's business.
  *
- * The client quote is deliberately not collected here. The column and the
- * case study's rendering of it both remain, so anything already stored keeps
- * showing and restoring the fields is a template change — but there is no way
- * to type one in, which is the point.
+ * The client quote is collected here, and is the one field on this form that
+ * needs a second person's permission before it is typed. It sits in its own
+ * fold rather than inside Story, because Story is the studio describing the
+ * work and a quote is the client describing it — and because a set of marks
+ * still has exactly one client who commissioned it, so unlike Story it is a
+ * fair question to ask of every layout.
  */
 import AdminLayout from '@/layouts/AdminLayout.astro';
 import DeckManager from '@/components/admin/DeckManager.astro';
@@ -28,6 +30,7 @@ import {
   type FieldErrors,
 } from '@/lib/admin-data';
 import { listPages } from '@/lib/deck';
+import { jsonObject } from '@/lib/db';
 import { CATEGORIES, ACTIVE_CATEGORIES, type CategoryId } from '@/data/categories';
 import { LOGO_TYPES, GUIDELINE_TYPES, TYPE_FILTERS } from '@/data/filters';
 import { getSortedProjects } from '@/lib/content';
@@ -227,8 +230,34 @@ const linkFields = [
   val('linkedin', existing?.linkedin),
   listVal('other_links', existing?.other_links),
 ];
+/**
+ * The stored quote, unpacked into three fields.
+ *
+ * `testimonial` is one JSON column because the case study renders it as one
+ * block — a quote with no speaker is anonymous, not a quote from nobody. The
+ * form asks for its parts separately, so this splits it on the way in and
+ * `testimonialJson` reassembles it on the way out.
+ *
+ * Through `jsonObject`, which is the only thing that reads this column
+ * correctly: the driver hands back an already-parsed object here and a string
+ * on a host whose JSON column is a text alias, so anything that assumes one
+ * shape silently produces an empty form on the other.
+ */
+const storedQuote = jsonObject<{ quote?: string; name?: string; role?: string }>(
+  existing?.testimonial,
+);
+
+const quoteFields = [
+  val('testimonial_quote', storedQuote?.quote),
+  val('testimonial_name', storedQuote?.name),
+  val('testimonial_role', storedQuote?.role),
+];
+
 const storyCount = filled(...storyFields);
 const linkCount = filled(...linkFields);
+// Only the quote itself counts. A name with no quote publishes nothing, so
+// reporting "1 written" for it would be a count of something that is not there.
+const quoteCount = filled(quoteFields[0]);
 const extrasCount =
   checkedExtras.length + filled(listVal('extras_custom', existing?.extras_custom));
 
@@ -433,6 +462,7 @@ const readiness = isNew
         pages={images}
         pdf={existing?.pdf}
         layout={existing?.layout === 'icons' ? 'icons' : 'deck'}
+        cover={existing?.cover}
       />
     ) : (
       /* Uploading needs a project to attach pages to, so it cannot happen
@@ -678,6 +708,38 @@ const readiness = isNew
           </label>
         </details>
 
+        {/* Not marked data-engagement. Story asks the studio to describe a
+             brief, and a set of marks has no single brief to describe. A quote
+             is different: whoever commissioned the set is one client who can
+             be asked what they thought of it, exactly as on a deck. */}
+        <details class="fold" open={quoteCount > 0}>
+          <summary>
+            <span class="fold-title">Client quote</span>
+            <span class="fold-count">{quoteCount === 0 ? 'none' : 'set'}</span>
+          </summary>
+          <p class="legend-note">
+            Their words, not a paraphrase, and only with their permission — this is published under
+            their name on a page they can find. Clearing the quote removes the section; the name and
+            role publish nothing on their own.
+          </p>
+
+          <label>
+            <span class="lab">Quote</span>
+            <textarea name="testimonial_quote" set:text={quoteFields[0]} />
+          </label>
+          <div class="grid2">
+            <label>
+              <span class="lab">Who said it</span>
+              <input type="text" name="testimonial_name" value={quoteFields[1]} />
+            </label>
+            <label>
+              <span class="lab">Their role</span>
+              <span class="hint">Printed after the name, e.g. “Founder, Arch Chiropractic”.</span>
+              <input type="text" name="testimonial_role" value={quoteFields[2]} />
+            </label>
+          </div>
+        </details>
+
         <details class="fold" data-engagement hidden={setHides(linkCount)} open={linkCount > 0}>
           <summary>
             <span class="fold-title">Links</span>
@@ -727,8 +789,8 @@ const readiness = isNew
           </div>
           <p class="panel-note" data-cover-note>
             {currentLayout === 'icons'
-              ? 'The cover is the first sheet. Star any other in the set above to use that instead. This is what a screen reader announces for the thumbnail on the work grid.'
-              : 'The cover is page one of the deck. Star any other page above to use that instead. This is what a screen reader announces for the thumbnail on the work grid.'}
+              ? 'The cover is the tile a visitor sees on the work grid. Star the sheet above that best shows what the set is. This box is what a screen reader announces for that tile.'
+              : 'The cover is the tile a visitor sees on the work grid, and page one of a deck is usually its title slide — a name they can already read. Star the page above where the mark is in use. This box is what a screen reader announces for that tile.'}
           </p>
           <label>
             <span class="lab">Cover alt text</span>
@@ -829,8 +891,8 @@ const readiness = isNew
 
       if (coverNote) {
         coverNote.textContent = icons
-          ? 'The cover is the first sheet. Star any other in the set above to use that instead. This is what a screen reader announces for the thumbnail on the work grid.'
-          : 'The cover is page one of the deck. Star any other page above to use that instead. This is what a screen reader announces for the thumbnail on the work grid.';
+          ? 'The cover is the tile a visitor sees on the work grid. Star the sheet above that best shows what the set is. This box is what a screen reader announces for that tile.'
+          : 'The cover is the tile a visitor sees on the work grid, and page one of a deck is usually its title slide — a name they can already read. Star the page above where the mark is in use. This box is what a screen reader announces for that tile.';
       }
 
       const noun = icons ? 'sheet' : 'page';

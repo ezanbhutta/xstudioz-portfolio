@@ -103,9 +103,92 @@ const pages = await Promise.all(
   })),
 );
 
-// The stored path already points at the widest WebP that was written, so the
-// full-screen viewer uses it directly rather than asking the build for one.
-const viewerPages = images.map((img) => ({ src: img.src, alt: img.alt }));
+/**
+ * Chapters, from the labels typed against the pages themselves.
+ *
+ * A forty-five page deck is 38,000 pixels of one column. Every page is worth
+ * showing — the document is the deliverable — but a reader arriving two thirds
+ * of the way down has no idea whether they are looking at colour, typography
+ * or stationery, and no way to get to the part they came for. The count above
+ * the stack said "45 pages, in order", which is true and useless.
+ *
+ * Only the person who made the deck knows where its sections begin, so this is
+ * not inferred. A deck page carrying a label opens the chapter it names —
+ * the same `label` column an icon set uses for a mark's own name, because it
+ * is the same fact: this image has a name of its own. Page one is the hero and
+ * sits above the stack, so its label names the run that leads up to the first
+ * mark rather than printing a rule at the top of a section that has not
+ * started yet.
+ *
+ * Two named chapters is the floor. One rule two thirds down a deck, with
+ * nothing before it and nothing after, is not a structure — it is a deck
+ * somebody started labelling and stopped, and drawing it would say the
+ * document has one section that begins in the middle.
+ */
+type Chapter = { title: string | null; id: string; first: number; pages: typeof pages };
+
+const chapters: Chapter[] = [];
+const usedIds = new Set<string>();
+const chapterId = (title: string, at: number) => {
+  const base =
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'chapter';
+  // Two chapters called "Applications" would otherwise share one id, and both
+  // links in the index would go to the first.
+  return usedIds.has(base) ? `${base}-${at}` : (usedIds.add(base), base);
+};
+
+if (!isIconSet) {
+  // The hero's own label opens the leading chapter; without one it is an
+  // untitled run and prints no rule.
+  const opening = hero.label?.trim();
+  chapters.push({
+    title: opening || null,
+    id: opening ? chapterId(opening, 0) : '',
+    first: 0,
+    pages: [],
+  });
+
+  for (const page of pages) {
+    const title = page.img.label?.trim();
+    if (title) {
+      chapters.push({ title, id: chapterId(title, page.at), first: page.at, pages: [page] });
+    } else {
+      chapters[chapters.length - 1].pages.push(page);
+    }
+  }
+
+  // A leading run with no pages and no title is not a chapter — it happens
+  // whenever page two opens the first named one.
+  if (chapters[0].pages.length === 0 && !chapters[0].title) chapters.shift();
+}
+
+const namedChapters = chapters.filter((c) => c.title);
+const isChaptered = namedChapters.length >= 2;
+
+/**
+ * The stored path already points at the widest WebP that was written, so the
+ * full-screen viewer uses it directly rather than asking the build for one.
+ *
+ * The chapter rides along. Full screen is where a reader is most lost — the
+ * page is all artwork and the only orientation is "23 / 45" — and it is the
+ * one place the rules drawn down the page are not visible.
+ */
+const chapterAt: (string | null)[] = images.map(() => null);
+if (isChaptered) {
+  for (const chapter of chapters) {
+    if (!chapter.title) continue;
+    for (const page of chapter.pages) chapterAt[page.at] = chapter.title;
+    if (chapter.first === 0) chapterAt[0] = chapter.title;
+  }
+}
+const viewerPages = images.map((img, i) => ({
+  src: img.src,
+  alt: img.alt,
+  ...(chapterAt[i] ? { chapter: chapterAt[i]! } : {}),
+}));
 
 // Brand links, rendered only when set in the CMS. A social accepts a
 // full link or a bare username (the platform base is prepended); a value
@@ -303,10 +386,17 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
               <blockquote>
                 <p>{testimonial.quote}</p>
               </blockquote>
-              <figcaption>
-                {testimonial.name}
-                {testimonial.role && <span class="quote-role">{testimonial.role}</span>}
-              </figcaption>
+              {/* One string, not a name beside a span whose ::before supplied
+                  the comma. The formatter is entitled to put an expression and
+                  the element after it on separate lines, and that newline is a
+                  space — which rendered "Dana Okafor , Founder". Unreachable
+                  while the editor had no way to type a quote in; reachable the
+                  moment those fields came back. */}
+              {[testimonial.name, testimonial.role].filter(Boolean).length > 0 && (
+                <figcaption>
+                  {[testimonial.name, testimonial.role].filter(Boolean).join(', ')}
+                </figcaption>
+              )}
             </figure>
           )
         }
@@ -406,14 +496,18 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
         <section class="container project-gallery" aria-labelledby="gallery-heading">
           <div class="gallery-head">
             <p class="overline">{isIconSet ? 'The set' : 'The system'}</p>
-            <h2 id="gallery-heading" class="gallery-title">
-              {isIconSet ? 'Every mark' : 'Every page'}
-              <span class="accent-dot">.</span>
-            </h2>
+            {/* The dot has to touch the word. Every other use of this device
+                on the site writes it adjacent — `your brand<span…>.` — and the
+                newline the formatter puts here is a rendered space that does
+                not collapse against a visible full stop: "Every page ." */}
+            {/* prettier-ignore */}
+            <h2 id="gallery-heading" class="gallery-title">{isIconSet ? 'Every mark' : 'Every page'}<span class="accent-dot">.</span></h2>
             <p class="gallery-count">
               {isIconSet
                 ? `${images.length} ${images.length === 1 ? 'sheet' : 'sheets'} of icons.`
-                : `${images.length} pages, in order.`}
+                : isChaptered
+                  ? `${images.length} pages, in order, in ${namedChapters.length} chapters.`
+                  : `${images.length} pages, in order.`}
             </p>
             {/* A door, not a rumour.
                 
@@ -428,54 +522,99 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
                 Open the viewer <span aria-hidden="true">↗</span>
               </button>
             </p>
+
+            {/* The way in to a specific part.
+
+                A deck is read start to finish by whoever commissioned it and
+                skimmed by everyone else — a buyer wants to see the colour
+                system, an art director wants the typography. Without this the
+                only instrument for reaching page 31 is the scrollbar. */}
+            {isChaptered && (
+              <nav class="chapter-index" aria-label="Chapters">
+                <ol role="list">
+                  {namedChapters.map((chapter) => (
+                    <li>
+                      <a href={`#${chapter.id}`}>
+                        <span class="chapter-index-name">{chapter.title}</span>
+                        <span class="chapter-index-at" aria-hidden="true">
+                          {chapter.first + 1}
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+            )}
           </div>
 
-          <div class="gallery-stack">
-            {pages.map(({ img, at, placeholder }) => (
-              <figure class="gallery-figure" data-reveal="wipe">
-                <button
-                  type="button"
-                  class="page-open media"
-                  data-open-page={at}
-                  aria-label={`Open page ${at + 1} of ${images.length} full screen`}
+          <div class="gallery-stack" data-chaptered={isChaptered ? '' : undefined}>
+            {(isChaptered ? chapters : [{ title: null, id: '', first: 0, pages }]).map(
+              (chapter) => (
+                <section
+                  class="chapter"
+                  id={chapter.id || undefined}
+                  aria-labelledby={chapter.title ? `${chapter.id}-heading` : undefined}
                 >
-                  <picture>
-                    {img.avifSrcset && (
-                      <source type="image/avif" srcset={img.avifSrcset} sizes={heroSizes} />
-                    )}
-                    <img
-                      src={img.src}
-                      srcset={img.srcset}
-                      sizes={heroSizes}
-                      alt={img.alt}
-                      width={img.width}
-                      height={img.height}
-                      loading="lazy"
-                      decoding="async"
-                      style={placeholder}
-                    />
-                  </picture>
-                  {!isIconSet && (
-                    <span class="page-num" aria-hidden="true">
-                      {String(at + 1).padStart(2, '0')}
-                    </span>
+                  {chapter.title && (
+                    <h3 class="chapter-mark" id={`${chapter.id}-heading`}>
+                      <span class="chapter-name">{chapter.title}</span>
+                      <span class="chapter-span">
+                        {chapter.pages.length === 1 && chapter.first !== 0
+                          ? `page ${chapter.first + 1}`
+                          : `pages ${chapter.first + 1}–${
+                              (chapter.pages.at(-1)?.at ?? chapter.first) + 1
+                            }`}
+                      </span>
+                    </h3>
                   )}
-                  <span class="page-cue" aria-hidden="true">
-                    Enlarge
-                  </span>
-                </button>
-                {/* A sheet can say which group it holds — "Fitness", or
+                  {chapter.pages.map(({ img, at, placeholder }) => (
+                    <figure class="gallery-figure" data-reveal="wipe">
+                      <button
+                        type="button"
+                        class="page-open media"
+                        data-open-page={at}
+                        aria-label={`Open page ${at + 1} of ${images.length} full screen`}
+                      >
+                        <picture>
+                          {img.avifSrcset && (
+                            <source type="image/avif" srcset={img.avifSrcset} sizes={heroSizes} />
+                          )}
+                          <img
+                            src={img.src}
+                            srcset={img.srcset}
+                            sizes={heroSizes}
+                            alt={img.alt}
+                            width={img.width}
+                            height={img.height}
+                            loading="lazy"
+                            decoding="async"
+                            style={placeholder}
+                          />
+                        </picture>
+                        {!isIconSet && (
+                          <span class="page-num" aria-hidden="true">
+                            {String(at + 1).padStart(2, '0')}
+                          </span>
+                        )}
+                        <span class="page-cue" aria-hidden="true">
+                          Enlarge
+                        </span>
+                      </button>
+                      {/* A sheet can say which group it holds — "Fitness", or
                     "Mascot" — where a deck page is just page seven. Rendered
                     only when there is something to say, so a set part-way
                     through being labelled prints nothing rather than a rule. */}
-                {isIconSet && (img.label || img.logoType) && (
-                  <figcaption class="icon-caption">
-                    {img.label && <span class="icon-name">{img.label}</span>}
-                    {img.logoType && <span class="icon-kind">{img.logoType}</span>}
-                  </figcaption>
-                )}
-              </figure>
-            ))}
+                      {isIconSet && (img.label || img.logoType) && (
+                        <figcaption class="icon-caption">
+                          {img.label && <span class="icon-name">{img.label}</span>}
+                          {img.logoType && <span class="icon-kind">{img.logoType}</span>}
+                        </figcaption>
+                      )}
+                    </figure>
+                  ))}
+                </section>
+              ),
+            )}
           </div>
         </section>
       )
@@ -902,10 +1041,6 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
     color: var(--color-ink-mute);
   }
 
-  .quote-role::before {
-    content: ', ';
-  }
-
   .spec-table {
     margin: 0;
     border-block-start: 1px solid var(--color-line);
@@ -972,6 +1107,111 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
     display: grid;
     gap: var(--space-xl);
     margin-block-start: var(--space-xl);
+  }
+
+  /* A chapter break gets more air than a page break, so the structure is
+     legible before a word of it is read. */
+  .gallery-stack[data-chaptered] {
+    gap: var(--space-3xl);
+  }
+
+  .chapter {
+    display: grid;
+    gap: var(--space-xl);
+  }
+
+  /* Sticky against the chapter, not the page: the rule holds the top of the
+     column for exactly as long as its own pages are on screen, and is pushed
+     off by the next one. Its containing block is .chapter, which is why the
+     wrapper is a real box rather than display: contents. */
+  .chapter-mark {
+    position: sticky;
+    /* Pinned at the same offset every other anchor on the site lands at, so a
+       followed chapter link puts the rule exactly where it will stay. The rem
+       of air that offset leaves between the header and this bar is a problem
+       an opaque bar creates for itself — deck pages slid through the gap
+       between two fixed elements — and ::before below fills it. */
+    inset-block-start: var(--sticky-offset);
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2xs) var(--space-sm);
+    margin: 0;
+    padding-block: var(--space-2xs);
+    /* The stack scrolls under this, so it needs a floor of its own. */
+    background: var(--color-paper);
+    border-block-end: 1px solid var(--color-line-strong);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+  }
+
+  /* The rem between the header and the pinned bar. Container-width, which is
+     exactly as wide as the artwork that would otherwise show through it. */
+  .chapter-mark::before {
+    content: '';
+    position: absolute;
+    inset-block-end: 100%;
+    inset-inline: 0;
+    block-size: calc(var(--sticky-offset) - var(--header-h));
+    background: inherit;
+  }
+
+  .chapter-span {
+    font-weight: var(--weight-medium);
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--color-ink-mute);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .chapter-index {
+    margin-block-start: var(--space-md);
+  }
+
+  .chapter-index ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .chapter-index a {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-3xs);
+    min-height: var(--control-h);
+    padding-inline: var(--space-xs);
+    padding-block: 0.375rem;
+    border-radius: var(--radius-pill);
+    box-shadow: inset 0 0 0 1px var(--color-line-control);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-ink-soft);
+    text-decoration: none;
+    transition:
+      box-shadow var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .chapter-index a:hover {
+      box-shadow: inset 0 0 0 1px var(--color-ink);
+      color: var(--color-ink);
+    }
+  }
+
+  .chapter-index-at {
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-ink-mute);
   }
 
   .gallery-figure {

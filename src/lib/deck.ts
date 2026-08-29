@@ -218,16 +218,30 @@ export async function setPageMeta(
   slug: string,
   src: string,
   label: string,
-  logoType: string,
+  logoType?: string,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const kind = logoType.trim();
+  /**
+   * An omitted kind means "leave it alone", not "clear it".
+   *
+   * The label is now editable on a deck as well as a set — it is the chapter
+   * mark there — but the kind control belongs to a set and is hidden on a
+   * deck. Without this distinction, opening a set's page while the Layout
+   * select happened to say "deck" and tabbing out of the name would post an
+   * empty kind and erase it. The same rule the project save follows for the
+   * client quote: absent is not empty.
+   */
+  const kind = logoType?.trim();
   if (kind && !(LOGO_TYPES as readonly string[]).includes(kind)) {
     return { ok: false, reason: `"${kind}" is not one of the known logo types.` };
   }
 
   const [result] = await db().execute(
-    `UPDATE project_images SET label = ?, logo_type = ? WHERE project_slug = ? AND src = ?`,
-    [label.trim().slice(0, 120) || null, kind || null, slug, src],
+    kind === undefined
+      ? `UPDATE project_images SET label = ? WHERE project_slug = ? AND src = ?`
+      : `UPDATE project_images SET label = ?, logo_type = ? WHERE project_slug = ? AND src = ?`,
+    kind === undefined
+      ? [label.trim().slice(0, 120) || null, slug, src]
+      : [label.trim().slice(0, 120) || null, kind || null, slug, src],
   );
   if (((result as { affectedRows?: number }).affectedRows ?? 0) === 0) {
     return { ok: false, reason: 'That image is no longer in this project.' };

@@ -104,15 +104,20 @@ export const POST: APIRoute = async ({ params, request }) => {
       }
 
       case 'meta': {
-        // An icon's name and kind. Saved together because they are one
+        // An image's own name — an icon's, or the chapter a deck page opens —
+        // and, for a set, its kind. Saved together because they are one
         // thought — "this is the mascot" — and two requests would let a
         // dropped connection leave half of it stored.
+        //
+        // A missing `logoType` is passed on as missing rather than flattened
+        // to '': setPageMeta reads the difference as "leave it" against
+        // "clear it", and a deck posting a chapter name has no kind to send.
         if (typeof body.src !== 'string') return json({ error: 'Expected an image.' }, 400);
         const result = await setPageMeta(
           slug,
           body.src,
           typeof body.label === 'string' ? body.label : '',
-          typeof body.logoType === 'string' ? body.logoType : '',
+          typeof body.logoType === 'string' ? body.logoType : undefined,
         );
         if (!result.ok) return json({ error: result.reason }, 400);
         return json({ ok: true });

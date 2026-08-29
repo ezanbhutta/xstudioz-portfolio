@@ -10,7 +10,7 @@
  * including values that "obviously" came from a select box, because the admin
  * accepts an HTTP request and an HTTP request can say anything.
  */
-import { query, db, type Param } from './db';
+import { query, db, jsonObject, type Param } from './db';
 import { resolveImage } from '@/lib/content';
 import { CATEGORY_IDS } from '@/data/categories';
 import { LOGO_TYPES, GUIDELINE_TYPES } from '@/data/filters';
@@ -47,7 +47,15 @@ export type AdminProject = {
   direction: string | null;
   delivered: string;
   outcome: string | null;
-  testimonial: string | null;
+  /**
+   * The raw column, whatever the driver made of it.
+   *
+   * Not `string | null`: mysql2 hands a JSON column back already parsed on a
+   * server that has a real JSON type, and as text on one where JSON is an
+   * alias for LONGTEXT. Typing it as a string made `JSON.parse(String(v))`
+   * look correct and produce `[object Object]`. Read it with `jsonObject`.
+   */
+  testimonial: unknown;
   pdf: string | null;
   cover: string | null;
   cover_alt: string | null;
@@ -167,16 +175,19 @@ export function validateProject(form: FormData, isNew: boolean): FieldErrors {
 }
 
 /**
- * The client quote, which the editor no longer collects.
+ * The client quote, assembled from the three fields the form asks for.
  *
- * The fields are gone from the form, so nothing new can be entered. This still
- * has to run, because the save is an upsert that writes every column: reading
- * an absent field as "empty" would set testimonial = NULL and quietly delete a
- * quote that a project already carries — the same trap the grid position had.
- * Whatever is stored stays stored until something deliberately clears it.
+ * One JSON column, because the case study renders it as one block and a name
+ * with no quote publishes nothing. The quote is what decides: with one, the
+ * name and role ride along; without one, there is nothing to attribute.
  *
- * The form value is still honoured if one is ever posted, so restoring the
- * fields is a template change and nothing more.
+ * The absent-field branch is not dead code. The save is an upsert that writes
+ * every column, so reading an absent field as "empty" would set
+ * testimonial = NULL and quietly delete a quote a project already carries —
+ * the same trap the grid position had. The form posts these fields on every
+ * layout, so in practice the emptied branch is the one that runs; the fallback
+ * is what keeps a quote safe from any caller that does not send them, which is
+ * how this column survived the period when the form had no fields at all.
  */
 async function testimonialJson(form: FormData, slug: string): Promise<string | null> {
   const quote = str(form.get('testimonial_quote'));
@@ -188,11 +199,15 @@ async function testimonialJson(form: FormData, slug: string): Promise<string | n
 
   // No quote in the form: keep the row's own value rather than erasing it.
   if (form.has('testimonial_quote')) return null; // present but emptied — a real clear
-  const [row] = await query<{ testimonial: string | null }>(
+  const [row] = await query<{ testimonial: unknown }>(
     `SELECT testimonial FROM projects WHERE slug = ?`,
     [slug],
   );
-  return row?.testimonial ?? null;
+  // Re-serialised rather than passed through, because what comes back may be
+  // an object or a string depending on the server, and only one of those goes
+  // into a text parameter as itself.
+  const stored = jsonObject(row?.testimonial);
+  return stored ? JSON.stringify(stored) : null;
 }
 
 /** Insert or update, from a validated form. */

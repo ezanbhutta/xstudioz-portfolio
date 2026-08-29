@@ -134,7 +134,7 @@ const jsonLd = {
                 the script pairs them without a global selector — and the
                 secondary "delivered as part of" grid below stays untouched
                 by them. */
-              <div class="service-grid" data-facet-scope>
+              <div class="service-grid" data-facet-scope={`service-${category.id}`}>
                 <SectionFilters
                   category={category}
                   projects={direct}

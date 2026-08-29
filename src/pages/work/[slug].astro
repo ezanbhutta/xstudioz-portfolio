@@ -237,6 +237,9 @@ const story = [
   ['Direction', direction],
 ].filter((row): row is [string, string] => Boolean(row[1]));
 
+/** Is there anything in the body at all, once the summary reads above? */
+const hasStory = story.length > 0 || Boolean(outcome) || Boolean(testimonial?.quote);
+
 const specs = [
   ['Service', categoryInfo.title],
   ['Industry', industry],
@@ -348,105 +351,165 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
       </p>
 
       <h1 class="project-title">{title}</h1>
-      {/* The value proposition, at statement scale, before any image */}
-      {intent && <p class="project-intent">{intent}</p>}
 
       {
-        links.length > 0 && (
-          <p class="project-links">
-            {links.map((l) => (
-              <a href={l.href} target="_blank" rel="noopener noreferrer">
-                {l.label} <span aria-hidden="true">↗</span>
-              </a>
-            ))}
-          </p>
-        )
+        /**
+         * The masthead's two halves, under a banner title.
+         *
+         * The title stays the width of the page — a project name is the one
+         * thing on this page that should not be asked to share a line, and
+         * three of the five published ones run past 25 characters, so a
+         * narrower column simply broke them across three lines and pushed the
+         * work down the page. Under it: what the studio says the work is on
+         * the left, at statement scale, and what it actually was on the right.
+         *
+         * The summary moved up here from the body. It is the argument that
+         * belongs beside the promise, and its old home was a 7fr column that
+         * left the reading and the facts each using half a page with a void
+         * between them.
+         */
+      }
+      <div class="project-lead">
+        {/* The value proposition, at statement scale, before any image */}
+        {intent && <p class="project-intent">{intent}</p>}
+
+        <div class="project-lead-detail">
+          <p class="project-summary">{summary}</p>
+
+          {
+            links.length > 0 && (
+              <p class="project-links">
+                {links.map((l) => (
+                  <a href={l.href} target="_blank" rel="noopener noreferrer">
+                    {l.label} <span aria-hidden="true">↗</span>
+                  </a>
+                ))}
+              </p>
+            )
+          }
+        </div>
+      </div>
+
+      {
+        /**
+         * What this is, beside what it is called.
+         *
+         * These four facts identify the project — the service it was bought
+         * as, the industry it was drawn for, the kind of mark. They are not
+         * commentary on the work, so they belong with the title rather than
+         * beside the reading, and putting them there fills a masthead that was
+         * a title over an empty right half at every width above 1000px.
+         *
+         * They were an `aside` in the body declared `position: sticky`, which
+         * measured as very nearly nothing: the body it sticks inside is 447px
+         * tall on a single-board project and 495px on a thirteen-page deck, so
+         * the panel followed the reader for about two hundred pixels and then
+         * scrolled away like anything else.
+         */
       }
     </header>
 
-    <div class="container project-body">
-      <div class="project-story">
-        <section aria-labelledby="overview-heading">
-          <p class="overline story-label" id="overview-heading">Overview</p>
-          <p class="project-summary">{summary}</p>
-        </section>
+    {
+      /**
+       * The specification, and where it sits relative to the work.
+       *
+       * A sibling of the masthead rather than a child of it, because on a
+       * phone the two want opposite orders. There, everything is one column:
+       * back link, breadcrumb, a title over three lines, a statement over
+       * four, a summary over five and then four stacked facts put the board
+       * at y=1092 on an 844px screen — a full screen of writing before any
+       * work, which is the thing this site was rebuilt to stop doing. Ordered
+       * after the board on a phone and before it on a desktop, where it costs
+       * the fold nothing because it sits beside the words rather than under
+       * them.
+       */
+    }
+    {
+      (specs.length > 0 || deliverables.length > 0) && (
+        <dl class="container project-facts">
+          {specs.map(([label, value]) => (
+            <div class="fact">
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+          {/* One more column, not a band of its own. What arrived is the
+                same kind of fact as what it was for, and every published
+                project lists exactly one thing — a full-width section under
+                the work for the words "Wordmark logo" was 200px of page
+                introducing a single line. */}
+          {deliverables.length > 0 && (
+            <div class="fact">
+              <dt>Delivered</dt>
+              <dd>
+                <ul class="fact-list" role="list">
+                  {deliverables.map((d) => (
+                    <li>{d}</li>
+                  ))}
+                </ul>
+              </dd>
+            </div>
+          )}
+        </dl>
+      )
+    }
 
-        {
-          story.map(([label, text]) => (
-            <section class="story-row" aria-label={label}>
-              <p class="overline story-label">{label}</p>
-              <p class="story-text">{text}</p>
-            </section>
-          ))
-        }
+    {
+      /* Nothing left to say is a real state now that the summary reads in the
+        masthead: four of the five published projects carry no story sections,
+        no verified outcome and no quote, and an empty div with 4rem of padding
+        is 4rem of nothing between the work and the ask. */
+    }
+    {
+      hasStory && (
+        <div class="container project-body">
+          <div class="project-story">
+            {story.map(([label, text]) => (
+              <section class="story-row" aria-label={label}>
+                <p class="overline story-label">{label}</p>
+                <p class="story-text">{text}</p>
+              </section>
+            ))}
 
-        {
-          outcome && (
-            <section class="story-row story-row--outcome" aria-label="Outcome">
-              <p class="overline story-label">Outcome</p>
-              <p class="story-text">{outcome}</p>
-            </section>
-          )
-        }
+            {outcome && (
+              <section class="story-row story-row--outcome" aria-label="Outcome">
+                <p class="overline story-label">Outcome</p>
+                <p class="story-text">{outcome}</p>
+              </section>
+            )}
 
-        {
-          testimonial?.quote && (
-            <figure class="project-quote">
-              <blockquote>
-                <p>{testimonial.quote}</p>
-              </blockquote>
-              {/* One string, not a name beside a span whose ::before supplied
+            {testimonial?.quote && (
+              <figure class="project-quote">
+                <blockquote>
+                  <p>{testimonial.quote}</p>
+                </blockquote>
+                {/* One string, not a name beside a span whose ::before supplied
                   the comma. The formatter is entitled to put an expression and
                   the element after it on separate lines, and that newline is a
                   space — which rendered "Dana Okafor , Founder". Unreachable
                   while the editor had no way to type a quote in; reachable the
                   moment those fields came back. */}
-              {[testimonial.name, testimonial.role].filter(Boolean).length > 0 && (
-                <figcaption>
-                  {[testimonial.name, testimonial.role].filter(Boolean).join(', ')}
-                </figcaption>
-              )}
-            </figure>
-          )
-        }
-      </div>
+                {[testimonial.name, testimonial.role].filter(Boolean).length > 0 && (
+                  <figcaption>
+                    {[testimonial.name, testimonial.role].filter(Boolean).join(', ')}
+                  </figcaption>
+                )}
+              </figure>
+            )}
+          </div>
+        </div>
+      )
+    }
 
-      <aside class="project-spec" aria-label="Project details">
-        <dl class="spec-table">
-          {
-            specs.map(([label, value]) => (
-              <div class="spec-row">
-                <dt>{label}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))
-          }
-        </dl>
-
-        {
-          deliverables.length > 0 && (
-            <div class="spec-block">
-              <p class="overline spec-label">Delivered</p>
-              <ul class="spec-list" role="list">
-                {deliverables.map((d) => (
-                  <li>{d}</li>
-                ))}
-              </ul>
-            </div>
-          )
-        }
-
-        {
-          extras.length > 0 && deliverables.length === 0 && (
-            <p class="spec-tags">
-              {extras.map((e) => (
-                <span class="tag">{e}</span>
-              ))}
-            </p>
-          )
-        }
-      </aside>
-    </div>
+    {
+      extras.length > 0 && deliverables.length === 0 && (
+        <p class="container project-tags">
+          {extras.map((e) => (
+            <span class="tag">{e}</span>
+          ))}
+        </p>
+      )
+    }
 
     {
       /* The deck opens here. Cover first, at size, then every page below it —
@@ -725,8 +788,26 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
                         />
                       </picture>
                     </span>
-                    <span class="project-nav-title">{p.data.title}</span>
-                    {p.data.intent && <span class="project-nav-intent">{p.data.intent}</span>}
+                    {/* The same specimen label the wall uses: a hairline the
+                        width of the board, then what it is. Prev and next are
+                        two adjacent projects rather than a numbered set, so
+                        the numeral is the direction — this is the one place on
+                        the site where WHICH way you are going is the fact
+                        worth printing. */}
+                    <span class="project-nav-say">
+                      <span class="project-nav-dir" aria-hidden="true">
+                        {p === prev ? '←' : '→'}
+                      </span>
+                      <span class="project-nav-words">
+                        <span class="project-nav-title">{p.data.title}</span>
+                        <span class="project-nav-meta">
+                          {[getCategory(p.data.category).title, p.data.industry]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </span>
+                        {p.data.intent && <span class="project-nav-intent">{p.data.intent}</span>}
+                      </span>
+                    </span>
                   </a>
                 </li>
               ))}
@@ -766,12 +847,33 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
    *
    * Ordering rather than moving the markup: the hero carries the
    * view-transition name the grid morphs into, and the spec aside is
-   * position: sticky inside .project-body. Both keep working untouched; only
+   * the sticky rail the body used to carry. Both keep working untouched; only
    * the paint order changes.
    */
   .project {
     display: flex;
     flex-direction: column;
+  }
+
+  /* The promise on the left, what the work actually was on the right. One
+     column below 1000px, in the order the markup is already in. */
+  .project-lead {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  @media (min-width: 1000px) {
+    .project-lead {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: start;
+      column-gap: var(--space-3xl);
+    }
+  }
+
+  .project-lead-detail {
+    display: grid;
+    gap: var(--space-sm);
+    align-content: start;
   }
 
   .project-header {
@@ -782,6 +884,24 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
 
   .project-back {
     margin-block-end: var(--space-lg);
+  }
+
+  /* On a phone the masthead is one column, so every line of chrome above the
+     title is a line between the visitor and the work. 56px of padding and
+     36px between a back link and a breadcrumb is desktop generosity; here it
+     is 60px of the fold spent on two pieces of navigation. */
+  @media (max-width: 599px) {
+    .project-header {
+      padding-block-start: var(--space-md);
+    }
+
+    .project-back {
+      margin-block-end: var(--space-sm);
+    }
+
+    .project-lead {
+      gap: var(--space-sm);
+    }
   }
 
   .back-link {
@@ -1061,23 +1181,13 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
     gap: var(--space-sm);
   }
 
+  /* One column at a reading measure. The 7fr/4fr split existed to hold the
+     spec aside; the facts are in the masthead now and the reading gets the
+     page to itself. */
   .project-body {
     display: grid;
     gap: var(--space-2xl);
-    padding-block: var(--space-xl) var(--space-3xl);
-  }
-
-  @media (min-width: 1000px) {
-    .project-body {
-      grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
-      gap: var(--space-3xl);
-      align-items: start;
-    }
-
-    .project-spec {
-      position: sticky;
-      top: 6rem;
-    }
+    padding-block: var(--space-xl) var(--space-2xl);
   }
 
   .project-story {
@@ -1123,6 +1233,69 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
     margin-block-start: var(--space-sm);
     font-size: var(--text-sm);
     color: var(--color-ink-mute);
+  }
+
+  /* Set as a masthead panel rather than a table: label above value, in a row
+     of columns that wraps, so four facts read across the space beside a title
+     instead of down a 416px rail. */
+  .project-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: var(--space-sm) var(--space-lg);
+    /* Block only. `margin: 0` on a <dl> that is also a .container zeroes the
+       `margin-inline: auto` the container centres itself with — the same trap
+       the hero figure fell into. Measured at 1440: the specification started
+       at x=64 against a title at x=84. */
+    margin-block: 0;
+    /* Default order 0: after the board, which on a phone is where it goes. */
+    padding-block: var(--space-lg) var(--space-2xl);
+  }
+
+  /* Into the masthead. `-1` is the hero's group, and within a group the DOM
+     decides — the facts are written before the figure, so they land above it. */
+  @media (min-width: 1000px) {
+    .project-facts {
+      order: -1;
+      padding-block: var(--space-xl) 0;
+    }
+  }
+
+  .fact {
+    display: grid;
+    gap: var(--space-3xs);
+    align-content: start;
+    padding-block-start: var(--space-2xs);
+    border-block-start: 1px solid var(--color-line-strong);
+  }
+
+  .fact dt {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-ink-mute);
+  }
+
+  .fact dd {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-md);
+    font-weight: var(--weight-medium);
+    letter-spacing: var(--tracking-tight);
+    color: var(--color-ink);
+  }
+
+  .fact-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.15em;
+  }
+
+  .project-tags {
+    padding-block-end: var(--space-3xl);
   }
 
   .spec-table {
@@ -1375,6 +1548,46 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
     object-fit: cover;
     object-position: 50% 0;
     transition: transform var(--duration-slower) var(--ease-out);
+  }
+
+  /* Matches the grid card's label exactly: a rule the width of the board, a
+     mark in the margin, the words beside it. Two components, one device. */
+  .project-nav-say {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    gap: 0 var(--space-sm);
+    margin-block-start: var(--space-sm);
+    padding-block-start: var(--space-sm);
+    border-block-start: 1px solid var(--color-line-strong);
+  }
+
+  .project-nav-words {
+    display: grid;
+    gap: var(--space-3xs);
+    min-inline-size: 0;
+  }
+
+  .project-nav-dir {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    color: var(--color-ink-mute);
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  .project-nav-meta {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-ink-mute);
+  }
+
+  @media (hover: hover) {
+    .project-nav-link:hover .project-nav-dir {
+      color: var(--color-accent);
+    }
   }
 
   .project-nav-title {

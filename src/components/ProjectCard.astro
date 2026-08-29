@@ -116,8 +116,6 @@ const placeholder = await lqipStyle(cover.src);
       }
       <div class="card-veil">
         <div class="card-copy">
-          <p class="card-meta">{meta}</p>
-          {intent && <p class="card-intent">{intent}</p>}
           <span class="card-cue">
             View case study <span aria-hidden="true">→</span>
           </span>
@@ -125,7 +123,23 @@ const placeholder = await lqipStyle(cover.src);
       </div>
     </div>
 
-    <h3 class="card-title">{title}</h3>
+    {
+      /* Under the artwork, not behind a hover.
+        
+        This stack used to live inside `.card-veil`, which is `opacity: 0`
+        until the pointer arrives — so on a phone, where there is no pointer,
+        it was shown by a `(hover: none)` block, and on a laptop the grid was
+        nine covers with nothing but a title. Six of nine titles here end in
+        "Brand Guidelines"; the line that distinguishes them was the one
+        being hidden. It reads at rest now, in the same title / label /
+        sentence stack the project nav already uses at the foot of a case
+        study. */
+    }
+    <div class="card-say">
+      <h3 class="card-title">{title}</h3>
+      <p class="card-meta">{meta}</p>
+      {intent && <p class="card-intent">{intent}</p>}
+    </div>
   </a>
 </li>
 
@@ -147,8 +161,12 @@ const placeholder = await lqipStyle(cover.src);
     aspect-ratio: var(--card-ratio, 16 / 9);
     overflow: hidden;
     border-radius: var(--radius-md);
-    background: var(--color-paper-raised);
-    box-shadow: inset 0 0 0 1px var(--color-line);
+    /* The mat behind the artwork. Not --color-paper-raised, which is pure
+       white in light mode: a deck page is usually white too, so the card's
+       edge dissolved into the page exactly where the frame is meant to be.
+       --image-bg is the half-step of grey that exists for this. */
+    background: var(--image-bg);
+    box-shadow: var(--image-frame);
     transition:
       box-shadow var(--duration-base) var(--ease-out),
       transform var(--duration-base) var(--ease-out);
@@ -237,19 +255,29 @@ const placeholder = await lqipStyle(cover.src);
     }
   }
 
+  .card-say {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
+    margin-block-start: var(--space-sm);
+  }
+
+  /* Both were hardcoded #fff because they sat on artwork. On paper that is
+     white on white, so they move onto the ink tokens as they come out. */
   .card-meta {
     font-family: var(--font-sans);
     font-size: var(--text-xs);
     font-weight: var(--weight-semibold);
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
-    color: #fff;
+    color: var(--color-ink-mute);
   }
 
   .card-intent {
-    font-size: var(--text-md);
-    color: #fff;
-    max-width: 40ch;
+    font-size: var(--text-sm);
+    line-height: 1.45;
+    color: var(--color-ink-soft);
+    max-width: 46ch;
   }
 
   .card-cue {
@@ -261,7 +289,6 @@ const placeholder = await lqipStyle(cover.src);
   }
 
   .card-title {
-    margin-block-start: var(--space-sm);
     font-size: var(--text-lg);
     font-weight: var(--weight-display);
     letter-spacing: var(--tracking-tight);
@@ -271,10 +298,10 @@ const placeholder = await lqipStyle(cover.src);
   @media (hover: hover) {
     .card-link:hover .card-media {
       transform: translateY(-4px);
-      box-shadow:
-        inset 0 0 0 1px var(--color-line-strong),
-        var(--shadow-lift),
-        var(--glow-card);
+      /* The widened edge leads the lift cue; the violet bloom follows it.
+         Before, the ring was inset and invisible, so the only thing that
+         answered a hover was a glow with no object under it. */
+      box-shadow: var(--image-frame-hover), var(--shadow-lift), var(--glow-card);
     }
 
     .card-link:hover .card-media::before,
@@ -305,20 +332,13 @@ const placeholder = await lqipStyle(cover.src);
     transform: scale(1.04);
   }
 
-  /* Touch has no hover, so the metadata would never appear. Show the panel
-     always — and drop the tile-wide dim, which on touch would be permanent
-     and would dull every cover in the grid. */
+  /* Touch has no hover, and the veil now carries only the "View case study"
+     cue — which on a device where the whole card is the tap target says
+     nothing a tap does not already. The metadata it used to reveal is
+     printed under the artwork for everyone, so this block has nothing left
+     to do but dim every cover in the grid permanently. */
   @media (hover: none) {
     .card-veil {
-      opacity: 1;
-      background: none;
-    }
-
-    .card-copy {
-      transform: none;
-    }
-
-    .card-cue {
       display: none;
     }
   }

@@ -598,8 +598,13 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
     font-weight: var(--weight-display);
     letter-spacing: var(--tracking-tight);
     line-height: var(--leading-snug);
-    color: var(--color-accent);
-    max-width: 24ch;
+    /* Ink, not accent. tokens.css rations the violet to one thing per view —
+       the case study already spends it on the header rule and the Fiverr
+       pill — and `.service-outcome` makes the argument against this exact
+       treatment in its own comment: a promise set in purple reads as a
+       highlighter pen over the sentence rather than as the sentence. */
+    color: var(--color-ink);
+    max-width: var(--measure-statement);
   }
 
   .project-links {
@@ -707,8 +712,16 @@ const heroSizes = '(min-width: 1360px) 1232px, 92vw';
      into the "Every page" heading with nothing between them.                  */
   .project-hero {
     /* A <figure> so an icon sheet can carry its caption; figures default to a
-       browser margin that would misalign it against every other container. */
-    margin: 0;
+       browser margin that would misalign it against every other container.
+       
+       Block-only, though. This was `margin: 0`, which also zeroed the
+       `margin-inline: auto` that `.container` uses to centre itself — so the
+       largest plate on the site pinned to the left edge while every other
+       container centred. Measured at 1440: left 0px, right 40px, against
+       20/20 for its siblings. The gap grows with the viewport, because it is
+       (viewport − 1400) / 2: 260px at 1920, 580px at 2560. */
+    margin-block: 0;
+    margin-inline: auto;
     padding-block-end: var(--space-2xl);
   }
 

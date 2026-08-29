@@ -1,5 +1,6 @@
 ---
 import type { ReadyProject } from '@/lib/projects';
+import { categoryLabel } from '@/data/categories';
 
 /**
  * A slow, seamless column of real project covers beside the hero headline.
@@ -13,9 +14,14 @@ import type { ReadyProject } from '@/lib/projects';
  * the loop has no seam to hide. The duplicate half is aria-hidden, so a
  * screen reader hears each project once.
  *
- * It is decoration, so it is quiet about it: no links, no controls, paused
- * for anyone who asked for less motion, and the whole thing is skipped by
- * assistive tech (the same covers are a keyboard tab away, in the grid).
+ * It used to be decoration — no links, no captions, aria-hidden — which made
+ * the first work a visitor sees the one thing on the site they cannot act on.
+ * Hovering already paused the drift, so it invited a click and then answered
+ * nothing. Each tile is a link now, and says which project it is.
+ *
+ * The duplicate half stays hidden: the track renders the column twice, so
+ * naively exposing it would put every project in the tab order and the
+ * accessibility tree twice.
  */
 interface Props {
   projects: ReadyProject[];
@@ -32,31 +38,42 @@ const columns =
 
 {
   projects.length > 0 && (
-    <div class="marquee" aria-hidden="true">
+    <div class="marquee">
       {columns.map((column, c) => (
         <div class:list={['marquee-col', { 'marquee-col--reverse': c === 1 }]}>
           <div class="marquee-track">
-            {[...column, ...column].map((p) => (
-              <figure class="marquee-tile">
-                <picture>
-                  {p.data.cover.avifSrcset && (
-                    <source
-                      type="image/avif"
-                      srcset={p.data.cover.avifSrcset}
-                      sizes="(min-width: 1100px) 320px, 40vw"
+            {[...column, ...column].map((p, i) => (
+              <figure class="marquee-tile" aria-hidden={i >= column.length ? 'true' : undefined}>
+                <a
+                  class="marquee-link"
+                  href={`/work/${p.id}/`}
+                  data-astro-prefetch
+                  tabindex={i >= column.length ? -1 : undefined}
+                >
+                  <picture>
+                    {p.data.cover.avifSrcset && (
+                      <source
+                        type="image/avif"
+                        srcset={p.data.cover.avifSrcset}
+                        sizes="(min-width: 1100px) 320px, 92vw"
+                      />
+                    )}
+                    <img
+                      src={p.data.cover.src}
+                      srcset={p.data.cover.srcset}
+                      sizes="(min-width: 1100px) 320px, 92vw"
+                      alt=""
+                      width={p.data.cover.width}
+                      height={p.data.cover.height}
+                      loading="lazy"
+                      decoding="async"
                     />
-                  )}
-                  <img
-                    src={p.data.cover.src}
-                    srcset={p.data.cover.srcset}
-                    sizes="(min-width: 1100px) 320px, 40vw"
-                    alt=""
-                    width={p.data.cover.width}
-                    height={p.data.cover.height}
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </picture>
+                  </picture>
+                  <figcaption class="marquee-say">
+                    <span class="marquee-name">{p.data.title}</span>
+                    <span class="marquee-kind">{categoryLabel(p.data.category)}</span>
+                  </figcaption>
+                </a>
               </figure>
             ))}
           </div>
@@ -82,6 +99,26 @@ const columns =
   @media (min-width: 1100px) {
     .marquee {
       grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* One lane below the two-column hero. Two lanes at 390px is two 45%-wide
+     columns of postage stamps; one lane is a cover you can actually read.
+     The mask moves onto the column so the single lane still fades at both
+     of its own ends. */
+  @media (max-width: 1099px) {
+    .marquee {
+      block-size: auto;
+      mask-image: none;
+    }
+
+    .marquee-col {
+      block-size: clamp(18rem, 42vh, 26rem);
+      mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+    }
+
+    .marquee-col--reverse {
+      display: none;
     }
   }
 
@@ -122,16 +159,67 @@ const columns =
      different artwork reads as one set of objects in one room. */
   .marquee-tile {
     margin: 0;
-    overflow: hidden;
     border-radius: var(--radius-md);
-    background: var(--color-paper-raised);
-    box-shadow:
-      inset 0 0 0 1px var(--color-line),
-      var(--shadow-md);
+    /* --image-bg, not --color-paper-raised: that token is pure white in light
+       mode, and a deck page is usually white too, so the tile's edge
+       dissolved into exactly the frame that is meant to hold it. */
+    background: var(--image-bg);
+    box-shadow: var(--image-frame), var(--shadow-md);
+    overflow: hidden;
+    transition:
+      box-shadow var(--duration-base) var(--ease-out),
+      transform var(--duration-base) var(--ease-out);
+  }
+
+  .marquee-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
   }
 
   .marquee-tile :global(img) {
     inline-size: 100%;
     block-size: auto;
+    display: block;
+  }
+
+  /* Names the cover. Without this a visitor who likes one has nothing to
+     search for and nothing to ask about. */
+  .marquee-say {
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+    padding: var(--space-2xs) var(--space-xs) var(--space-xs);
+  }
+
+  .marquee-name {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-ink-soft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .marquee-kind {
+    font-size: var(--text-xs);
+    color: var(--color-ink-mute);
+  }
+
+  @media (hover: hover) {
+    .marquee-link:hover .marquee-name {
+      color: var(--color-ink);
+    }
+  }
+
+  .marquee-tile:has(.marquee-link:hover),
+  .marquee-tile:has(.marquee-link:focus-visible) {
+    box-shadow: var(--image-frame-hover), var(--shadow-lift), var(--glow-card);
+  }
+
+  .marquee-link:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+    border-radius: var(--radius-md);
   }
 </style>

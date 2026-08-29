@@ -51,9 +51,10 @@ export function projectDeliverables(data: Project['data']): string[] {
  *
  * A project belongs to a service when it is tagged with that category, and
  * *also* when it carried the service as an add-on, via `relatedExtras`. Both
- * live services list no extras today, so the second path returns nothing —
- * it stays because it is the mechanism that lets a future service show real
- * work from day one instead of an empty grid.
+ * second path is live: Stationery lists "Stationery Design Kit" and Social
+ * Media lists "Social Media Kit", and five published projects carry one or
+ * both — so it is what lets a service with no case study of its own still
+ * show real work rather than an empty grid.
  */
 export function projectsForService(
   projects: ReadyProject[],

@@ -235,8 +235,17 @@
      Every portfolio image gets the same frame, so covers of wildly different
      brightness sit together as one set.                                      */
   --image-radius: var(--radius-xs);
-  --image-frame: inset 0 0 0 1px var(--color-line);
-  --image-frame-hover: inset 0 0 0 1px var(--color-line-strong);
+  /* Outset, not inset.
+     
+     This was `inset`, which paints inside the padding box and therefore
+     UNDER the artwork. Every image on this site is opaque and fills its box
+     exactly, so the one device meant to make a teal cover, an orange cover
+     and a black cover read as one hung set rendered nowhere at all —
+     measured across a cover's edge, the page ground ran straight into the
+     artwork with no line between. An outset ring sits on the boundary, where
+     a frame goes, and follows the border radius. */
+  --image-frame: 0 0 0 1px var(--color-line-strong);
+  --image-frame-hover: 0 0 0 1px var(--color-line-control);
   /* Not --color-paper-raised, which is pure white in light mode: a deck page
      is usually white too, so the frame would vanish and pages would bleed
      into the page. A half-step of grey keeps every image's edge visible. */

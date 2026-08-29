@@ -143,10 +143,69 @@ const facets = [
       if (status) status.textContent = `Showing ${label}`;
     };
 
+    /**
+     * Name every card, so the transition moves them instead of dissolving.
+     *
+     * A view transition was already running here, and it did almost nothing:
+     * with no element carrying a `view-transition-name`, the whole document is
+     * one snapshot called `root`, and the browser cross-fades the old grid
+     * into the new one. A card that survives the filter and travels from the
+     * fourth column to the first fades out where it was and fades in where it
+     * ended up — the two are read as different cards, which is precisely
+     * backwards: the point of filtering is that the work does not change, only
+     * how much of it is on screen.
+     *
+     * Named, each card becomes its own group and the browser interpolates its
+     * position and size. The bento sizes tiles with `nth-child(... of
+     * li:not([hidden]))`, so a card can change shape as well as place when its
+     * neighbours leave, and that reshaping now animates too.
+     *
+     * Names are per scope and per project, never per index: numbering them
+     * would pair whichever card happened to land in slot two with whichever
+     * card used to be there, and morph one project's artwork into another's.
+     * They exist only for the duration of the transition — a permanently named
+     * element is snapshotted on every navigation, which is the cost WorkGrid's
+     * click handler already avoids for the same reason.
+     */
+    const scopeName = (scope.dataset.facetScope || 'scope').replace(/[^\w-]/g, '-');
+    const nameOf = (li: HTMLElement, i: number) => {
+      const key = li.querySelector<HTMLElement>('[data-vt]')?.dataset.vt ?? `card-${i}`;
+      return `${scopeName}-${key}`.replace(/[^\w-]/g, '-');
+    };
+
+    // A change that lands mid-flight supersedes the one running. Only the
+    // newest transition may clear the names, or it would strip them off the
+    // cards the replacement is still animating.
+    let latest = 0;
+
     const run = () => {
       const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (document.startViewTransition && !reduceMotion) document.startViewTransition(apply);
-      else apply();
+      if (!document.startViewTransition || reduceMotion) {
+        apply();
+        return;
+      }
+
+      for (const [i, li] of items.entries()) {
+        li.style.viewTransitionName = nameOf(li, i);
+        // Styled as a group in global.css. Unknown to browsers without
+        // view-transition-class, which fall back to the rules for every
+        // named group and still animate.
+        li.style.setProperty('view-transition-class', 'card');
+      }
+
+      const token = ++latest;
+      const clear = () => {
+        if (token !== latest) return;
+        for (const li of items) {
+          li.style.viewTransitionName = '';
+          li.style.removeProperty('view-transition-class');
+        }
+      };
+      // Both arms, not .finally: `finished` rejects if the update callback
+      // throws, and a .finally on a rejected promise re-rejects with nothing
+      // downstream to catch it — an unhandled rejection in the console for a
+      // filter that otherwise recovered.
+      document.startViewTransition(apply).finished.then(clear, clear);
     };
 
     for (const s of selects) s.addEventListener('change', run);

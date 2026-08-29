@@ -106,6 +106,12 @@
   --color-glow: light-dark(rgb(124 58 237 / 12%), rgb(139 92 246 / 15%));
   --color-accent-wash: rgb(139 92 246 / 10%);
   --color-accent-wash: light-dark(rgb(124 58 237 / 8%), rgb(139 92 246 / 10%));
+  /* Text sitting ON a flat --color-accent fill, which is not the same question
+     in the two themes and cannot be one value. Light mode's violet-600 is dark
+     enough to carry white (5.7:1). Dark mode's violet-400 is a light colour —
+     white on it measures 2.7:1 — so it carries near-black instead (6.6:1). */
+  --color-on-accent: #17151f;
+  --color-on-accent: light-dark(#fff, #17151f);
   /* --- Status ------------------------------------------------------------ *
      Destructive and confirming, in both themes.
 
@@ -235,8 +241,17 @@
      Every portfolio image gets the same frame, so covers of wildly different
      brightness sit together as one set.                                      */
   --image-radius: var(--radius-xs);
-  --image-frame: inset 0 0 0 1px var(--color-line);
-  --image-frame-hover: inset 0 0 0 1px var(--color-line-strong);
+  /* Outset, not inset.
+     
+     This was `inset`, which paints inside the padding box and therefore
+     UNDER the artwork. Every image on this site is opaque and fills its box
+     exactly, so the one device meant to make a teal cover, an orange cover
+     and a black cover read as one hung set rendered nowhere at all —
+     measured across a cover's edge, the page ground ran straight into the
+     artwork with no line between. An outset ring sits on the boundary, where
+     a frame goes, and follows the border radius. */
+  --image-frame: 0 0 0 1px var(--color-line-strong);
+  --image-frame-hover: 0 0 0 1px var(--color-line-control);
   /* Not --color-paper-raised, which is pure white in light mode: a deck page
      is usually white too, so the frame would vanish and pages would bleed
      into the page. A half-step of grey keeps every image's edge visible. */

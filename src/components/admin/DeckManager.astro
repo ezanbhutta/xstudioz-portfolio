@@ -38,9 +38,16 @@ interface Props {
    * both, because a set of icons arrives as one PDF exactly like a deck does.
    */
   layout?: 'deck' | 'icons';
+  /**
+   * `src` of the page currently used as the grid cover. Nothing here showed
+   * which page that was, so an operator could not tell a deck whose cover had
+   * been chosen from one still defaulting to its title slide — and starring a
+   * page gave no visible result beyond a line of status text.
+   */
+  cover?: string | null;
 }
 
-const { slug, pages, pdf, layout = 'deck' } = Astro.props;
+const { slug, pages, pdf, layout = 'deck', cover = null } = Astro.props;
 
 /**
  * Only the tile labels still branch here. Every other wording is both
@@ -74,9 +81,9 @@ const icons = layout === 'icons';
           ) : (
             <>
               {pages.length}
-              <span data-deck-only> page{pages.length === 1 ? '' : 's'}</span>
-              <span data-icons-only> sheet{pages.length === 1 ? '' : 's'}</span>. Drag to reorder —
-              each change saves immediately.
+              <span data-deck-only> page{pages.length === 1 ? '' : 's'}.</span>
+              <span data-icons-only> sheet{pages.length === 1 ? '' : 's'}.</span>
+              Drag to reorder — each change saves immediately.
             </>
           )
         }
@@ -194,9 +201,29 @@ const icons = layout === 'icons';
             <span data-icons-only>a sheet</span>
           </>{' '}
           to move it. With the keyboard: focus one, press Space to pick it up, arrow keys to move,
-          Space to drop. The star makes it the grid cover; the lines open
-          <span data-deck-only> its description</span>
-          <span data-icons-only> its name, kind and description</span>.
+          Space to drop. The star makes it the grid cover; the lines open{' '}
+          <span data-deck-only>its chapter and description.</span>
+          <span data-icons-only>its name, kind and description.</span>
+        </p>
+
+        {/* The convention, said where the star is rather than in a panel four
+            thousand pixels below it.
+
+            A deck exported to PDF starts with a title slide, and page one is
+            the default cover — so the work grid was a row of typeset project
+            names, which is the one thing a visitor can already read from the
+            card's own title. The cover's job is to show the mark existing in
+            the world. Nothing can enforce that, so it is at least said. */}
+        <p class="deck-help deck-help--cover">
+          <span data-deck-only>
+            Star the page where the mark is <em>in use</em> — on a sign, a card, a bag, a shopfront
+            — not the title slide. The grid tile is the only thing most visitors will ever see of
+            this project.
+          </span>
+          <span data-icons-only>
+            Star the sheet that best shows what the set is. It is the only thing most visitors will
+            ever see of this project.
+          </span>
         </p>
 
         <ol class="pages" data-pages aria-describedby="deck-help">
@@ -207,10 +234,29 @@ const icons = layout === 'icons';
               tabindex="0"
               data-page
               data-src={page.src}
+              data-is-cover={cover === page.src ? '' : undefined}
               aria-label={`${icons ? 'Icon' : 'Page'} ${i + 1}`}
             >
               <span class="page-no" data-no aria-hidden="true">
                 {i + 1}
+              </span>
+
+              {/* Only ever on one tile, so it is a statement of fact rather
+                  than a badge every page wears. */}
+              <span class="page-cover-flag" data-cover-flag hidden={cover !== page.src}>
+                Cover
+              </span>
+
+              {/* The deck's structure, visible on the grid.
+
+                  A chapter is typed into a panel that is closed by default, so
+                  on a 45-tile deck the only way to see where the chapters
+                  start was to open all 45. This is that answer at a glance:
+                  the tiles carrying a name are the ones that open a section.
+                  Kept in the DOM even when empty so the save handler can fill
+                  it without rebuilding the tile. */}
+              <span class="page-name-flag" data-name-flag hidden={!page.label}>
+                {page.label}
               </span>
 
               {page.display ? (
@@ -232,11 +278,16 @@ const icons = layout === 'icons';
               )}
 
               <div class="page-tools">
+                {/* aria-pressed, not a second control: "is the cover" and
+                    "make it the cover" are one toggle in the on and off
+                    position, and a screen reader that can only hear "Make page
+                    3 the grid cover" cannot find out which page already is. */}
                 <button
                   class="page-btn"
                   type="button"
                   data-cover
-                  aria-label={`Make page ${i + 1} the grid cover`}
+                  aria-pressed={cover === page.src ? 'true' : 'false'}
+                  aria-label={`Use ${icons ? 'sheet' : 'page'} ${i + 1} as the grid cover`}
                   title="Use as grid cover"
                 >
                   <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
@@ -253,8 +304,12 @@ const icons = layout === 'icons';
                   class="page-btn"
                   type="button"
                   data-alt-open
-                  aria-label={`Describe page ${i + 1}`}
-                  title="Description"
+                  aria-label={
+                    icons
+                      ? `Name and describe sheet ${i + 1}`
+                      : `Set the chapter and description for page ${i + 1}`
+                  }
+                  title={icons ? 'Name, kind and description' : 'Chapter and description'}
                 >
                   <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
                     <path
@@ -287,38 +342,48 @@ const icons = layout === 'icons';
               </div>
 
               <div class="page-meta" hidden data-alt-wrap>
-                <div data-icons-only>
-                  {/* A sheet can hold a group of marks, and which group is
-                      exactly what the project's single logo type cannot
-                      express. Always in the DOM so switching Layout in the
-                      form below reveals these immediately, with nothing typed
-                      lost by switching back. Saved on blur, like the
-                      description. */}
-                  <div class="page-fields">
-                    <label class="page-field">
-                      <span class="page-alt-label">Name</span>
-                      <input
-                        class="page-alt-input"
-                        type="text"
-                        data-label
-                        maxlength="120"
-                        value={page.label}
-                        placeholder="e.g. Sunrise Yoga"
-                      />
-                    </label>
+                {/* One column, two meanings.
 
-                    <label class="page-field">
-                      <span class="page-alt-label">Kind</span>
-                      <select class="page-alt-input" data-logo-type>
-                        <option value="">— not set —</option>
-                        {LOGO_TYPES.map((t) => (
-                          <option value={t} selected={page.logoType === t}>
-                            {t}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
+                    On a sheet it is the group of marks it holds — exactly what
+                    the project's single logo type cannot express. On a deck
+                    page it opens a chapter: a forty-five page presentation is
+                    38,000 pixels of one column with no landmark in it, and the
+                    only person who knows where "Colour" starts is whoever made
+                    the deck. Typing a name here is that person saying so.
+
+                    The same column, because it is the same fact — this image
+                    has a name of its own — and a second column would mean a
+                    second migration to store a word we already store.
+
+                    Always in the DOM, so switching Layout in the form below
+                    reveals or hides these immediately with nothing typed lost
+                    by switching back. Saved on blur, like the description. */}
+                <div class="page-fields">
+                  <label class="page-field">
+                    <span class="page-alt-label">
+                      <span data-deck-only>Chapter starts here — e.g. Colour</span>
+                      <span data-icons-only>Name — e.g. Sunrise Yoga</span>
+                    </span>
+                    <input
+                      class="page-alt-input"
+                      type="text"
+                      data-label
+                      maxlength="120"
+                      value={page.label}
+                    />
+                  </label>
+
+                  <label class="page-field" data-icons-only>
+                    <span class="page-alt-label">Kind</span>
+                    <select class="page-alt-input" data-logo-type>
+                      <option value="">— not set —</option>
+                      {LOGO_TYPES.map((t) => (
+                        <option value={t} selected={page.logoType === t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
 
                 <label class="page-field">
@@ -529,18 +594,36 @@ const icons = layout === 'icons';
       const item = button.closest<HTMLElement>('[data-page]')!;
       const number = item.querySelector('[data-no]')!.textContent;
 
+      if (button.getAttribute('aria-pressed') === 'true') {
+        say(`Page ${number} is already the grid cover.`);
+        return;
+      }
+
       button.setAttribute('aria-busy', 'true');
-      say(`Building a cover from page ${number}…`);
+      say(`Making page ${number} the grid cover…`);
       try {
         await post({ action: 'cover', src: item.dataset.src });
-        // The old cover file is overwritten at the same path, so the browser
-        // still holds the previous bytes. Reloading is the only honest way to
-        // show what the grid will now display.
-        say(`Page ${number} is now the grid cover. Reloading…`);
-        location.reload();
+
+        // This used to reload, because setting a cover wrote a second image
+        // file at a fixed path and the browser still held the old bytes. The
+        // cover is a reference to a page now — no file is written, so there is
+        // nothing stale to flush, and throwing away the operator's scroll
+        // position and every unsaved field in the form below to re-render one
+        // star would be a poor trade. Move the star instead.
+        for (const other of list!.querySelectorAll<HTMLElement>('[data-page]')) {
+          const isNew = other === item;
+          other.toggleAttribute('data-is-cover', isNew);
+          other.querySelector<HTMLElement>('[data-cover-flag]')!.hidden = !isNew;
+          other
+            .querySelector<HTMLElement>('[data-cover]')!
+            .setAttribute('aria-pressed', String(isNew));
+        }
+
+        say(`Page ${number} is now the grid cover.`);
       } catch (error) {
-        button.removeAttribute('aria-busy');
         say((error as Error).message);
+      } finally {
+        button.removeAttribute('aria-busy');
       }
     });
 
@@ -551,8 +634,9 @@ const icons = layout === 'icons';
       const item = button.closest<HTMLElement>('[data-page]')!;
       const wrap = item.querySelector<HTMLElement>('[data-alt-wrap]')!;
       wrap.hidden = !wrap.hidden;
-      // The first field in the panel, whichever it is: an icon set opens on
-      // its name, a deck straight onto the description.
+      // The first field in the panel: the name on a set, the chapter on a
+      // deck. Both are the same input — the panel's own layout decides which
+      // question it is asking.
       if (!wrap.hidden) wrap.querySelector<HTMLElement>('input, select, textarea')?.focus();
     });
 
@@ -578,27 +662,45 @@ const icons = layout === 'icons';
     );
 
     /**
-     * An icon's name and kind, saved as one thing.
+     * An image's name and, on a set, its kind — saved as one thing.
      *
      * Both live on the same row and are read together, so they go in one
      * request: two would let a dropped connection store the name of a mark
      * whose kind never arrived. The name saves on blur like the description;
      * the kind saves the moment it is chosen, because a select has no typing
      * to finish waiting for.
+     *
+     * The kind is only sent on a set. On a deck its control is hidden and
+     * reads '', so sending it would let someone who flipped Layout to deck
+     * erase a set's kinds one blur at a time. Omitted, the server leaves the
+     * column alone.
      */
     const saveMeta = async (item: HTMLElement) => {
       const label = item.querySelector<HTMLInputElement>('[data-label]');
       const kind = item.querySelector<HTMLSelectElement>('[data-logo-type]');
       if (!label && !kind) return;
+      const icons = deck.dataset.layout === 'icons';
       try {
         await post({
           action: 'meta',
           src: item.dataset.src,
           label: label?.value ?? '',
-          logoType: kind?.value ?? '',
+          ...(icons && kind ? { logoType: kind.value } : {}),
         });
         if (label) label.defaultValue = label.value;
-        say(label?.value ? `“${label.value.trim()}” saved.` : 'Icon saved.');
+        const named = label?.value.trim();
+        const flag = item.querySelector<HTMLElement>('[data-name-flag]');
+        if (flag) {
+          flag.textContent = named ?? '';
+          flag.hidden = !named;
+        }
+        say(
+          named
+            ? `“${named}” saved.`
+            : icons
+              ? 'Name cleared.'
+              : 'Chapter cleared — this page no longer starts one.',
+        );
       } catch (error) {
         say((error as Error).message);
       }
@@ -1115,6 +1217,20 @@ const icons = layout === 'icons';
     border-block-start: 1px solid var(--color-line);
   }
 
+  /* Sits directly under the drag instructions and above the tiles, so it is
+     read on the way to the star rather than after using it. */
+  .deck-help--cover {
+    margin-block: 0 0.8rem;
+    padding-block-start: 0;
+    border-block-start: 0;
+  }
+
+  .deck-help--cover em {
+    font-style: normal;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
   .pages {
     list-style: none;
     margin: 0;
@@ -1191,6 +1307,60 @@ const icons = layout === 'icons';
     font-size: 0.72rem;
     font-weight: 600;
     text-align: center;
+  }
+
+  /* The chosen tile, said twice: a ring the eye finds while scanning a grid of
+     forty thumbnails, and a word for anyone who cannot use the ring. */
+  .page[data-is-cover] {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px var(--color-accent-wash);
+  }
+
+  /* Quiet, and on the opposite corner from the cover flag: a chapter is a
+     fact about the deck, where the cover is a decision about the grid. The
+     accent stays rationed to the one tile that carries it. */
+  .page-name-flag {
+    position: absolute;
+    inset-block-end: 0.4rem;
+    inset-inline-end: 0.4rem;
+    z-index: 1;
+    max-inline-size: calc(100% - 3.5rem);
+    overflow: hidden;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    background: rgb(0 0 0 / 70%);
+    color: #fff;
+    font-size: 0.66rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .page-cover-flag {
+    position: absolute;
+    inset-block-end: 0.4rem;
+    inset-inline-start: 0.4rem;
+    z-index: 1;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* A filled star is the cover; an outlined one is the offer to become it.
+     The tools only appear on hover, so without the fill the state would be
+     invisible exactly when the operator is not reaching for it — hence the
+     flag above, which is always on screen. */
+  .page[data-is-cover] .page-btn[data-cover] {
+    background: var(--color-accent);
+  }
+
+  .page[data-is-cover] .page-btn[data-cover] svg path {
+    fill: currentcolor;
   }
 
   .page-tools {

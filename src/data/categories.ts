@@ -32,6 +32,16 @@ export interface Category {
   /** A short paragraph on why this service exists and what it solves. */
   intro?: string;
   /**
+   * What the client actually receives, in their words not the studio's.
+   *
+   * "What do I get?" is the question no pixel on the site answered — the
+   * `description` line that half-answers it renders only into <head>. Every
+   * entry here is a promise a buyer can hold the studio to, so it says only
+   * what is certain: formats and artefacts, never a turnaround or a revision
+   * count, which are gig terms that change.
+   */
+  deliverables?: string[];
+  /**
    * Extra-element labels (see src/data/filters.ts) that count as evidence of
    * this service. Used to surface honest related work for services that have
    * no standalone case study yet.

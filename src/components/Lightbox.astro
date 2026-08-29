@@ -14,8 +14,16 @@
  * document already. This only upgrades the way they are looked at.
  */
 interface Props {
-  /** Every page of the deck, in order, at full display resolution. */
-  pages: { src: string; alt: string }[];
+  /**
+   * Every page of the deck, in order, at full display resolution.
+   *
+   * `chapter` is the section that page belongs to, on a deck whose pages have
+   * been labelled. Full screen is where a reader is most lost — the whole
+   * viewport is artwork and the only orientation is "23 / 45" — and it is the
+   * one view where the chapter rules drawn down the case study are not on
+   * screen. Absent on an unchaptered deck, where the counter stands alone.
+   */
+  pages: { src: string; alt: string; chapter?: string }[];
   /** Named in the counter, e.g. "Zion Ventures". */
   title: string;
 }
@@ -25,7 +33,10 @@ const { pages, title } = Astro.props;
 
 <dialog class="lightbox on-ink" data-lightbox aria-label={`${title}: presentation pages`}>
   <div class="lightbox-head">
-    <p class="lightbox-counter" data-lightbox-counter aria-live="polite"></p>
+    <p class="lightbox-where" aria-live="polite">
+      <span class="lightbox-chapter" data-lightbox-chapter hidden></span>
+      <span class="lightbox-counter" data-lightbox-counter></span>
+    </p>
     <button type="button" class="lightbox-btn" data-lightbox-close aria-label="Close viewer">
       <span aria-hidden="true">✕</span>
     </button>
@@ -74,13 +85,14 @@ const { pages, title } = Astro.props;
   const payload = document.querySelector<HTMLScriptElement>('[data-lightbox-pages]');
 
   if (dialog && payload && typeof dialog.showModal === 'function') {
-    const sources: { src: string; alt: string; thumb?: string }[] = JSON.parse(
+    const sources: { src: string; alt: string; thumb?: string; chapter?: string }[] = JSON.parse(
       payload.textContent || '[]',
     );
 
     if (sources.length > 0) {
       const img = dialog.querySelector<HTMLImageElement>('[data-lightbox-img]')!;
       const counter = dialog.querySelector<HTMLElement>('[data-lightbox-counter]')!;
+      const chapter = dialog.querySelector<HTMLElement>('[data-lightbox-chapter]')!;
       const rail = dialog.querySelector<HTMLElement>('[data-lightbox-rail]')!;
       const btnPrev = dialog.querySelector<HTMLButtonElement>('[data-lightbox-prev]')!;
       const btnNext = dialog.querySelector<HTMLButtonElement>('[data-lightbox-next]')!;
@@ -111,6 +123,10 @@ const { pages, title } = Astro.props;
         img.src = page.src;
         img.alt = page.alt;
         counter.textContent = `${index + 1} / ${sources.length}`;
+        // One live region, so the chapter and the count are announced as one
+        // change rather than racing each other on every arrow press.
+        chapter.textContent = page.chapter ?? '';
+        chapter.hidden = !page.chapter;
         for (const [n, dot] of dots.entries()) {
           const on = n === index;
           dot.classList.toggle('is-current', on);
@@ -220,7 +236,10 @@ const { pages, title } = Astro.props;
      full-height black panel into the page flow on every case study. */
   .lightbox[open] {
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    /* One row. The head and the bar are absolutely positioned over it now,
+       so the artwork gets the whole viewport instead of the ~136px that two
+       chrome rows used to take off the top and bottom. */
+    grid-template-rows: minmax(0, 1fr);
     /* `minmax(0, 1fr)`, not the implicit `auto` column: an auto track floors
        at its widest item's min-content, and a 36-dot rail min-contents at
        554px. On a 390px phone that pushed every row off the left edge. */
@@ -237,8 +256,48 @@ const { pages, title } = Astro.props;
     padding: 0;
     border: none;
     background: #0d0b10;
+    /* The viewer is its own dark room whatever the page theme. Without this
+       the ink tokens resolve light-mode values inside it, and the controls —
+       set in --color-ink on #0d0b10 — go nearly black on black. */
+    color-scheme: dark;
+    --color-ink: #f4f4f5;
+    --color-paper-mute: #a1a1aa;
+    --color-accent-bright: #d946ef;
+    --color-line-on-ink-strong: rgb(255 255 255 / 24%);
     color: var(--color-ink);
     overflow: hidden;
+  }
+
+  /**
+   * The chrome floats; the stage is the whole dialog.
+   *
+   * The head (~60px) and the bar (~76px) were grid rows, so "open full
+   * screen" handed back 136px less height than it took. On a 1440x900
+   * laptop a deck page went from 1272x716 in the page to 1440x764 in the
+   * viewer — 13% wider — and a taller icon sheet came out SHORTER than it
+   * had been on the page it was opened from. Overlaying the controls gives
+   * the artwork the full viewport and the gain becomes real.
+   */
+  .lightbox-head,
+  .lightbox-bar {
+    position: absolute;
+    inset-inline: 0;
+    z-index: 2;
+    /* A short scrim so controls stay legible over a light deck page. */
+    background: linear-gradient(to bottom, rgb(13 11 16 / 82%), transparent);
+  }
+
+  .lightbox-head {
+    inset-block-start: 0;
+  }
+
+  .lightbox-bar {
+    inset-block-end: 0;
+    background: linear-gradient(to top, rgb(13 11 16 / 82%), transparent);
+  }
+
+  .lightbox-stage {
+    grid-row: 1 / -1;
   }
 
   .lightbox::backdrop {
@@ -254,7 +313,36 @@ const { pages, title } = Astro.props;
     padding: var(--space-2xs) clamp(0.75rem, 3vw, 2rem);
   }
 
+  .lightbox-where {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2xs);
+    min-inline-size: 0;
+    margin: 0;
+  }
+
+  /* Truncates rather than wraps: the head is one row over the artwork, and a
+     long chapter name pushing the close button off the edge would trap
+     somebody in the viewer. */
+  .lightbox-chapter {
+    overflow: hidden;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-ink);
+  }
+
+  .lightbox-chapter:not([hidden]) + .lightbox-counter::before {
+    content: '·';
+    margin-inline-end: var(--space-2xs);
+  }
+
   .lightbox-counter {
+    flex: none;
     font-family: var(--font-sans);
     font-size: var(--text-sm);
     font-weight: var(--weight-medium);
@@ -288,7 +376,9 @@ const { pages, title } = Astro.props;
     inset: 0;
     inline-size: 100%;
     block-size: 100%;
-    padding: clamp(0.5rem, 2vw, 1.5rem);
+    /* Enough to clear the floating chrome at the top and bottom without
+       boxing the artwork in on a wide screen. */
+    padding: 3.25rem clamp(0.5rem, 2vw, 1.5rem) 4.25rem;
     object-fit: contain;
   }
 

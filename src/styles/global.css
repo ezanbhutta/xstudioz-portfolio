@@ -643,6 +643,26 @@ picture {
     animation-duration: var(--duration-base);
   }
 
+  /* Cards rearranging under a filter, which is a different event from a cover
+     travelling between two pages and wants a different speed. Nothing is
+     navigating and nobody is waiting, but a dozen tiles taking 450ms to shuffle
+     reads as the page thinking. The group carries the movement; the old and new
+     images only cross-fade, and deliberately carry no transform of their own —
+     scaling them would fight the size the group is already interpolating and
+     make a card that merely moved appear to pulse.
+
+     Selected by view-transition-class, set on each card by SectionFilters for
+     the length of the transition. A browser without it falls through to the
+     rule above and still animates, only slower. */
+  ::view-transition-group(.card) {
+    animation-duration: var(--duration-base);
+  }
+
+  ::view-transition-old(.card),
+  ::view-transition-new(.card) {
+    animation-duration: var(--duration-fast);
+  }
+
   ::view-transition-old(root) {
     animation: vt-leave 180ms var(--ease-in-out) both;
   }

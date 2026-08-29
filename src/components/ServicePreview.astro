@@ -31,9 +31,27 @@ interface Props {
   count?: number;
   /** The very first card on the page paints instantly (it is the LCP). */
   lead?: boolean;
+  /**
+   * How the work qualifies. A service with no case study of its own can still
+   * have shipped inside other projects, and saying which is which is the
+   * difference between evidence and a claim — the service page has always
+   * drawn that line, so the homepage draws it in the same words.
+   */
+  directCount?: number;
+  viaExtrasCount?: number;
 }
 
-const { category, projects, count = 2, lead = false } = Astro.props;
+const {
+  category,
+  projects,
+  count = 2,
+  lead = false,
+  directCount = projects.length,
+  viaExtrasCount = 0,
+} = Astro.props;
+
+/** Everything shown came in through an extra — so the row needs saying. */
+const allViaExtras = directCount === 0 && viaExtrasCount > 0;
 
 const headingId = `section-${category.id}`;
 // The first by `order`, so which two appear is a content decision.
@@ -48,6 +66,11 @@ const remaining = projects.length - preview.length;
     {
       preview.length > 0 && (
         <div class="preview-body">
+          {allViaExtras && (
+            <p class="preview-secondary-label" data-reveal>
+              Delivered as part of these identity projects
+            </p>
+          )}
           <WorkGrid projects={preview} eagerCount={lead ? 2 : 0} leadFirst={lead} labelled />
         </div>
       )
@@ -74,6 +97,16 @@ const remaining = projects.length - preview.length;
 </section>
 
 <style>
+  .preview-secondary-label {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-ink-mute);
+    margin-block-end: var(--space-sm);
+  }
+
   .preview {
     padding-block: var(--space-3xl);
     border-block-start: 1px solid var(--color-line);

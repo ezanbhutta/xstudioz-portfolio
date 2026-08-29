@@ -20,8 +20,18 @@ const year = new Date().getFullYear();
       <div class="footer-cta-text">
         <p class="overline">Start a project</p>
         <h2 id="footer-cta-heading" class="footer-cta-title">
-          Tell me about your brand<span class="accent-dot">.</span>
+          Tell us about your brand<span class="accent-dot">.</span>
         </h2>
+        {
+          /* The site speaks as a studio everywhere else — categories.json,
+            the hero, every case study. This heading was the one place it
+            slipped into the first person, which read as a solo operator
+            dressed up rather than as either thing done deliberately. */
+        }
+        <p class="footer-cta-lede">
+          Send what the business does and who it is for. What comes back is a mark, its variants,
+          and the files to use them — in SVG, PDF and PNG, colour and mono.
+        </p>
       </div>
       <div class="footer-actions">
         <a
@@ -97,6 +107,14 @@ const year = new Date().getFullYear();
 </footer>
 
 <style>
+  .footer-cta-lede {
+    margin-block-start: var(--space-xs);
+    max-inline-size: 46ch;
+    color: var(--color-paper-mute);
+    font-size: var(--text-sm);
+    line-height: var(--leading-body);
+  }
+
   .footer {
     /* The page is already obsidian, so the footer separates by sinking
        darker behind a hairline rather than inverting to light. */

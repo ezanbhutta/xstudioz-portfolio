@@ -194,13 +194,18 @@ const facets = [
       }
 
       const token = ++latest;
-      document.startViewTransition(apply).finished.finally(() => {
+      const clear = () => {
         if (token !== latest) return;
         for (const li of items) {
           li.style.viewTransitionName = '';
           li.style.removeProperty('view-transition-class');
         }
-      });
+      };
+      // Both arms, not .finally: `finished` rejects if the update callback
+      // throws, and a .finally on a rejected promise re-rejects with nothing
+      // downstream to catch it — an unhandled rejection in the console for a
+      // filter that otherwise recovered.
+      document.startViewTransition(apply).finished.then(clear, clear);
     };
 
     for (const s of selects) s.addEventListener('change', run);

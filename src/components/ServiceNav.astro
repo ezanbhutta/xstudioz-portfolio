@@ -44,6 +44,18 @@ const { current } = Astro.props;
     border-block: 1px solid var(--color-line);
   }
 
+  /* The row draws its own rules per column above 900px, so the wrapper's top
+     hairline would sit 1px above five more of them — and the space that
+     hairline used to hold has to come back as padding, or the index's five
+     rules land ~36px under the inclusions' three and the two read as one
+     grid that cannot agree how many columns it has. */
+  @media (min-width: 900px) {
+    .servicenav {
+      border-block-start: 0;
+      padding-block-start: var(--space-2xl);
+    }
+  }
+
   .servicenav-list {
     display: flex;
     flex-wrap: wrap;
@@ -57,6 +69,39 @@ const { current } = Astro.props;
        the page stayed centred on the 1360px measure. */
     margin-block: 0;
     padding-block: var(--space-md);
+  }
+
+  /**
+   * An index across the row, once there is room for one.
+   *
+   * Five names in a flex row ended at 936px of a 1440px page — the links
+   * huddled at the left under a masthead that had just been rebuilt to use
+   * the whole width, and the strip read as a leftover rather than as the
+   * site's index. Equal columns, each under its own rule: the same device the
+   * inclusions and the project facts use, so the one row on the page that
+   * lists everything looks like it belongs to the same document.
+   *
+   * Only above 900px. Below that, five equal columns are five cramped ones
+   * and the wrapping flex row is the better answer.
+   */
+  @media (min-width: 900px) {
+    .servicenav-list {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0 var(--space-md);
+      padding-block: 0;
+    }
+
+    .servicenav-list > li {
+      padding-block: var(--space-sm) var(--space-md);
+      border-block-start: 1px solid var(--color-line);
+    }
+
+    /* The current page owns its column: the rule above it is the accent, so
+       the strip says where you are before you read a single word of it. */
+    .servicenav-list > li:has(> [aria-current='page']) {
+      border-block-start-color: var(--color-accent);
+    }
   }
 
   .servicenav-link {

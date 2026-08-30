@@ -17,43 +17,59 @@ const year = new Date().getFullYear();
 <footer class="footer on-ink">
   <div class="container">
     <section class="footer-cta" aria-labelledby="footer-cta-heading">
-      <div class="footer-cta-text">
-        <p class="overline">Start a project</p>
-        <h2 id="footer-cta-heading" class="footer-cta-title">
-          Tell us about your brand<span class="accent-dot">.</span>
-        </h2>
-        {
-          /* The site speaks as a studio everywhere else — categories.json,
-            the hero, every case study. This heading was the one place it
-            slipped into the first person, which read as a solo operator
-            dressed up rather than as either thing done deliberately. */
-        }
+      <p class="overline">Start a project</p>
+      {
+        /* The site speaks as a studio everywhere else — categories.json, the
+          hero, every case study. This heading was the one place it slipped
+          into the first person, which read as a solo operator dressed up
+          rather than as either thing done deliberately. */
+      }
+      {/* prettier-ignore */}
+      <h2 id="footer-cta-heading" class="footer-cta-title">
+        Tell us about your brand<span class="accent-dot">.</span>
+      </h2>
+
+      {
+        /**
+         * The banner, then the two halves under it.
+         *
+         * This was a flex row meant to put the words left and the buttons
+         * right, and it never did: the heading is set at --text-4xl and runs
+         * 1090px, so the actions had nowhere to go but the next line, where
+         * `justify-content: space-between` put them back at the left margin.
+         * The result was a 900x220 hole in the right of the band on every
+         * page of the site. The title keeps the whole width — it is the one
+         * sentence here worth setting large — and the lede and the buttons
+         * share the row beneath it.
+         */
+      }
+      <div class="footer-cta-row">
         <p class="footer-cta-lede">
           Send what the business does and who it is for. What comes back is a mark, its variants,
           and the files to use them — in SVG, PDF and PNG, colour and mono.
         </p>
-      </div>
-      <div class="footer-actions">
-        <a
-          class="button button--paper button--lg"
-          href={SITE.fiverrUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Message on Fiverr <span aria-hidden="true">↗</span>
-        </a>
-        {
-          SITE.linkedinUrl && (
-            <a
-              class="button button--ghost button--lg"
-              href={SITE.linkedinUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Connect on LinkedIn <span aria-hidden="true">↗</span>
-            </a>
-          )
-        }
+        <div class="footer-actions">
+          <a
+            class="button button--paper button--lg"
+            href={SITE.fiverrUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Message on Fiverr <span aria-hidden="true">↗</span>
+          </a>
+          {
+            SITE.linkedinUrl && (
+              <a
+                class="button button--ghost button--lg"
+                href={SITE.linkedinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Connect on LinkedIn <span aria-hidden="true">↗</span>
+              </a>
+            )
+          }
+        </div>
       </div>
     </section>
 
@@ -126,19 +142,30 @@ const year = new Date().getFullYear();
 
   /* Closing statement left, actions right — one row on desktop so the band
      opens with a single confident line rather than a stacked paragraph. */
-  .footer-cta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: end;
-    justify-content: space-between;
-    gap: var(--space-xl);
-  }
-
   .footer-cta-title {
     font-size: var(--text-4xl);
     letter-spacing: var(--tracking-display);
     margin-block-start: var(--space-2xs);
-    max-width: var(--measure-statement);
+  }
+
+  .footer-cta-row {
+    display: grid;
+    gap: var(--space-lg);
+    margin-block-start: var(--space-lg);
+  }
+
+  /* The lede left, the buttons hard right against the far edge — the band's
+     own version of the masthead every other page on the site now uses. */
+  @media (min-width: 860px) {
+    .footer-cta-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      column-gap: var(--space-3xl);
+    }
+
+    .footer-actions {
+      justify-content: flex-end;
+    }
   }
 
   .footer-actions {
@@ -148,9 +175,16 @@ const year = new Date().getFullYear();
     gap: var(--space-sm);
   }
 
+  /* Three children, not four. The track list declared `2fr` plus three 1fr
+     columns while the footer renders a brand block and exactly two navs, so
+     the fourth track was always empty — a quarter of the footer reserved for
+     a column that does not exist, and the three that do squeezed into 4/5 of
+     the width to pay for it. `auto-fit` also works here (the extra tracks
+     collapse to 0) but reports eight tracks for three children, which is a
+     lot of machinery for a number this file already knows. */
   .footer-grid {
     display: grid;
-    grid-template-columns: 2fr repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
     gap: var(--space-lg);
     border-block-start: 1px solid var(--color-line-on-ink);
     margin-block-start: var(--space-3xl);
